@@ -1,0 +1,16 @@
+# Godot 4
+.godot/
+/android/
+*.translation
+
+# Exports and builds
+/build/
+/export/
+export_presets.cfg
+
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+*.tmp
+.vscode/
+.idea/

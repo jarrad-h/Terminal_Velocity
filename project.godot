@@ -1,0 +1,20 @@
+; Engine configuration file.
+; Godot fills in the rest (features, icon, main scene) on first open.
+
+config_version=5
+
+[application]
+
+config/name="Terminal Velocity"
+config/description="Top-down space trading and combat in the spirit of EV Nova."
+
+[display]
+
+window/size/viewport_width=1600
+window/size/viewport_height=900
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
