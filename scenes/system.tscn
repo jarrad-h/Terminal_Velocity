@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/system_scene.gd" id="1_system"]
+[ext_resource type="Script" path="res://scripts/world/starfield.gd" id="2_starfield"]
+[ext_resource type="Script" path="res://scripts/world/follow_camera.gd" id="3_camera"]
+
+[node name="SystemScene" type="Node2D"]
+script = ExtResource("1_system")
+
+[node name="Starfield" type="Node2D" parent="."]
+script = ExtResource("2_starfield")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Camera" type="Camera2D" parent="."]
+process_callback = 0
+script = ExtResource("3_camera")
