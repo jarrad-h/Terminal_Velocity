@@ -1,0 +1,21 @@
+{
+  "player_ship": "courier",
+  "background_colour": "#05060c",
+  "camera": {
+    "zoom": 1.0,
+    "smoothing_speed": 0
+  },
+  "starfield": {
+    "seed": 1,
+    "tile_size": 2048,
+    "layers": [
+      {"scroll_scale": 0.15, "count": 400, "size": 1.0, "brightness": 0.35},
+      {"scroll_scale": 0.4, "count": 200, "size": 1.5, "brightness": 0.6},
+      {"scroll_scale": 0.8, "count": 80, "size": 2.0, "brightness": 0.9}
+    ]
+  },
+  "debug": {
+    "time_scales": [0.25, 0.5, 1, 2, 4],
+    "velocity_vector_seconds": 0.5
+  }
+}
