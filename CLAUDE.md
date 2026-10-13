@@ -30,6 +30,7 @@ scripts/
   sim/        Pure logic (flight maths, damage, odds) — unit-testable
   ui/         HUD, LandedScreen
   debug/      DebugPanel, Console, overlays
+  world/      SystemScene, camera, starfield
 assets/       sprites/, audio/ (placeholder art is fine)
 tests/        Unit tests for scripts/sim and the data loader
 docs/         Spec and design notes
@@ -46,5 +47,8 @@ docs/         Spec and design notes
 
 ## Checking work
 
-- Run the project headless to catch script errors before handing back: `godot --headless --path . --quit` (adjust the Godot executable name for this machine).
+- Run the project headless to catch script errors before handing back (Godot 4.6.1; adjust the executable name for the machine):
+  `godot --headless --path "C:\Users\jarra\OneDrive\Claude_Code\Terminal_Velocity\terminal-velocity\terminal-velocity" --quit`
+  In a cloud session the repo root is the project, so use `--path .`. On a fresh clone run `--import` once first so `class_name` scripts register.
+- Unit tests: `godot --headless --path . --script res://tests/run_tests.gd`. Scene smoke test: `godot --headless --path . --script res://tests/smoke_system.gd`. Both exit non-zero on failure.
 - Add or update tests in `tests/` for anything in `scripts/sim/` and for the data loader's validation rules.
