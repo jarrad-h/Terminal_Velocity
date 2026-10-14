@@ -1,6 +1,6 @@
 # Terminal Velocity Prototype — Requirements & Scope
 
-Exported from the planning doc on 13 Oct 2026. The planning doc is the source of truth; refresh this copy when it changes.
+Exported from the planning doc on 14 Oct 2026. The planning doc is the source of truth; refresh this copy when it changes.
 
 ## Purpose and success criteria
 
@@ -20,7 +20,7 @@ One system, one player ship, combat and AI first; everything that needs more tha
 
 | Area | In the prototype | Out (later milestones) |
 | --- | --- | --- |
-| World | One system: a star, 2–3 planets, 1 station, an asteroid field optional | Multiple systems, hyperspace, galaxy map, fuel |
+| World | One system: a star, 2–3 planets, 1 station, a noise-generated backdrop, local debris and an asteroid field | Multiple systems, hyperspace, galaxy map, fuel |
 | Player ship | Fly, fire, take damage, be disabled, die and respawn | Buying ships, escorts, capture keeping the ship |
 | Weapons | Fixed gun, turret, guided missile, beam | Ammo economy, point defence, ion, jamming, cloaking |
 | Damage model | Shields, armour, disabled state, destruction | Armour recharge, repair systems |
@@ -41,7 +41,16 @@ Each requirement has an ID so milestones, commits and tests can refer to it.
 - F1: Thrust, turn and reverse-thrust (turn to face opposite velocity) controls, keyboard first, gamepad later.
 - F2: Velocity is capped at the ship's top speed; there is no drag, so the ship drifts when not thrusting.
 - F3: Acceleration, top speed and turn rate come from the ship definition.
-- F4: The camera follows the player; a parallax starfield shows motion.
+- F4: The camera follows the player; speed reads from passing local-space objects (L1), while the distant backdrop barely moves (B1).
+
+**Backdrop and local space**
+
+- B1: The backdrop is distant stars plus nebula generated from noise (Godot's FastNoiseLite), drawn behind everything with a very small parallax factor (default 0.02, so it moves 2% of camera motion).
+- B2: Each system sets its backdrop in data: star density and brightness, nebula coverage and intensity, a colour gradient, noise seed, frequency and octaves, and the parallax factor. The balance of stars to nebula is a data change.
+- L1: Local space is filled with scenery in world space, from dust through to large asteroids, moving past at true speed so it carries the sense of motion. Dust is cosmetic only and may use a depth of 0.9–1.1 for slight layering.
+- L2: Scenery is generated in chunks around the player from the system seed, so the same place always holds the same objects; distant chunks unload.
+- L3: Each scenery type is a data definition; a system lists the types it uses, each with a density and an optional region (whole system, ring or circle). Swapping dust and asteroids for wrecks, flora or fauna is a data change, and a behaviour field (static or drift now) leaves room for moving fauna later.
+- L4: Solid scenery uses the same Health component as ships (armour only), so weapons can hit it from milestone 3; destroyed objects can spawn fragment scenery as cosmetic RigidBody2D pieces. Ships pass through scenery, as they pass through each other.
 
 **Combat**
 
@@ -100,7 +109,7 @@ Each requirement has an ID so milestones, commits and tests can refer to it.
 
 ## Data requirements
 
-Five definition types load from JSON files at startup; IDs are readable strings, and references use explicit fields rather than Nova's numeric offsets.
+Six definition types load from JSON files at startup; IDs are readable strings, and references use explicit fields rather than Nova's numeric offsets.
 
 | Type | Defines | Key fields |
 | --- | --- | --- |
@@ -108,7 +117,8 @@ Five definition types load from JSON files at startup; IDs are readable strings,
 | `weapon` | A gun, turret, missile or beam | kind, damage_shield, damage_armor, range or lifetime, speed, reload, turn_rate (guided), arc (turret), sprite or colour, sound |
 | `government` | A faction | name, colour, allies, enemies, crime_threshold, penalties (shoot, disable, board, kill), max_odds, flee_shield_pct |
 | `ai_pool` | A traffic type (Nova's dude) | government, behaviour (trader, warship, pirate), weighted list of ship IDs |
-| `system` | The one star system | name, objects (star, planets, station with position, sprite, description, landable, min_record), traffic (pool ID + target count) |
+| `system` | The one star system | name, objects (star, planets, station with position, sprite, description, landable, min_record), traffic (pool ID + target count), backdrop (B2 settings), local_space (scenery IDs with density and region), seed |
+| `scenery` | A local-space object type | name, sprites (random pick), size range, spin range, drift range, depth, solid, armor, fragments (scenery ID + count), behaviour |
 
 See `data/ships/courier.json` for an example ship file.
 
@@ -131,6 +141,8 @@ GameState (autoload: credits, legal record per government)
 SystemScene (one star system)
   ├─ TrafficSpawner   spawns ships from ai_pools to target counts
   ├─ System objects   star, planets, station from the system file
+  ├─ Backdrop         noise stars + nebula on a slow parallax layer
+  ├─ LocalSpace       streams scenery chunks around the camera
   ├─ Ship (player and AI)
   │    ├─ ShipBody      flight model
   │    ├─ WeaponMounts  hardpoints
@@ -147,6 +159,7 @@ DebugCommands (autoload) ◄── DebugPanel, Console
 - **Signals for events:** Health emits `disabled` and `destroyed`; GameState listens to apply legal penalties, and the HUD listens to show messages.
 - **Simulation separate from visuals:** flight and damage maths live in plain classes the scene calls each physics frame, so they can be unit-tested.
 - **Debug layer:** a DebugCommands autoload holds every debug action; the DebugPanel scene and the console both call it, so the same commands can also drive automated tests. Both are excluded from release builds.
+- **Backdrop and local space:** a Backdrop node renders stars and nebula with a shader on a parallax layer; a LocalSpace node streams scenery chunks around the camera. Each scenery object is one generic Scenery scene configured from its definition, so new object kinds need data and sprites, not code.
 
 ## Prototype content
 
@@ -159,16 +172,17 @@ Just enough content to make the three behaviours and the four weapon kinds disti
 | Governments | 3 | Local authority, independent traders, pirates (enemy of both) |
 | AI pools | 3 | Trader traffic, authority patrol, pirate raid |
 | System objects | 5 | A star, 2 landable planets, 1 station, 1 gas giant (not landable) |
+| Scenery | 5 | Dust, small debris, rock, large asteroid, derelict hull (proves a data-only swap) |
 
-Placeholder art: single top-down sprites rotated in engine (no 36-frame sheets), flat-coloured planets, and generated beam and projectile visuals. Free asset packs (Kenney space shooter assets are CC0) cover ships and effects until real art exists.
+Placeholder art: single top-down sprites rotated in engine (no 36-frame sheets), flat-coloured planets, a noise-generated nebula backdrop, and generated beam and projectile visuals. Free asset packs (Kenney space shooter assets are CC0) cover ships and effects until real art exists.
 
 ## Milestones
 
 Six steps, each ending in something playable; the data loader comes second so nothing after it is hard-coded.
 
 1. **Fly:** player ship, flight model, camera, starfield. Done when flight feels right (F1–F4).
-2. **Data loader:** JSON definitions, typed resource classes, reference validation, mod override. Done when the player ship loads from `courier.json`.
-3. **Fight:** four weapon kinds, shields and armour, disable and destroy, targeting, a static dummy target. Done when C1–C8 work against a dummy.
+2. **Data loader and local space:** JSON definitions for all six types, typed resource classes, reference validation, mod override and hot reload; then the system file drives the backdrop and local-space scenery, replacing the milestone 1 starfield. Done when changing the backdrop or scenery in JSON changes the scene (B1–B2, L1–L3) and the player ship loads from `courier.json`.
+3. **Fight:** four weapon kinds, shields and armour, disable and destroy, targeting, a static dummy target. Done when C1–C8 work against a dummy and shots damage solid scenery (L4).
 4. **AI and governments:** trader, warship and pirate behaviours, traffic spawning, government relations and the legal record. Done when a pirate raid on traders draws in the patrol (A1–A6, G1–G3).
 5. **Board and land:** boarding for credits, landing with the repair stub, respawn. Done when C9–C10, G4 and S1–S3 work.
 6. **HUD and tuning pass:** radar, target panel, messages, then a balance pass on the data files only. Done when the success criteria in the first section are met.
