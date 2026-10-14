@@ -6,7 +6,7 @@ const OVERLAY_NAMES: Dictionary = {
 	&"hitboxes": "Hitboxes",
 	&"velocity": "Velocity vectors",
 	&"ai_labels": "AI state labels",
-	&"stats": "FPS / ship count",
+	&"stats": "FPS / ship and scenery count",
 }
 
 var _panel: PanelContainer
@@ -24,7 +24,7 @@ func _ready() -> void:
 	layer = 100
 	_build()
 	_panel.visible = DebugCommands.panel_visible
-	DebugCommands.panel_toggled.connect(func(v: bool) -> void: _panel.visible = v)
+	DebugCommands.panel_toggled.connect(_on_panel_toggled)
 	DebugCommands.time_scale_changed.connect(func(_s: float) -> void: _refresh())
 	DebugCommands.paused_changed.connect(func(_p: bool) -> void: _refresh())
 	DebugCommands.overlay_changed.connect(_on_overlay_changed)
@@ -38,6 +38,10 @@ func _process(_delta: float) -> void:
 	if not _stats_label.visible:
 		return
 	var text: String = "FPS %d   Ships %d" % [Engine.get_frames_per_second(), get_tree().get_nodes_in_group(&"ships").size()]
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	if scene != null and scene.system != null:
+		var local_space: LocalSpace = scene.local_space
+		text += "   Scenery %d in %d chunks   System %s" % [local_space.object_count(), local_space.loaded_chunks().size(), scene.system.id]
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
 	if player != null:
 		text += "   Speed %.0f / %.0f px/s" % [player.get_velocity().length(), player.body.stats.top_speed]
@@ -81,13 +85,15 @@ func _build() -> void:
 	_ship_select = _make_select()
 	ship_row.add_child(_ship_select)
 	ship_row.add_child(_make_button("Swap ship", func() -> void:
-		DebugCommands.swap_player_ship(_ship_select.get_item_text(_ship_select.selected))))
+		DebugCommands.swap_player_ship(_ship_select.get_item_text(_ship_select.selected))
+		_fill_selects()))
 	var system_row := HBoxContainer.new()
 	box.add_child(system_row)
 	_system_select = _make_select()
 	system_row.add_child(_system_select)
 	system_row.add_child(_make_button("Switch system", func() -> void:
-		DebugCommands.switch_system(_system_select.get_item_text(_system_select.selected))))
+		DebugCommands.switch_system(_system_select.get_item_text(_system_select.selected))
+		_fill_selects()))
 	_fill_selects()
 
 	box.add_child(HSeparator.new())
@@ -106,6 +112,12 @@ func _on_overlay_changed(overlay: StringName, enabled: bool) -> void:
 	var check: CheckBox = _overlay_checks.get(overlay)
 	if check != null:
 		check.set_pressed_no_signal(enabled)
+
+
+func _on_panel_toggled(panel_visible: bool) -> void:
+	_panel.visible = panel_visible
+	if panel_visible:
+		_fill_selects()
 
 
 func _fill_selects() -> void:

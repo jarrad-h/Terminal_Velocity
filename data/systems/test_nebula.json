@@ -27,7 +27,7 @@
     "noise": {"seed": 7, "frequency": 0.004, "octaves": 6, "texture_size": 1024, "scale": 2}
   },
   "local_space": [
-    {"scenery": "dust", "density": 20},
+    {"scenery": "dust", "density": 30},
     {"scenery": "small_debris", "density": 0.6},
     {"scenery": "rock", "density": 0.4}
   ]

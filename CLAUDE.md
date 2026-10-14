@@ -31,8 +31,8 @@ scripts/
   sim/        Pure logic (flight maths, damage, odds) — unit-testable
   ui/         HUD, LandedScreen
   debug/      DebugPanel, Console, overlays
-  world/      SystemScene, camera, starfield
-assets/       sprites/, audio/ (placeholder art is fine)
+  world/      SystemScene, camera, Backdrop, LocalSpace, Scenery
+assets/       sprites/, audio/, shaders/ (placeholder art is fine)
 tests/        Unit tests for scripts/sim and the data loader
 docs/         Spec and design notes
 ```

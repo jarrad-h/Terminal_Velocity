@@ -1,17 +1,21 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/world/system_scene.gd" id="1_system"]
-[ext_resource type="Script" path="res://scripts/world/starfield.gd" id="2_starfield"]
-[ext_resource type="Script" path="res://scripts/world/follow_camera.gd" id="3_camera"]
+[ext_resource type="Script" path="res://scripts/world/backdrop.gd" id="2_backdrop"]
+[ext_resource type="Script" path="res://scripts/world/local_space.gd" id="3_local"]
+[ext_resource type="Script" path="res://scripts/world/follow_camera.gd" id="4_camera"]
 
 [node name="SystemScene" type="Node2D"]
 script = ExtResource("1_system")
 
-[node name="Starfield" type="Node2D" parent="."]
-script = ExtResource("2_starfield")
+[node name="Backdrop" type="CanvasLayer" parent="."]
+script = ExtResource("2_backdrop")
 
 [node name="World" type="Node2D" parent="."]
 
+[node name="LocalSpace" type="Node2D" parent="World"]
+script = ExtResource("3_local")
+
 [node name="Camera" type="Camera2D" parent="."]
 process_callback = 0
-script = ExtResource("3_camera")
+script = ExtResource("4_camera")

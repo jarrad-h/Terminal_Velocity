@@ -4,6 +4,7 @@ extends Node2D
 ## Lives under the World node so it draws in world coordinates.
 
 const HITBOX_COLOUR := Color(0.2, 1.0, 0.3, 0.8)
+const SCENERY_HITBOX_COLOUR := Color(0.3, 0.8, 1.0, 0.6)
 const VELOCITY_COLOUR := Color(1.0, 0.8, 0.2)
 const LABEL_COLOUR := Color(0.8, 0.9, 1.0)
 const LABEL_FONT_SIZE: int = 12
@@ -26,6 +27,10 @@ func _draw() -> void:
 		return
 	var vector_seconds: float = float(DataRegistry.settings["debug"]["velocity_vector_seconds"])
 	var font: Font = ThemeDB.fallback_font
+	if show_hitboxes:
+		for node: Node in get_tree().get_nodes_in_group(&"solid_scenery"):
+			var scenery: Scenery = node
+			draw_arc(scenery.global_position, scenery.hit_radius, 0.0, TAU, 24, SCENERY_HITBOX_COLOUR, 1.0)
 	for node: Node in get_tree().get_nodes_in_group(&"ships"):
 		var ship: Ship = node
 		var pos: Vector2 = ship.global_position

@@ -89,12 +89,56 @@ func _run() -> void:
 	_check(reload_errors.is_empty(), "reload succeeds: %s" % [reload_errors])
 	_check(player.def.id == "shuttle" and player.def != null, "player keeps its hull after reload")
 
+	# L1–L3: scenery streams around the camera and is the same on revisit.
+	var scene_root: Node = get_tree().get_first_node_in_group(&"system_scene")
+	var local_space: LocalSpace = scene_root.local_space
+	await _teleport(player, Vector2.ZERO)
+	_check(local_space.object_count() > 0, "scenery loaded around the player")
+	var first_visit: Array[String] = _chunk_snapshot(local_space, Vector2i(0, 0))
+	_check(not first_visit.is_empty(), "chunk (0,0) has scenery")
+	await _teleport(player, Vector2(50000.0, 0.0))
+	_check(not local_space.loaded_chunks().has(Vector2i(0, 0)), "distant chunk unloaded")
+	await _teleport(player, Vector2.ZERO)
+	_check(_chunk_snapshot(local_space, Vector2i(0, 0)) == first_visit, "revisited chunk holds the same objects")
+	var saw_dust: bool = false
+	var saw_solid: bool = false
+	for node: Node in local_space.find_children("*", "Scenery", true, false):
+		var scenery: Scenery = node
+		var has_hitbox: bool = scenery.has_node("Hitbox") and scenery.health != null
+		_check(has_hitbox == scenery.def.solid, "%s: hitbox and Health only when solid" % scenery.def.id)
+		saw_dust = saw_dust or scenery.def.id == "dust"
+		saw_solid = saw_solid or scenery.def.solid
+	_check(saw_dust and saw_solid, "both dust and solid scenery present")
+
 	# System switch.
 	_check(_debug.switch_system("test_graveyard"), "switch to test_graveyard")
 	_check(_debug.current_system_id() == "test_graveyard", "current system updated")
+	await _teleport(player, Vector2(2200.0, 0.0))
+	var hulls: int = 0
+	for node: Node in local_space.find_children("*", "Scenery", true, false):
+		if (node as Scenery).def.id == "derelict_hull":
+			hulls += 1
+	_check(hulls > 0, "graveyard ring has derelict hulls")
 	_check(not _debug.switch_system("nowhere"), "unknown system is refused")
 	await _frames(5)
 	_finish()
+
+
+func _teleport(ship: Ship, at: Vector2) -> void:
+	ship.body.state = FlightState.new(at, Vector2.ZERO, 0.0)
+	await _frames(3)
+
+
+func _chunk_snapshot(local_space: LocalSpace, chunk: Vector2i) -> Array[String]:
+	var out: Array[String] = []
+	var holder: Node = local_space.get_node_or_null("Chunk_%d_%d" % [chunk.x, chunk.y])
+	if holder == null:
+		return out
+	for node: Node in holder.get_children():
+		var scenery: Scenery = node
+		out.append("%s %s %.3f" % [scenery.def.id, scenery.placement.position.round(), scenery.placement.size])
+	out.sort()
+	return out
 
 
 func _finish() -> void:

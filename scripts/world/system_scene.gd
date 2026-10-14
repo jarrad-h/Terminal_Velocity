@@ -1,13 +1,14 @@
 extends Node2D
-## Root of the star system: starfield, camera, the player ship and the
-## current system definition.
+## Root of the star system: backdrop, local-space scenery, camera and the
+## player ship, all driven by the current system definition.
 
 const SHIP_SCENE: PackedScene = preload("res://scenes/ship.tscn")
 const DEBUG_PANEL_SCENE: String = "res://scenes/debug_panel.tscn"
 
 var system: SystemDef = null
 
-@onready var starfield: Starfield = $Starfield
+@onready var backdrop: Backdrop = $Backdrop
+@onready var local_space: LocalSpace = $World/LocalSpace
 @onready var world: Node2D = $World
 @onready var camera: FollowCamera = $Camera
 
@@ -20,8 +21,6 @@ func _ready() -> void:
 		screen.show_errors(DataRegistry.load_errors)
 		return
 	var settings: Dictionary = DataRegistry.settings
-	RenderingServer.set_default_clear_color(Color.html(settings["background_colour"]))
-	starfield.configure(settings["starfield"])
 	camera.configure(settings["camera"])
 	load_system(settings["system"])
 
@@ -45,6 +44,8 @@ func load_system(system_id: String) -> bool:
 		push_error("No system with id '%s'" % system_id)
 		return false
 	system = next
+	backdrop.configure(system.backdrop)
+	local_space.configure(system, float(DataRegistry.settings["local_space"]["chunk_size"]))
 	return true
 
 
