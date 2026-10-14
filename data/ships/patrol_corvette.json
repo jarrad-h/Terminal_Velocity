@@ -1,0 +1,25 @@
+{
+  "id": "patrol_corvette",
+  "name": "Patrol Corvette",
+  "sprite": "ships/patrol_corvette.png",
+  "mass": 120,
+  "accel": 260,
+  "top_speed": 300,
+  "turn_rate": 160,
+  "shield": 400,
+  "shield_regen": 8,
+  "armor": 300,
+  "strength": 40,
+  "crew": 12,
+  "hit_radius": 24,
+  "hardpoints": {
+    "gun": [[-8, -22], [8, -22]],
+    "turret": [[0, 6]],
+    "guided": [[0, -10]]
+  },
+  "default_weapons": [
+    {"weapon": "light_laser", "count": 2},
+    {"weapon": "flak_turret", "count": 1},
+    {"weapon": "homing_missile", "count": 1}
+  ]
+}

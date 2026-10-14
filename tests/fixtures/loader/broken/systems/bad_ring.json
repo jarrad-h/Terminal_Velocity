@@ -1,0 +1,5 @@
+{"name": "Bad Ring",
+ "local_space": [
+   {"scenery": "speck", "density": 1},
+   {"scenery": "speck", "density": 1, "region": {"shape": "ring", "inner_radius": 500, "radius": 100}}
+ ]}

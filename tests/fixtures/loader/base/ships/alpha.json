@@ -1,0 +1,2 @@
+{"name": "Alpha", "accel": 100, "top_speed": 200, "turn_rate": 90,
+ "default_weapons": [{"weapon": "zap", "count": 2}]}

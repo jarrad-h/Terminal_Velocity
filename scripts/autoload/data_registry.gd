@@ -1,63 +1,72 @@
 extends Node
-## Loads JSON definitions from data/. Milestone 1 version: global settings and
-## ships by ID only. Validation, other types and mod overrides arrive in
-## milestone 2.
+## Holds every definition after loading data/ then mods/ (later files with the
+## same ID win). If anything is invalid the game refuses to start and lists
+## each error with its file and field. reload() supports D8 hot reload.
 
-const DATA_DIR: String = "res://data"
+signal data_reloaded
 
-## Documented in data/README.md; keep the two in sync.
-const SETTINGS_DEFAULTS: Dictionary = {
-	"player_ship": "courier",
-	"background_colour": "#05060c",
-	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
-	"starfield": {"seed": 1, "tile_size": 2048.0, "layers": [
-		{"scroll_scale": 0.15, "count": 400, "size": 1.0, "brightness": 0.35},
-		{"scroll_scale": 0.4, "count": 200, "size": 1.5, "brightness": 0.6},
-		{"scroll_scale": 0.8, "count": 80, "size": 2.0, "brightness": 0.9},
-	]},
-	"debug": {"time_scales": [0.25, 0.5, 1.0, 2.0, 4.0], "velocity_vector_seconds": 0.5},
-}
-const SHIP_DEFAULTS: Dictionary = {"hit_radius": 16.0, "sprite": ""}
-const SHIP_REQUIRED: Array[String] = ["accel", "top_speed", "turn_rate"]
+const ROOTS: Array[String] = ["res://data", "res://mods"]
 
 var settings: Dictionary = {}
+## Errors from the startup load. Non-empty means the game must not start.
+var load_errors: Array[String] = []
+var _set: DataSet = DataSet.new()
 
 
 func _ready() -> void:
-	settings = _merged(SETTINGS_DEFAULTS, _load_json("%s/game.json" % DATA_DIR))
+	var loaded: DataSet = DataLoader.load_roots(ROOTS)
+	load_errors = loaded.errors
+	if not load_errors.is_empty():
+		push_error("Data errors (%d), the game cannot start:\n%s" % [load_errors.size(), "\n".join(load_errors)])
+		if DisplayServer.get_name() == "headless":
+			get_tree().quit(1)
+		return
+	_apply(loaded)
 
 
-## Returns the ship definition with defaults filled in, or {} if it is missing
-## or invalid (the error names the file and field).
-func get_ship(id: String) -> Dictionary:
-	var path: String = "%s/ships/%s.json" % [DATA_DIR, id]
-	var def: Dictionary = _load_json(path)
-	if def.is_empty():
-		return {}
-	for field: String in SHIP_REQUIRED:
-		if not def.has(field):
-			push_error("%s: missing required field '%s'" % [path, field])
-			return {}
-	return _merged(SHIP_DEFAULTS, def)
+## D8: re-reads every file. On success swaps in the new data and emits
+## data_reloaded; on failure keeps the current data and returns the errors.
+func reload() -> Array[String]:
+	var loaded: DataSet = DataLoader.load_roots(ROOTS)
+	if not loaded.errors.is_empty():
+		push_error("Reload failed, keeping previous data:\n%s" % "\n".join(loaded.errors))
+		return loaded.errors
+	_apply(loaded)
+	data_reloaded.emit()
+	return []
 
 
-func _load_json(path: String) -> Dictionary:
-	if not FileAccess.file_exists(path):
-		push_error("%s: file not found" % path)
-		return {}
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-	if not parsed is Dictionary:
-		push_error("%s: not a JSON object (check for syntax errors)" % path)
-		return {}
-	return parsed
+func get_ship(id: String) -> ShipDef:
+	return _set.get_def("ships", id)
 
 
-## Recursively overlays `over` on `base`; nested dictionaries merge key by key.
-func _merged(base: Dictionary, over: Dictionary) -> Dictionary:
-	var result: Dictionary = base.duplicate(true)
-	for key: Variant in over:
-		if result.get(key) is Dictionary and over[key] is Dictionary:
-			result[key] = _merged(result[key], over[key])
-		else:
-			result[key] = over[key]
-	return result
+func get_weapon(id: String) -> WeaponDef:
+	return _set.get_def("weapons", id)
+
+
+func get_government(id: String) -> GovernmentDef:
+	return _set.get_def("governments", id)
+
+
+func get_ai_pool(id: String) -> AiPoolDef:
+	return _set.get_def("ai_pools", id)
+
+
+func get_system(id: String) -> SystemDef:
+	return _set.get_def("systems", id)
+
+
+func get_scenery(id: String) -> SceneryDef:
+	return _set.get_def("scenery", id)
+
+
+## Sorted IDs of one type folder ("ships", "systems"…).
+func ids(type: String) -> Array[String]:
+	return _set.ids(type)
+
+
+func _apply(loaded: DataSet) -> void:
+	_set = loaded
+	settings = loaded.settings
+	for line: String in loaded.overrides:
+		print("Mod override: ", line)

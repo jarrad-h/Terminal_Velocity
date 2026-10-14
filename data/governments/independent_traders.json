@@ -1,0 +1,11 @@
+{
+  "id": "independent_traders",
+  "name": "Independent Traders",
+  "colour": "#40d080",
+  "allies": ["local_authority"],
+  "enemies": ["pirates"],
+  "crime_threshold": -100,
+  "penalties": {"shoot": 3, "disable": 10, "board": 20, "kill": 30},
+  "max_odds": 0.5,
+  "flee_shield_pct": 60
+}

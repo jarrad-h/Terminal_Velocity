@@ -1,0 +1,11 @@
+{
+  "id": "local_authority",
+  "name": "Local Authority",
+  "colour": "#4080ff",
+  "allies": ["independent_traders"],
+  "enemies": ["pirates"],
+  "crime_threshold": -50,
+  "penalties": {"shoot": 5, "disable": 20, "board": 30, "kill": 50},
+  "max_odds": 1.5,
+  "flee_shield_pct": 15
+}

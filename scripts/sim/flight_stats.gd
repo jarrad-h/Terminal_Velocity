@@ -13,5 +13,5 @@ func _init(p_accel: float = 0.0, p_top_speed: float = 0.0, p_turn_rate: float = 
 	turn_rate = p_turn_rate
 
 
-static func from_ship_def(def: Dictionary) -> FlightStats:
-	return FlightStats.new(float(def["accel"]), float(def["top_speed"]), float(def["turn_rate"]))
+static func from_ship_def(def: ShipDef) -> FlightStats:
+	return FlightStats.new(def.accel, def.top_speed, def.turn_rate)

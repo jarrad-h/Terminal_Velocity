@@ -1,0 +1,34 @@
+{
+  "id": "test_nebula",
+  "name": "Test Nebula",
+  "seed": 1001,
+  "objects": [
+    {"id": "sol", "type": "star", "name": "Vela", "position": [0, -6000], "radius": 400, "colour": "#fff0c0"},
+    {"id": "haven", "type": "planet", "name": "Haven", "position": [3000, 1500], "radius": 160, "colour": "#4a8a5a",
+     "description": "A temperate world with a busy orbital dock.", "landable": true, "government": "local_authority", "min_record": -20},
+    {"id": "cinder", "type": "planet", "name": "Cinder", "position": [-3500, 2500], "radius": 110, "colour": "#a05a3a",
+     "description": "A mining colony that asks few questions.", "landable": true, "government": "independent_traders", "min_record": -80},
+    {"id": "picket", "type": "station", "name": "Picket Station", "position": [800, -1200], "radius": 60, "colour": "#a0a8b8",
+     "description": "Authority patrol base.", "landable": true, "government": "local_authority", "min_record": -10},
+    {"id": "tethys", "type": "planet", "name": "Tethys", "position": [-1500, -4000], "radius": 300, "colour": "#c0a070",
+     "description": "A gas giant.", "landable": false}
+  ],
+  "traffic": [
+    {"pool": "trader_traffic", "count": 4},
+    {"pool": "authority_patrol", "count": 2},
+    {"pool": "pirate_raid", "count": 1}
+  ],
+  "backdrop": {
+    "parallax": 0.02,
+    "base_colour": "#05060c",
+    "stars": {"density": 0.035, "brightness": 0.6, "size": 1.2, "spacing": 16},
+    "nebula": {"coverage": 0.75, "intensity": 0.85, "softness": 0.45,
+               "gradient": ["#0a0820", "#2a1650", "#6a2a7a", "#d06a8a"]},
+    "noise": {"seed": 7, "frequency": 0.004, "octaves": 6, "texture_size": 1024, "scale": 2}
+  },
+  "local_space": [
+    {"scenery": "dust", "density": 20},
+    {"scenery": "small_debris", "density": 0.6},
+    {"scenery": "rock", "density": 0.4}
+  ]
+}

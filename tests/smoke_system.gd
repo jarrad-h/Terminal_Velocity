@@ -1,14 +1,13 @@
-extends SceneTree
+extends Node
 ## Smoke test: runs the system scene, presses flight keys and exercises every
-## debug command. Run with:
-##   godot --headless --path . --script res://tests/smoke_system.gd
+## debug command. Run as a scene so autoloads exist:
+##   godot --headless --path . res://tests/smoke_system.tscn
 
 var _errors: Array[String] = []
-## Autoloads are not global identifiers in --script runners; fetch the node.
 var _debug: Node
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	_run.call_deferred()
 
 
@@ -19,15 +18,15 @@ func _check(condition: bool, message: String) -> void:
 
 func _frames(n: int) -> void:
 	for i: int in n:
-		await physics_frame
+		await get_tree().physics_frame
 
 
 func _run() -> void:
-	_debug = root.get_node(^"DebugCommands")
+	_debug = DebugCommands
 	var scene: Node = load("res://scenes/system.tscn").instantiate()
-	root.add_child(scene)
+	get_tree().root.add_child(scene)
 	await _frames(2)
-	var player: Ship = get_first_node_in_group(&"player")
+	var player: Ship = get_tree().get_first_node_in_group(&"player")
 	_check(player != null, "player ship spawned")
 	if player == null:
 		_finish()
@@ -64,16 +63,36 @@ func _run() -> void:
 	_debug.set_time_scale(1.0)
 	_debug.set_paused(true)
 	var paused_at: Vector2 = player.position
-	await process_frame
-	await process_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
 	_check(player.position == paused_at, "pause stops the ship")
 	_debug.step_frame()
 	await _frames(5)
 	var step_delta: float = player.position.distance_to(paused_at)
 	var expected: float = player.get_velocity().length() / Engine.physics_ticks_per_second
 	_check(absf(step_delta - expected) < 0.01, "step advances exactly one physics frame (moved %f, expected %f)" % [step_delta, expected])
-	_check(paused, "still paused after step")
+	_check(get_tree().paused, "still paused after step")
 	_debug.set_paused(false)
+	await _frames(5)
+
+	# D2: ship swap keeps position and velocity.
+	var pos_before: Vector2 = player.position
+	var vel_before: Vector2 = player.get_velocity()
+	_check(_debug.swap_player_ship("shuttle"), "swap command succeeds")
+	_check(player.def.id == "shuttle", "player is now a shuttle")
+	_check(is_equal_approx(player.body.stats.top_speed, player.def.top_speed), "flight stats follow the new hull")
+	_check(player.get_velocity() == vel_before and player.position == pos_before, "swap keeps position and velocity")
+	_check(not _debug.swap_player_ship("no_such_ship"), "unknown ship is refused")
+
+	# D8: reload re-reads data and live ships pick it up.
+	var reload_errors: Array[String] = _debug.reload_data()
+	_check(reload_errors.is_empty(), "reload succeeds: %s" % [reload_errors])
+	_check(player.def.id == "shuttle" and player.def != null, "player keeps its hull after reload")
+
+	# System switch.
+	_check(_debug.switch_system("test_graveyard"), "switch to test_graveyard")
+	_check(_debug.current_system_id() == "test_graveyard", "current system updated")
+	_check(not _debug.switch_system("nowhere"), "unknown system is refused")
 	await _frames(5)
 	_finish()
 
@@ -82,4 +101,4 @@ func _finish() -> void:
 	for e: String in _errors:
 		print("FAIL ", e)
 	print("smoke: %d failures" % _errors.size())
-	quit(1 if _errors.size() > 0 else 0)
+	get_tree().quit(1 if _errors.size() > 0 else 0)

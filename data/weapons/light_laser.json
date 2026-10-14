@@ -1,0 +1,11 @@
+{
+  "id": "light_laser",
+  "name": "Light Laser",
+  "kind": "gun",
+  "damage_shield": 10,
+  "damage_armor": 6,
+  "range": 700,
+  "speed": 900,
+  "reload": 0.25,
+  "colour": "#ff5050"
+}

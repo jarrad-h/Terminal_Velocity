@@ -1,0 +1,10 @@
+{
+  "id": "trader_traffic",
+  "government": "independent_traders",
+  "behaviour": "trader",
+  "ships": [
+    {"ship": "freighter", "weight": 3},
+    {"ship": "shuttle", "weight": 2},
+    {"ship": "courier", "weight": 1}
+  ]
+}

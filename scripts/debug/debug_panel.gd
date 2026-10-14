@@ -14,6 +14,9 @@ var _time_label: Label
 var _pause_button: Button
 var _stats_label: Label
 var _overlay_checks: Dictionary = {}
+var _ship_select: OptionButton
+var _system_select: OptionButton
+var _reload_label: Label
 
 
 func _ready() -> void:
@@ -25,6 +28,8 @@ func _ready() -> void:
 	DebugCommands.time_scale_changed.connect(func(_s: float) -> void: _refresh())
 	DebugCommands.paused_changed.connect(func(_p: bool) -> void: _refresh())
 	DebugCommands.overlay_changed.connect(_on_overlay_changed)
+	DebugCommands.data_reload_finished.connect(_on_data_reload_finished)
+	DataRegistry.data_reloaded.connect(_fill_selects)
 	_refresh()
 
 
@@ -65,6 +70,27 @@ func _build() -> void:
 	pause_row.add_child(_make_button("Step frame", DebugCommands.step_frame))
 
 	box.add_child(HSeparator.new())
+	box.add_child(_make_label("Data"))
+	box.add_child(_make_button("Reload data files", DebugCommands.reload_data))
+	_reload_label = _make_label("")
+	_reload_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_reload_label.custom_minimum_size.x = 320.0
+	box.add_child(_reload_label)
+	var ship_row := HBoxContainer.new()
+	box.add_child(ship_row)
+	_ship_select = _make_select()
+	ship_row.add_child(_ship_select)
+	ship_row.add_child(_make_button("Swap ship", func() -> void:
+		DebugCommands.swap_player_ship(_ship_select.get_item_text(_ship_select.selected))))
+	var system_row := HBoxContainer.new()
+	box.add_child(system_row)
+	_system_select = _make_select()
+	system_row.add_child(_system_select)
+	system_row.add_child(_make_button("Switch system", func() -> void:
+		DebugCommands.switch_system(_system_select.get_item_text(_system_select.selected))))
+	_fill_selects()
+
+	box.add_child(HSeparator.new())
 	box.add_child(_make_label("Overlays"))
 	for overlay: StringName in DebugCommands.OVERLAYS:
 		var check := CheckBox.new()
@@ -82,6 +108,27 @@ func _on_overlay_changed(overlay: StringName, enabled: bool) -> void:
 		check.set_pressed_no_signal(enabled)
 
 
+func _fill_selects() -> void:
+	var player: Ship = get_tree().get_first_node_in_group(&"player")
+	_fill(_ship_select, DataRegistry.ids("ships"), player.def.id if player != null else "")
+	_fill(_system_select, DataRegistry.ids("systems"), DebugCommands.current_system_id())
+
+
+func _fill(select: OptionButton, ids: Array[String], current: String) -> void:
+	select.clear()
+	for id: String in ids:
+		select.add_item(id)
+		if id == current:
+			select.select(select.item_count - 1)
+
+
+func _on_data_reload_finished(errors: Array[String]) -> void:
+	if errors.is_empty():
+		_reload_label.text = "Reloaded OK at %s" % Time.get_time_string_from_system()
+	else:
+		_reload_label.text = "Reload failed (%d), kept old data:\n%s" % [errors.size(), "\n".join(errors)]
+
+
 func _refresh() -> void:
 	_time_label.text = "Time scale: %s×%s" % [Engine.time_scale, "  (paused)" if get_tree().paused else ""]
 	_pause_button.text = "Resume" if get_tree().paused else "Pause"
@@ -91,6 +138,13 @@ func _make_label(text: String) -> Label:
 	var label := Label.new()
 	label.text = text
 	return label
+
+
+func _make_select() -> OptionButton:
+	var select := OptionButton.new()
+	select.focus_mode = Control.FOCUS_NONE
+	select.custom_minimum_size.x = 180.0
+	return select
 
 
 ## Buttons never take keyboard focus, so flight keys (and space) stay with the ship.

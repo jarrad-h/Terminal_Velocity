@@ -1,0 +1,8 @@
+{
+  "id": "pirate_raid",
+  "government": "pirates",
+  "behaviour": "pirate",
+  "ships": [
+    {"ship": "pirate_raider", "weight": 1}
+  ]
+}

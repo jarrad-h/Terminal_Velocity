@@ -1,0 +1,12 @@
+{
+  "id": "derelict_hull",
+  "name": "Derelict Hull",
+  "size": [50, 110],
+  "spin": [-5, 5],
+  "drift": [0, 3],
+  "solid": true,
+  "armor": 250,
+  "fragments": [{"scenery": "small_debris", "count": 6}],
+  "behaviour": "drift",
+  "placeholder": {"colour": "#58626e", "sides": 6, "roughness": 0.15, "aspect": 3}
+}

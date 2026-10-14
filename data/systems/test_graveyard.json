@@ -1,0 +1,38 @@
+{
+  "id": "test_graveyard",
+  "name": "Test Graveyard",
+  "seed": 2002,
+  "objects": [
+    {"id": "dim", "type": "star", "name": "Dim", "position": [0, 0], "radius": 300, "colour": "#ffb080"},
+    {"id": "bastion", "type": "planet", "name": "Bastion", "position": [4500, 0], "radius": 140, "colour": "#6080a0",
+     "description": "A fortress world watching the old battlefield.", "landable": true, "government": "local_authority", "min_record": -20},
+    {"id": "scrapyard", "type": "planet", "name": "Scrapyard", "position": [-4200, 1800], "radius": 100, "colour": "#806050",
+     "description": "Salvagers strip the wrecks for parts.", "landable": true, "government": "independent_traders", "min_record": -80},
+    {"id": "watch", "type": "station", "name": "Graveyard Watch", "position": [0, 4200], "radius": 60, "colour": "#a0a8b8",
+     "description": "A listening post.", "landable": true, "government": "local_authority", "min_record": -10},
+    {"id": "titan", "type": "planet", "name": "Titan", "position": [-2000, -4800], "radius": 280, "colour": "#b09060",
+     "description": "A gas giant.", "landable": false}
+  ],
+  "traffic": [
+    {"pool": "trader_traffic", "count": 2},
+    {"pool": "authority_patrol", "count": 1},
+    {"pool": "pirate_raid", "count": 2}
+  ],
+  "backdrop": {
+    "parallax": 0.02,
+    "base_colour": "#030305",
+    "stars": {"density": 0.06, "brightness": 0.9, "size": 1.2, "spacing": 14},
+    "nebula": {"coverage": 0.2, "intensity": 0.4, "softness": 0.3,
+               "gradient": ["#050810", "#10304a", "#2a6a7a"]},
+    "noise": {"seed": 31, "frequency": 0.006, "octaves": 4, "texture_size": 1024, "scale": 2}
+  },
+  "local_space": [
+    {"scenery": "dust", "density": 35},
+    {"scenery": "derelict_hull", "density": 4,
+     "region": {"shape": "ring", "centre": [0, 0], "inner_radius": 1200, "radius": 3200}},
+    {"scenery": "small_debris", "density": 12,
+     "region": {"shape": "ring", "centre": [0, 0], "inner_radius": 1100, "radius": 3300}},
+    {"scenery": "large_asteroid", "density": 1.5,
+     "region": {"shape": "circle", "centre": [-2500, -2500], "radius": 1200}}
+  ]
+}

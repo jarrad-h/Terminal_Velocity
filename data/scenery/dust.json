@@ -1,0 +1,9 @@
+{
+  "id": "dust",
+  "name": "Dust",
+  "size": [1.5, 3],
+  "depth": [0.9, 1.1],
+  "solid": false,
+  "behaviour": "static",
+  "placeholder": {"colour": "#8890a0", "sides": 4, "roughness": 0}
+}

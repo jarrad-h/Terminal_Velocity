@@ -20,11 +20,12 @@ Terminal Velocity is a top-down space trading and combat game in the style of EV
 ## Layout
 
 ```
-data/         JSON definitions: ships/, weapons/, governments/, ai_pools/, systems/
+data/         JSON definitions: ships/, weapons/, governments/, ai_pools/, systems/, scenery/ (fields in data/README.md)
 mods/         Same structure; files here override data/ by ID
 scenes/       .tscn files
 scripts/
   autoload/   DataRegistry, GameState, DebugCommands
+  data/       Typed definition classes and the DataLoader (validation, mod override)
   ship/       ShipBody, WeaponMounts, Health, controllers
   ai/         AI behaviours
   sim/        Pure logic (flight maths, damage, odds) — unit-testable
@@ -50,5 +51,6 @@ docs/         Spec and design notes
 - Run the project headless to catch script errors before handing back (Godot 4.6.1; adjust the executable name for the machine):
   `godot --headless --path "C:\Users\jarra\OneDrive\Claude_Code\Terminal_Velocity\terminal-velocity\terminal-velocity" --quit`
   In a cloud session the repo root is the project, so use `--path .`. On a fresh clone run `--import` once first so `class_name` scripts register.
-- Unit tests: `godot --headless --path . --script res://tests/run_tests.gd`. Scene smoke test: `godot --headless --path . --script res://tests/smoke_system.gd`. Both exit non-zero on failure.
+- Unit tests: `godot --headless --path . --script res://tests/run_tests.gd`. Scene smoke test (a scene, so autoloads exist): `godot --headless --path . res://tests/smoke_system.tscn`. Both exit non-zero on failure.
+- `--quit` exits 0 even after script errors, so read its output for `SCRIPT ERROR`/`ERROR` lines. Invalid data makes it exit 1.
 - Add or update tests in `tests/` for anything in `scripts/sim/` and for the data loader's validation rules.

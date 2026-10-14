@@ -1,0 +1,11 @@
+{
+  "id": "large_asteroid",
+  "name": "Large Asteroid",
+  "size": [90, 180],
+  "spin": [-6, 6],
+  "solid": true,
+  "armor": 400,
+  "fragments": [{"scenery": "rock", "count": 3}, {"scenery": "small_debris", "count": 5}],
+  "behaviour": "static",
+  "placeholder": {"colour": "#5a5048", "sides": 12, "roughness": 0.25}
+}

@@ -4,7 +4,7 @@ extends Node2D
 
 const SPRITE_DIR: String = "res://assets/sprites"
 
-var def: Dictionary = {}
+var def: ShipDef = null
 var hit_radius: float = 0.0
 var controller: Node = null
 
@@ -15,15 +15,15 @@ var controller: Node = null
 
 func _ready() -> void:
 	add_to_group(&"ships")
+	DataRegistry.data_reloaded.connect(_on_data_reloaded)
 
 
-## Applies a ship definition from DataRegistry. Call after adding to the tree.
-func setup(ship_def: Dictionary) -> void:
+## Applies a ship definition. Call after adding to the tree. Calling it again
+## (ship swap, hot reload) keeps position, velocity and heading.
+func setup(ship_def: ShipDef) -> void:
 	def = ship_def
-	hit_radius = float(def["hit_radius"])
+	hit_radius = def.hit_radius
 	body.stats = FlightStats.from_ship_def(def)
-	body.state.position = position
-	body.state.rotation = rotation
 	var circle := CircleShape2D.new()
 	circle.radius = hit_radius
 	hitbox_shape.shape = circle
@@ -55,11 +55,17 @@ func get_velocity() -> Vector2:
 	return body.state.velocity
 
 
+func _on_data_reloaded() -> void:
+	var fresh: ShipDef = DataRegistry.get_ship(def.id)
+	if fresh != null:
+		setup(fresh)
+
+
 func _build_visual() -> void:
 	for child: Node in visual.get_children():
 		child.queue_free()
-	var sprite_path: String = "%s/%s" % [SPRITE_DIR, def["sprite"]]
-	if def["sprite"] != "" and ResourceLoader.exists(sprite_path):
+	var sprite_path: String = SPRITE_DIR.path_join(def.sprite)
+	if def.sprite != "" and ResourceLoader.exists(sprite_path):
 		var sprite := Sprite2D.new()
 		sprite.texture = load(sprite_path)
 		visual.add_child(sprite)

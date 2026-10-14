@@ -1,0 +1,10 @@
+{
+  "id": "mining_beam",
+  "name": "Mining Beam",
+  "kind": "beam",
+  "damage_shield": 8,
+  "damage_armor": 20,
+  "range": 300,
+  "reload": 0,
+  "colour": "#60ff90"
+}

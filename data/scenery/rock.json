@@ -1,0 +1,12 @@
+{
+  "id": "rock",
+  "name": "Rock",
+  "size": [20, 45],
+  "spin": [-25, 25],
+  "drift": [0, 6],
+  "solid": true,
+  "armor": 60,
+  "fragments": [{"scenery": "small_debris", "count": 3}],
+  "behaviour": "drift",
+  "placeholder": {"colour": "#6e6258", "sides": 8, "roughness": 0.35}
+}

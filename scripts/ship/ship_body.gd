@@ -9,6 +9,10 @@ var state: FlightState = FlightState.new()
 @onready var ship: Ship = get_parent()
 
 
+func _ready() -> void:
+	state = FlightState.new(ship.position, Vector2.ZERO, ship.rotation)
+
+
 func _physics_process(delta: float) -> void:
 	state = FlightModel.step(state, ship.get_flight_input(), stats, delta)
 	ship.position = state.position

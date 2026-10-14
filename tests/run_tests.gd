@@ -5,6 +5,7 @@ extends SceneTree
 
 const TEST_FILES: Array[String] = [
 	"res://tests/test_flight_model.gd",
+	"res://tests/test_data_loader.gd",
 ]
 
 
