@@ -16,7 +16,8 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"system": "test_nebula",
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
 	"local_space": {"chunk_size": 1024.0},
-	"debug": {"time_scales": [0.25, 0.5, 1.0, 2.0, 4.0], "velocity_vector_seconds": 0.5},
+	"debug": {"time_scales": [0.25, 0.5, 1.0, 2.0, 4.0], "velocity_vector_seconds": 0.5,
+		"spawn_distance": 350.0, "spawn_at_start": []},
 }
 
 
@@ -99,6 +100,10 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var reader := DefReader.new(data_set.settings, SETTINGS_FILE, errors)
 	reader.ref("player_ship", "ships")
 	reader.ref("system", "systems")
+	for spawn: DefReader in reader.object("debug").objects("spawn_at_start"):
+		spawn.ref("ship", "ships", "", true)
+		spawn.ref("government", "governments")
+		spawn.vec2("position", Vector2.ZERO)
 	refs.append_array(reader.refs)
 	data_set.errors.append_array(errors)
 

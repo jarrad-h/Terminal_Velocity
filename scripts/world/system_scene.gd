@@ -10,6 +10,8 @@ var system: SystemDef = null
 @onready var backdrop: Backdrop = $Backdrop
 @onready var local_space: LocalSpace = $World/LocalSpace
 @onready var world: Node2D = $World
+@onready var ships: Node2D = $World/Ships
+@onready var hud: Hud = $Hud
 @onready var camera: FollowCamera = $Camera
 
 
@@ -29,12 +31,18 @@ func _ready() -> void:
 		player.add_to_group(&"player")
 		player.set_controller(PlayerController.new())
 		camera.target = player
+	hud.player = player
 
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
 	if OS.is_debug_build():
 		var overlay := DebugOverlay.new()
 		world.add_child(overlay)
 		add_child(load(DEBUG_PANEL_SCENE).instantiate())
+		for spawn: Dictionary in settings["debug"]["spawn_at_start"]:
+			var at: Array = spawn.get("position", [0, 0])
+			var ship: Ship = spawn_ship(spawn["ship"], Vector2(at[0], at[1]), spawn.get("government", ""))
+			if ship != null:
+				ship.set_controller(IdleController.new())
 
 
 ## Switches the backdrop and local space to another system definition.
@@ -49,14 +57,16 @@ func load_system(system_id: String) -> bool:
 	return true
 
 
-func spawn_ship(ship_id: String, at: Vector2) -> Ship:
+## Spawns a ship. Non-player ships get an IdleController until M4 adds AI.
+func spawn_ship(ship_id: String, at: Vector2, government: String = "") -> Ship:
 	var def: ShipDef = DataRegistry.get_ship(ship_id)
 	if def == null:
 		push_error("No ship with id '%s'" % ship_id)
 		return null
 	var ship: Ship = SHIP_SCENE.instantiate()
 	ship.position = at
-	world.add_child(ship)
+	ship.government = government
+	ships.add_child(ship)
 	ship.setup(def)
 	return ship
 

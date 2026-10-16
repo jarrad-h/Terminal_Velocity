@@ -10,6 +10,10 @@
   },
   "debug": {
     "time_scales": [0.25, 0.5, 1, 2, 4],
-    "velocity_vector_seconds": 0.5
+    "velocity_vector_seconds": 0.5,
+    "spawn_distance": 350,
+    "spawn_at_start": [
+      {"ship": "target_dummy", "position": [0, -450]}
+    ]
   }
 }

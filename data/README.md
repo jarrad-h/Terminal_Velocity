@@ -21,6 +21,8 @@ Fields marked **required** have no default.
 | `local_space.chunk_size` | Side of one local-space chunk in px | `1024` |
 | `debug.time_scales` | Time-scale buttons in the debug panel | `[0.25, 0.5, 1, 2, 4]` |
 | `debug.velocity_vector_seconds` | Velocity overlay length, as seconds of travel | `0.5` |
+| `debug.spawn_distance` | How far from the player debug-spawned ships appear (px) | `350` |
+| `debug.spawn_at_start` | Ships spawned at start in debug builds: `[{"ship": <ID>, "position": [x, y], "government": <ID>}]` (government optional). Idle until AI arrives | `[]` (data has the target dummy) |
 
 ## `ships/` — hull classes
 

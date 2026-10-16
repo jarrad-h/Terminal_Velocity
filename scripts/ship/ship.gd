@@ -4,6 +4,7 @@ extends Node2D
 ## ShipBody flies, Health takes damage (C5–C7).
 
 signal ship_destroyed(ship: Ship)
+signal target_changed(target: Ship)
 
 const SPRITE_DIR: String = "res://assets/sprites"
 const DISABLED_TINT := Color(0.45, 0.45, 0.5)
@@ -13,6 +14,7 @@ var hit_radius: float = 0.0
 var controller: Node = null
 ## Government ID ("" = none). Set at spawn; drives radar colour until M4.
 var government: String = ""
+var _target: Ship = null
 
 @onready var body: ShipBody = $ShipBody
 @onready var visual: Node2D = $Visual
@@ -78,6 +80,49 @@ func get_state_label() -> String:
 
 func get_velocity() -> Vector2:
 	return body.state.velocity
+
+
+## C8: the selected target, or null once it is gone.
+func get_target() -> Ship:
+	if _target != null and (not is_instance_valid(_target) or _target.health.is_destroyed):
+		_target = null
+		target_changed.emit(null)
+	return _target
+
+
+func set_target(ship: Ship) -> void:
+	if ship == _target:
+		return
+	_target = ship
+	target_changed.emit(ship)
+
+
+func target_nearest() -> void:
+	var candidates: Array[Ship] = _target_candidates()
+	var index: int = Targeting.nearest(global_position, _positions(candidates))
+	set_target(candidates[index] if index >= 0 else null)
+
+
+func cycle_target() -> void:
+	var candidates: Array[Ship] = _target_candidates()
+	var index: int = Targeting.cycle(global_position, _positions(candidates), candidates.find(get_target()))
+	set_target(candidates[index] if index >= 0 else null)
+
+
+func _target_candidates() -> Array[Ship]:
+	var result: Array[Ship] = []
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		var ship: Ship = node
+		if ship != self and not ship.health.is_destroyed:
+			result.append(ship)
+	return result
+
+
+func _positions(ships: Array[Ship]) -> Array[Vector2]:
+	var result: Array[Vector2] = []
+	for ship: Ship in ships:
+		result.append(ship.global_position)
+	return result
 
 
 func _on_disabled() -> void:

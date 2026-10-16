@@ -134,7 +134,7 @@ func test_invalid_files_are_not_registered() -> void:
 func test_real_game_data_is_valid() -> void:
 	var set: DataSet = _load(["res://data", "res://mods"])
 	assert_true(set.errors.is_empty(), "data/ has errors:\n    %s" % "\n    ".join(set.errors))
-	assert_true(set.ids("ships").size() == 5, "5 ships")
+	assert_true(set.ids("ships").size() == 6, "5 prototype ships plus target_dummy")
 	assert_true(set.ids("weapons").size() == 4, "4 weapons")
 	assert_true(set.ids("governments").size() == 3, "3 governments")
 	assert_true(set.ids("ai_pools").size() == 3, "3 AI pools")

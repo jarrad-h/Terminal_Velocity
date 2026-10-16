@@ -75,6 +75,13 @@ func _run() -> void:
 	_debug.set_paused(false)
 	await _frames(5)
 
+	# C8: the target dummy spawns in debug builds and can be selected.
+	player.target_nearest()
+	var target: Ship = player.get_target()
+	_check(target != null and target.def.id == "target_dummy", "nearest target is the dummy")
+	player.cycle_target()
+	_check(player.get_target() == target, "cycling with one candidate keeps it")
+
 	# D2: ship swap keeps position and velocity.
 	var pos_before: Vector2 = player.position
 	var vel_before: Vector2 = player.get_velocity()
