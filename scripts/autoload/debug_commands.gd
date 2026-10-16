@@ -8,11 +8,13 @@ signal paused_changed(paused: bool)
 signal overlay_changed(overlay: StringName, enabled: bool)
 ## Result of a D8 reload: empty errors means success.
 signal data_reload_finished(errors: Array[String])
+signal invulnerable_changed(enabled: bool)
 
 ## D9 overlays, in panel order.
 const OVERLAYS: Array[StringName] = [&"hitboxes", &"velocity", &"ai_labels", &"stats"]
 
 var panel_visible: bool = false
+var player_invulnerable: bool = false
 var _overlays: Dictionary = {}
 
 
@@ -116,3 +118,86 @@ func current_system_id() -> String:
 	if scene == null or scene.system == null:
 		return ""
 	return scene.system.id
+
+
+## D4: the player ignores all damage.
+func set_player_invulnerable(enabled: bool) -> void:
+	if not OS.is_debug_build():
+		return
+	player_invulnerable = enabled
+	var player: Ship = _player()
+	if player != null:
+		player.health.invulnerable = enabled
+	invulnerable_changed.emit(enabled)
+
+
+## D5: drops the player's target to its disable threshold.
+func disable_target() -> bool:
+	var target: Ship = _player_target()
+	if target == null:
+		return false
+	target.health.force_disable()
+	return true
+
+
+## D5
+func destroy_target() -> bool:
+	var target: Ship = _player_target()
+	if target == null:
+		return false
+	target.health.force_destroy()
+	return true
+
+
+## D3: spawns `count` ships ahead of the player (game.json debug.spawn_distance),
+## optionally under a government. They idle until AI arrives in milestone 4.
+func spawn_ships(ship_id: String, count: int = 1, government: String = "") -> Array[Ship]:
+	var spawned: Array[Ship] = []
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	var player: Ship = _player()
+	if not OS.is_debug_build() or scene == null or player == null:
+		return spawned
+	var distance: float = float(DataRegistry.settings["debug"]["spawn_distance"])
+	var ahead: Vector2 = player.global_position + FlightModel.heading(player.global_rotation) * distance
+	for i: int in count:
+		var offset := Vector2.from_angle(TAU * i / maxf(count, 1)) * (distance * 0.3 if count > 1 else 0.0)
+		var ship: Ship = scene.spawn_ship(ship_id, ahead + offset, government)
+		if ship == null:
+			break
+		ship.set_controller(IdleController.new())
+		spawned.append(ship)
+	return spawned
+
+
+## D5: removes every ship except the player.
+func clear_ships() -> int:
+	if not OS.is_debug_build():
+		return 0
+	var removed: int = 0
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		if not node.is_in_group(&"player"):
+			node.remove_from_group(&"ships")
+			node.queue_free()
+			removed += 1
+	return removed
+
+
+## D9: player world position and local-space chunk, for the panel readout.
+func player_location_text() -> String:
+	var player: Ship = _player()
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	if player == null or scene == null:
+		return "Position: -"
+	var chunk: Vector2i = SceneryGen.chunk_of(player.global_position, scene.local_space.chunk_size)
+	return "Position (%.0f, %.0f)   Chunk (%d, %d)" % [player.global_position.x, player.global_position.y, chunk.x, chunk.y]
+
+
+func _player() -> Ship:
+	return get_tree().get_first_node_in_group(&"player")
+
+
+func _player_target() -> Ship:
+	var player: Ship = _player()
+	if not OS.is_debug_build() or player == null:
+		return null
+	return player.get_target()

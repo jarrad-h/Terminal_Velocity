@@ -165,5 +165,16 @@ func _build_visual() -> void:
 	shape.polygon = PackedVector2Array([
 		Vector2(0.0, -r), Vector2(r * 0.7, r * 0.8), Vector2(0.0, r * 0.4), Vector2(-r * 0.7, r * 0.8),
 	])
-	shape.color = Color(0.75, 0.85, 1.0)
+	shape.color = placeholder_colour()
 	visual.add_child(shape)
+
+
+## Placeholder art colour: the player is pale blue, other ships take their
+## government's colour, or the radar's neutral colour without one.
+func placeholder_colour() -> Color:
+	if is_player():
+		return Color(0.75, 0.85, 1.0)
+	var gov: GovernmentDef = DataRegistry.get_government(government) if government != "" else null
+	if gov != null:
+		return gov.colour.lerp(Color.WHITE, 0.25)
+	return Color.html(DataRegistry.settings["radar"]["colours"]["neutral"])

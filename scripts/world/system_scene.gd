@@ -31,6 +31,7 @@ func _ready() -> void:
 	var player: Ship = spawn_ship(settings["player_ship"], Vector2.ZERO)
 	if player != null:
 		player.add_to_group(&"player")
+		player.setup(player.def)  # recolour now it is the player
 		player.set_controller(PlayerController.new())
 		camera.target = player
 	hud.player = player

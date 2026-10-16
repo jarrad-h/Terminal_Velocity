@@ -17,6 +17,10 @@ var _overlay_checks: Dictionary = {}
 var _ship_select: OptionButton
 var _system_select: OptionButton
 var _reload_label: Label
+var _location_label: Label
+var _spawn_count: SpinBox
+var _government_select: OptionButton
+var _invulnerable_check: CheckBox
 
 
 func _ready() -> void:
@@ -34,6 +38,8 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	if _panel.visible:
+		_location_label.text = DebugCommands.player_location_text()
 	_stats_label.visible = DebugCommands.is_overlay_enabled(&"stats")
 	if not _stats_label.visible:
 		return
@@ -59,6 +65,8 @@ func _build() -> void:
 	var box := VBoxContainer.new()
 	_panel.add_child(box)
 	box.add_child(_make_label("Debug  ( ` to close )"))
+	_location_label = _make_label("")
+	box.add_child(_location_label)
 
 	_time_label = _make_label("")
 	box.add_child(_time_label)
@@ -87,6 +95,21 @@ func _build() -> void:
 	ship_row.add_child(_make_button("Swap ship", func() -> void:
 		DebugCommands.swap_player_ship(_ship_select.get_item_text(_ship_select.selected))
 		_fill_selects()))
+	var spawn_row := HBoxContainer.new()
+	box.add_child(spawn_row)
+	_spawn_count = SpinBox.new()
+	_spawn_count.min_value = 1
+	_spawn_count.max_value = 20
+	_spawn_count.focus_mode = Control.FOCUS_NONE
+	_spawn_count.get_line_edit().focus_mode = Control.FOCUS_NONE
+	spawn_row.add_child(_spawn_count)
+	_government_select = _make_select()
+	_government_select.custom_minimum_size.x = 150.0
+	spawn_row.add_child(_government_select)
+	spawn_row.add_child(_make_button("Spawn", func() -> void:
+		var gov: String = "" if _government_select.selected <= 0 else _government_select.get_item_text(_government_select.selected)
+		DebugCommands.spawn_ships(_ship_select.get_item_text(_ship_select.selected), int(_spawn_count.value), gov)))
+	spawn_row.add_child(_make_button("Clear ships", DebugCommands.clear_ships))
 	var system_row := HBoxContainer.new()
 	box.add_child(system_row)
 	_system_select = _make_select()
@@ -95,6 +118,19 @@ func _build() -> void:
 		DebugCommands.switch_system(_system_select.get_item_text(_system_select.selected))
 		_fill_selects()))
 	_fill_selects()
+
+	box.add_child(HSeparator.new())
+	box.add_child(_make_label("Combat"))
+	_invulnerable_check = CheckBox.new()
+	_invulnerable_check.text = "Player invulnerable"
+	_invulnerable_check.focus_mode = Control.FOCUS_NONE
+	_invulnerable_check.toggled.connect(DebugCommands.set_player_invulnerable)
+	box.add_child(_invulnerable_check)
+	DebugCommands.invulnerable_changed.connect(func(on: bool) -> void: _invulnerable_check.set_pressed_no_signal(on))
+	var target_row := HBoxContainer.new()
+	box.add_child(target_row)
+	target_row.add_child(_make_button("Disable target", DebugCommands.disable_target))
+	target_row.add_child(_make_button("Destroy target", DebugCommands.destroy_target))
 
 	box.add_child(HSeparator.new())
 	box.add_child(_make_label("Overlays"))
@@ -124,6 +160,10 @@ func _fill_selects() -> void:
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
 	_fill(_ship_select, DataRegistry.ids("ships"), player.def.id if player != null else "")
 	_fill(_system_select, DataRegistry.ids("systems"), DebugCommands.current_system_id())
+	var governments: Array[String] = ["(no government)"]
+	governments.append_array(DataRegistry.ids("governments"))
+	var current: String = "" if _government_select.selected < 0 else _government_select.get_item_text(_government_select.selected)
+	_fill(_government_select, governments, current if current != "" else governments[0])
 
 
 func _fill(select: OptionButton, ids: Array[String], current: String) -> void:
