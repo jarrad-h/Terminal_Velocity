@@ -1,6 +1,6 @@
 # Terminal Velocity Prototype — Requirements & Scope
 
-Exported from the planning doc on 14 Oct 2026. The planning doc is the source of truth; refresh this copy when it changes.
+Exported from the planning doc on 16 Oct 2026. The planning doc is the source of truth; refresh this copy when it changes.
 
 ## Purpose and success criteria
 
@@ -50,7 +50,7 @@ Each requirement has an ID so milestones, commits and tests can refer to it.
 - L1: Local space is filled with scenery in world space, from dust through to large asteroids, moving past at true speed so it carries the sense of motion. Dust is cosmetic only and may use a depth of 0.9–1.1 for slight layering.
 - L2: Scenery is generated in chunks around the player from the system seed, so the same place always holds the same objects; distant chunks unload.
 - L3: Each scenery type is a data definition; a system lists the types it uses, each with a density and an optional region (whole system, ring or circle). Swapping dust and asteroids for wrecks, flora or fauna is a data change, and a behaviour field (static or drift now) leaves room for moving fauna later.
-- L4: Solid scenery uses the same Health component as ships (armour only), so weapons can hit it from milestone 3; destroyed objects can spawn fragment scenery as cosmetic RigidBody2D pieces. Ships pass through scenery, as they pass through each other.
+- L4: Solid scenery uses the same Health component as ships (armour only), so weapons can hit it from milestone 3; destroyed objects can spawn fragment scenery as cosmetic RigidBody2D pieces. Ships pass through scenery, as they pass through each other. Destroyed scenery stays destroyed until the player leaves the system, held in an in-memory set that is cleared on system change. Drifting solid scenery spawns at its start position plus velocity × elapsed game time; dust and other non-solid scenery skip this.
 
 **Combat**
 
@@ -90,7 +90,7 @@ Each requirement has an ID so milestones, commits and tests can refer to it.
 **HUD**
 
 - H1: Shield and armour bars; credits.
-- H2: Radar showing ships coloured by hostility, planets and the selected target.
+- H2: A small radar in a screen corner shows ships, system objects and the selected target around the player. Ships are coloured by government until hostility exists in milestone 4. Scenery shows only when its definition sets `radar: true` (in the prototype data: large_asteroid and derelict_hull). Radar range comes from data.
 - H3: Target panel: name, government, shield and armour.
 - H4: Message line for events (target disabled, landing refused).
 
@@ -104,7 +104,7 @@ Each requirement has an ID so milestones, commits and tests can refer to it.
 - D6: Set credits and the player's legal record with each government.
 - D7: Time scale from 0.25× to 4×, plus pause and single-frame step.
 - D8: Reload all data files at runtime, so tuning a JSON value needs no restart.
-- D9: Overlays: hitboxes, velocity vectors, AI state labels, FPS and ship count.
+- D9: Overlays: hitboxes, velocity vectors, AI state labels, FPS and ship count. The debug panel always shows the player's world position and current local-space chunk (grid) coordinates.
 - D10: A text console accepts the same actions as typed commands (for example `spawn pirate_raider 3`); panel and console call one shared command layer.
 
 ## Data requirements
@@ -118,7 +118,7 @@ Six definition types load from JSON files at startup; IDs are readable strings, 
 | `government` | A faction | name, colour, allies, enemies, crime_threshold, penalties (shoot, disable, board, kill), max_odds, flee_shield_pct |
 | `ai_pool` | A traffic type (Nova's dude) | government, behaviour (trader, warship, pirate), weighted list of ship IDs |
 | `system` | The one star system | name, objects (star, planets, station with position, sprite, description, landable, min_record), traffic (pool ID + target count), backdrop (B2 settings), local_space (scenery IDs with density and region), seed |
-| `scenery` | A local-space object type | name, sprites (random pick), size range, spin range, drift range, depth, solid, armor, fragments (scenery ID + count), behaviour |
+| `scenery` | A local-space object type | name, sprites (random pick), size range, spin range, drift range, depth, solid, armor, fragments (scenery ID + count), behaviour, radar (default false) |
 
 See `data/ships/courier.json` for an example ship file.
 
@@ -182,10 +182,10 @@ Six steps, each ending in something playable; the data loader comes second so no
 
 1. **Fly:** player ship, flight model, camera, starfield. Done when flight feels right (F1–F4).
 2. **Data loader and local space:** JSON definitions for all six types, typed resource classes, reference validation, mod override and hot reload; then the system file drives the backdrop and local-space scenery, replacing the milestone 1 starfield. Done when changing the backdrop or scenery in JSON changes the scene (B1–B2, L1–L3) and the player ship loads from `courier.json`.
-3. **Fight:** four weapon kinds, shields and armour, disable and destroy, targeting, a static dummy target. Done when C1–C8 work against a dummy and shots damage solid scenery (L4).
+3. **Fight:** four weapon kinds, shields and armour, disable and destroy, targeting, a static dummy target, the radar and placeholder drawing of system objects. Done when C1–C8 work against a dummy, shots damage solid scenery (L4) and the radar works (H2).
 4. **AI and governments:** trader, warship and pirate behaviours, traffic spawning, government relations and the legal record. Done when a pirate raid on traders draws in the patrol (A1–A6, G1–G3).
 5. **Board and land:** boarding for credits, landing with the repair stub, respawn. Done when C9–C10, G4 and S1–S3 work.
-6. **HUD and tuning pass:** radar, target panel, messages, then a balance pass on the data files only. Done when the success criteria in the first section are met.
+6. **HUD and tuning pass:** radar polish, target panel, messages, then a balance pass on the data files only. Done when the success criteria in the first section are met.
 
 Debug tools grow with the milestones rather than waiting for the end: the toggle, time scale and overlays in milestone 1; ship swap and data hot-reload in 2; invulnerability, target kill and spawning in 3; AI pause, legal record and government overrides in 4; the console in 5.
 
