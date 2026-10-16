@@ -9,6 +9,7 @@ var system: SystemDef = null
 
 @onready var backdrop: Backdrop = $Backdrop
 @onready var local_space: LocalSpace = $World/LocalSpace
+@onready var system_objects: SystemObjects = $World/SystemObjects
 @onready var world: Node2D = $World
 @onready var ships: Node2D = $World/Ships
 @onready var hud: Hud = $Hud
@@ -54,6 +55,7 @@ func load_system(system_id: String) -> bool:
 		return false
 	system = next
 	backdrop.configure(system.backdrop)
+	system_objects.configure(system)
 	local_space.configure(system, float(DataRegistry.settings["local_space"]["chunk_size"]))
 	return true
 
