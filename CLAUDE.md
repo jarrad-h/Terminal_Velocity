@@ -8,6 +8,7 @@ Terminal Velocity is a top-down space trading and combat game in the style of EV
 - Within a milestone, commit in small steps with messages that cite requirement IDs, e.g. `C5: shields absorb damage before armour`.
 - If the spec is ambiguous or a requirement seems wrong, ask rather than guess. Do not expand scope beyond the current milestone.
 - Debug tools ship with the milestone that needs them (see the Milestones section of the spec).
+- At the end of each milestone, add an entry to docs/devlog.md in the same format.
 
 ## Hard rules
 
@@ -27,6 +28,7 @@ scripts/
   autoload/   DataRegistry, GameState, DebugCommands
   data/       Typed definition classes and the DataLoader (validation, mod override)
   ship/       ShipBody, WeaponMounts, Health, controllers
+  combat/     Projectiles, beams, hit queries, fragments, effects
   ai/         AI behaviours
   sim/        Pure logic (flight maths, damage, odds) — unit-testable
   ui/         HUD, LandedScreen
