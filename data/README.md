@@ -32,8 +32,9 @@ Fields marked **required** have no default.
 | `turn_rate` | Turn rate | **required** |
 | `sprite` | Path under `assets/sprites/`, art facing up; placeholder arrow if missing | `""` |
 | `mass` | Mass (unused until boarding/capture) | `50` |
-| `shield`, `shield_regen` | Shield points and recharge per second | `0`, `0` |
+| `shield`, `shield_regen` | Shield points and recharge per second (no recharge while disabled) | `0`, `0` |
 | `armor` | Armour points | `100` |
+| `disable_armor_pct` | Disabled (drifts, can't fire) at or below this % of max armour; destroyed at 0 | `33` |
 | `strength` | Combat strength for AI odds | `1` |
 | `crew` | Crew count | `1` |
 | `hit_radius` | Hit circle radius in px (also placeholder art size) | `16` |

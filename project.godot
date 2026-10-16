@@ -57,3 +57,8 @@ debug_toggle={
 [physics]
 
 common/physics_interpolation=true
+
+[layer_names]
+
+2d_physics/layer_1="ships"
+2d_physics/layer_2="scenery"

@@ -13,6 +13,8 @@ var turn_rate: float
 var shield: float
 var shield_regen: float
 var armor: float
+## C7: disabled at or below this % of max armour.
+var disable_armor_pct: float
 var strength: float
 var crew: int
 var hit_radius: float
@@ -33,6 +35,7 @@ static func parse(r: DefReader) -> ShipDef:
 	d.shield = r.number("shield", 0.0, false, 0.0)
 	d.shield_regen = r.number("shield_regen", 0.0, false, 0.0)
 	d.armor = r.number("armor", 100.0, false, 0.0)
+	d.disable_armor_pct = r.number("disable_armor_pct", 33.0, false, 0.0)
 	d.strength = r.number("strength", 1.0, false, 0.0)
 	d.crew = r.integer("crew", 1, false, 0)
 	d.hit_radius = r.number("hit_radius", 16.0, false, 1.0)

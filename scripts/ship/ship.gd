@@ -1,25 +1,36 @@
 class_name Ship
 extends Node2D
-## One scene for player and AI ships. The controller child decides behaviour.
+## One scene for player and AI ships. The controller child decides behaviour;
+## ShipBody flies, Health takes damage (C5–C7).
+
+signal ship_destroyed(ship: Ship)
 
 const SPRITE_DIR: String = "res://assets/sprites"
+const DISABLED_TINT := Color(0.45, 0.45, 0.5)
 
 var def: ShipDef = null
 var hit_radius: float = 0.0
 var controller: Node = null
+## Government ID ("" = none). Set at spawn; drives radar colour until M4.
+var government: String = ""
 
 @onready var body: ShipBody = $ShipBody
 @onready var visual: Node2D = $Visual
+@onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
+@onready var health: Health = $Health
 
 
 func _ready() -> void:
 	add_to_group(&"ships")
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
+	health.disabled.connect(_on_disabled)
+	health.destroyed.connect(_on_destroyed)
 
 
 ## Applies a ship definition. Call after adding to the tree. Calling it again
-## (ship swap, hot reload) keeps position, velocity and heading.
+## (ship swap, hot reload) keeps position, velocity and heading, and restores
+## full shield and armour.
 func setup(ship_def: ShipDef) -> void:
 	def = ship_def
 	hit_radius = def.hit_radius
@@ -27,6 +38,10 @@ func setup(ship_def: ShipDef) -> void:
 	var circle := CircleShape2D.new()
 	circle.radius = hit_radius
 	hitbox_shape.shape = circle
+	health.setup(def.shield, def.armor, def.shield_regen, def.disable_armor_pct / 100.0)
+	visible = true
+	visual.modulate = Color.WHITE
+	body.set_physics_process(true)
 	_build_visual()
 
 
@@ -38,21 +53,46 @@ func set_controller(new_controller: Node) -> void:
 	add_child(controller)
 
 
+## Controller intent for this frame; nothing while disabled (C7: drifts).
 func get_flight_input() -> FlightInput:
-	if controller == null:
+	if controller == null or not can_act():
 		return FlightInput.new()
 	return controller.get_flight_input()
 
 
+func can_act() -> bool:
+	return not health.is_disabled and not health.is_destroyed
+
+
+func is_player() -> bool:
+	return is_in_group(&"player")
+
+
 ## Short label for the AI-state debug overlay.
 func get_state_label() -> String:
-	if controller == null:
-		return "no controller"
-	return controller.get_state_label()
+	var label: String = "no controller" if controller == null else controller.get_state_label()
+	if health.is_disabled:
+		label += " (disabled)"
+	return label
 
 
 func get_velocity() -> Vector2:
 	return body.state.velocity
+
+
+func _on_disabled() -> void:
+	visual.modulate = DISABLED_TINT
+
+
+func _on_destroyed() -> void:
+	Flash.spawn(get_parent(), global_position, hit_radius * 2.5, Color(1.0, 0.7, 0.3), 0.8)
+	ship_destroyed.emit(self)
+	if is_player():
+		# Respawn (C10) arrives in milestone 5; until then the wreck just vanishes.
+		visible = false
+		body.set_physics_process(false)
+		return
+	queue_free()
 
 
 func _on_data_reloaded() -> void:
