@@ -53,3 +53,12 @@ static func parse(r: DefReader) -> ShipDef:
 	for w: DefReader in r.objects("default_weapons"):
 		d.default_weapons.append({"weapon": w.ref("weapon", "weapons", "", true), "count": w.integer("count", 1, false, 1)})
 	return d
+
+
+## C1: each equipped weapon needs at least one exit point of its kind.
+func validate(defs: Dictionary, errors: Array[String]) -> void:
+	for i: int in default_weapons.size():
+		var weapon: WeaponDef = defs["weapons"].get(default_weapons[i]["weapon"])
+		if weapon != null and hardpoints[weapon.kind].is_empty():
+			errors.append("%s: field 'default_weapons[%d]': '%s' is a %s weapon but 'hardpoints' has no %s exit points" \
+				% [file, i, weapon.id, weapon.kind, weapon.kind])

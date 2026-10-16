@@ -17,6 +17,8 @@ var reload: float
 var turn_rate: float
 var arc: float
 var colour: Color
+## Guns and turrets: shots add the firing ship's velocity.
+var inherit_velocity: bool
 var sprite: String
 var sound: String
 
@@ -34,6 +36,19 @@ static func parse(r: DefReader) -> WeaponDef:
 	d.turn_rate = r.number("turn_rate", 0.0, false, 0.0)
 	d.arc = r.number("arc", 360.0, false, 0.0)
 	d.colour = r.colour("colour", Color.WHITE)
+	d.inherit_velocity = r.boolean("inherit_velocity", true)
 	d.sprite = r.string("sprite")
 	d.sound = r.string("sound")
 	return d
+
+
+## Seconds a projectile or missile lives: range ÷ speed if a range is set.
+func shot_lifetime() -> float:
+	if max_range > 0.0 and speed > 0.0:
+		return max_range / speed
+	return lifetime
+
+
+## Beam length: the range, or speed × lifetime when no range is set.
+func beam_length() -> float:
+	return max_range if max_range > 0.0 else speed * lifetime

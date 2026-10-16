@@ -5,11 +5,14 @@ extends Node
 
 
 func get_flight_input() -> FlightInput:
-	return FlightInput.new(
+	var input := FlightInput.new(
 		Input.is_action_pressed(&"thrust"),
 		Input.get_axis(&"turn_left", &"turn_right"),
 		Input.is_action_pressed(&"reverse"),
 	)
+	input.fire_primary = Input.is_action_pressed(&"fire_primary")
+	input.fire_secondary = Input.is_action_pressed(&"fire_secondary")
+	return input
 
 
 func get_state_label() -> String:

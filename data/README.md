@@ -40,10 +40,12 @@ Fields marked **required** have no default.
 | `strength` | Combat strength for AI odds | `1` |
 | `crew` | Crew count | `1` |
 | `hit_radius` | Hit circle radius in px (also placeholder art size) | `16` |
-| `hardpoints` | `{"gun": [[x, y], …], "turret": …, "guided": …, "beam": …}` exit points relative to the ship centre, ship facing up | none |
+| `hardpoints` | `{"gun": [[x, y], …], "turret": …, "guided": …, "beam": …}` exit points relative to the ship centre, ship facing up. Every equipped weapon needs at least one point of its kind; extra weapons share points | none |
 | `default_weapons` | `[{"weapon": <weapon ID>, "count": n}]`; `count` defaults to 1 | `[]` |
 
 ## `weapons/`
+
+Kinds: `gun` fires along the heading; `turret` leads the selected target within its arc (fires ahead with no target); `guided` homes on the target selected at launch at `turn_rate` (straight with no target); `beam` hits the first thing along its length every frame while held. Primary fire (Space) drives guns, turrets and beams; secondary (F) launches guided weapons.
 
 | Field | Meaning | Default |
 | --- | --- | --- |
@@ -55,7 +57,8 @@ Fields marked **required** have no default.
 | `speed` | Shot speed | `600` |
 | `reload` | Seconds between shots | `0.5` |
 | `turn_rate` | Missile turn rate (guided) | `0` |
-| `arc` | Turret tracking arc in degrees | `360` |
+| `arc` | Turret tracking arc in degrees, centred on the heading; the turret holds fire when the lead point is outside it | `360` |
+| `inherit_velocity` | Guns and turrets: shots add the ship's velocity | `true` |
 | `colour`, `sprite`, `sound` | Look and sound | `"#ffffff"`, `""`, `""` |
 
 ## `governments/`

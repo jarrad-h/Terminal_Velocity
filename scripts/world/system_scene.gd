@@ -17,6 +17,7 @@ var system: SystemDef = null
 
 func _ready() -> void:
 	add_to_group(&"system_scene")
+	$World/Shots.add_to_group(&"shots")
 	if not DataRegistry.load_errors.is_empty():
 		var screen := DataErrorScreen.new()
 		add_child(screen)

@@ -36,6 +36,11 @@ func loaded_chunks() -> Array:
 	return _chunks.keys()
 
 
+## The node holding a loaded chunk's scenery, or null.
+func chunk_node(chunk: Vector2i) -> Node2D:
+	return _chunks.get(chunk)
+
+
 func object_count() -> int:
 	var total: int = 0
 	for node: Node2D in _chunks.values():

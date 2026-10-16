@@ -82,6 +82,45 @@ func _run() -> void:
 	player.cycle_target()
 	_check(player.get_target() == target, "cycling with one candidate keeps it")
 
+	# C1–C7: fire every weapon kind at the dummy.
+	var dummy: Ship = target
+	await _teleport(player, dummy.global_position + Vector2(0.0, 250.0))
+	var shield_before: float = dummy.health.shield
+	Input.action_press(&"fire_primary")
+	await _frames(60)
+	Input.action_release(&"fire_primary")
+	await _frames(30)
+	_check(dummy.health.shield < shield_before, "gun shots (C1/C2) hit the dummy's shield (%f -> %f)" % [shield_before, dummy.health.shield])
+	_check(is_equal_approx(dummy.health.armor, dummy.health.max_armor), "shields absorb before armour (C5)")
+
+	_debug.swap_player_ship("patrol_corvette")
+	await _teleport(player, dummy.global_position + Vector2(300.0, 300.0))  # off to one side, facing up
+	player.set_target(dummy)
+	var before_missile: float = dummy.health.shield + dummy.health.armor
+	Input.action_press(&"fire_secondary")
+	await _frames(2)
+	Input.action_release(&"fire_secondary")
+	await _frames(150)
+	_check(dummy.health.shield + dummy.health.armor < before_missile, "guided missile (C3) homes onto an off-axis target")
+
+	_debug.swap_player_ship("pirate_raider")
+	await _teleport(player, dummy.global_position + Vector2(0.0, 150.0))
+	var before_beam: float = dummy.health.shield + dummy.health.armor
+	Input.action_press(&"fire_primary")
+	await _frames(30)
+	var beam_visible: bool = player.weapons.mounts.any(func(m: WeaponMounts.Mount) -> bool: return m.beam != null and m.beam.visible)
+	Input.action_release(&"fire_primary")
+	await _frames(2)
+	_check(beam_visible, "beam (C4) draws while held")
+	_check(dummy.health.shield + dummy.health.armor < before_beam, "beam (C4) damages while held")
+
+	dummy.health.force_disable()
+	_check(dummy.health.is_disabled and not dummy.can_act(), "disabled at 33%% armour (C7)")
+	dummy.health.force_destroy()
+	await _frames(2)
+	_check(not is_instance_valid(dummy), "destroyed dummy removed (C7)")
+	_check(player.get_target() == null, "target cleared when destroyed (C8)")
+
 	# D2: ship swap keeps position and velocity.
 	var pos_before: Vector2 = player.position
 	var vel_before: Vector2 = player.get_velocity()
@@ -138,7 +177,7 @@ func _teleport(ship: Ship, at: Vector2) -> void:
 
 func _chunk_snapshot(local_space: LocalSpace, chunk: Vector2i) -> Array[String]:
 	var out: Array[String] = []
-	var holder: Node = local_space.get_node_or_null("Chunk_%d_%d" % [chunk.x, chunk.y])
+	var holder: Node = local_space.chunk_node(chunk)
 	if holder == null:
 		return out
 	for node: Node in holder.get_children():

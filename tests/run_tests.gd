@@ -9,6 +9,7 @@ const TEST_FILES: Array[String] = [
 	"res://tests/test_scenery_gen.gd",
 	"res://tests/test_damage_model.gd",
 	"res://tests/test_targeting.gd",
+	"res://tests/test_aim.gd",
 ]
 
 

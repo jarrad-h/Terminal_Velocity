@@ -121,6 +121,7 @@ func test_field_errors_name_file_and_field() -> void:
 	_expect_error(set, ["bad_kind.json", "kind", "laser"])
 	_expect_error(set, ["confused.json", "also listed in 'enemies'"])
 	_expect_error(set, ["solid_dust.json", "depth", "solid"])
+	_expect_error(set, ["no_hardpoint.json", "default_weapons[0]", "no beam exit points"])
 	_expect_error(set, ["bad_ring.json", "local_space[1].region.inner_radius", "smaller than radius"])
 
 

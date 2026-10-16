@@ -21,6 +21,7 @@ var _target: Ship = null
 @onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 @onready var health: Health = $Health
+@onready var weapons: WeaponMounts = $WeaponMounts
 
 
 func _ready() -> void:
@@ -41,6 +42,8 @@ func setup(ship_def: ShipDef) -> void:
 	circle.radius = hit_radius
 	hitbox_shape.shape = circle
 	health.setup(def.shield, def.armor, def.shield_regen, def.disable_armor_pct / 100.0)
+	hitbox_shape.set_deferred(&"disabled", false)
+	weapons.setup(def)
 	visible = true
 	visual.modulate = Color.WHITE
 	body.set_physics_process(true)
@@ -132,6 +135,7 @@ func _on_disabled() -> void:
 func _on_destroyed() -> void:
 	Flash.spawn(get_parent(), global_position, hit_radius * 2.5, Color(1.0, 0.7, 0.3), 0.8)
 	ship_destroyed.emit(self)
+	hitbox_shape.set_deferred(&"disabled", true)
 	if is_player():
 		# Respawn (C10) arrives in milestone 5; until then the wreck just vanishes.
 		visible = false
