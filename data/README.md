@@ -19,6 +19,10 @@ Fields marked **required** have no default.
 | `camera.zoom` | Camera zoom; above 1 zooms in | `1.0` |
 | `camera.smoothing_speed` | How fast the camera catches up; `0` locks it to the ship | `0` |
 | `local_space.chunk_size` | Side of one local-space chunk in px | `1024` |
+| `radar.size` | Radar diameter in px (bottom-right corner) | `200` |
+| `radar.range` | World distance from the player to the radar rim, px | `3000` |
+| `radar.margin` | Gap from the screen edges, px | `16` |
+| `radar.colours` | `background`, `rim`, `player`, `neutral` (ships with no government), `target` (ring round the selected target), `scenery` | see `game.json` |
 | `debug.time_scales` | Time-scale buttons in the debug panel | `[0.25, 0.5, 1, 2, 4]` |
 | `debug.velocity_vector_seconds` | Velocity overlay length, as seconds of travel | `0.5` |
 | `debug.spawn_distance` | How far from the player debug-spawned ships appear (px) | `350` |

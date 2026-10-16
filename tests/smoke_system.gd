@@ -201,6 +201,10 @@ func _run() -> void:
 		if (node as Scenery).def.id == "derelict_hull":
 			hulls += 1
 	_check(hulls > 0, "graveyard ring has derelict hulls")
+	var radar_list: Array[Scenery] = local_space.radar_objects()
+	_check(radar_list.size() > 0 and radar_list.all(func(sc: Scenery) -> bool: return sc.def.radar), "radar lists only radar: true scenery (H2)")
+	var hud: Hud = scene_root.hud
+	_check(hud.radar != null and hud.radar.player == player, "radar follows the player (H2)")
 	_check(not _debug.switch_system("nowhere"), "unknown system is refused")
 	_check(local_space.destroyed.size() == 0, "destroyed set cleared on system change")
 	await _frames(5)

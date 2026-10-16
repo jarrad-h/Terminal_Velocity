@@ -1,9 +1,15 @@
 class_name Hud
 extends CanvasLayer
-## Minimal HUD for milestone 3: player shield/armour (H1) and the selected
-## target's name, shield and armour (C8). Polished in milestone 6.
+## Minimal HUD for milestone 3: player shield/armour (H1), the selected
+## target's name, shield and armour (C8) and the radar (H2). Polished in M6.
 
-var player: Ship = null
+var player: Ship = null:
+	set(value):
+		player = value
+		if radar != null:
+			radar.player = value
+
+var radar: Radar
 
 var _player_shield: ProgressBar
 var _player_armor: ProgressBar
@@ -16,6 +22,13 @@ var _target_armor: ProgressBar
 
 func _ready() -> void:
 	layer = 10
+	if not DataRegistry.load_errors.is_empty():
+		set_process(false)
+		return
+	radar = Radar.new()
+	add_child(radar)
+	radar.configure(DataRegistry.settings["radar"])
+	DataRegistry.data_reloaded.connect(func() -> void: radar.configure(DataRegistry.settings["radar"]))
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	box.offset_left = -240.0

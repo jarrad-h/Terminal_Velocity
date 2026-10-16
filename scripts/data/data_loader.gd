@@ -16,6 +16,9 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"system": "test_nebula",
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
 	"local_space": {"chunk_size": 1024.0},
+	"radar": {"size": 200.0, "range": 3000.0, "margin": 16.0, "colours": {
+		"background": "#0a1426c0", "rim": "#5a7aa0", "player": "#ffffff",
+		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68"}},
 	"debug": {"time_scales": [0.25, 0.5, 1.0, 2.0, 4.0], "velocity_vector_seconds": 0.5,
 		"spawn_distance": 350.0, "spawn_at_start": []},
 }
@@ -100,6 +103,12 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var reader := DefReader.new(data_set.settings, SETTINGS_FILE, errors)
 	reader.ref("player_ship", "ships")
 	reader.ref("system", "systems")
+	var radar: DefReader = reader.object("radar")
+	for key: String in ["size", "range", "margin"]:
+		radar.number(key, 0.0, false, 0.0)
+	var colours: DefReader = radar.object("colours")
+	for key: String in SETTINGS_DEFAULTS["radar"]["colours"]:
+		colours.colour(key)
 	for spawn: DefReader in reader.object("debug").objects("spawn_at_start"):
 		spawn.ref("ship", "ships", "", true)
 		spawn.ref("government", "governments")
