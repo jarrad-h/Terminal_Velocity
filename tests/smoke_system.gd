@@ -121,6 +121,42 @@ func _run() -> void:
 	_check(not is_instance_valid(dummy), "destroyed dummy removed (C7)")
 	_check(player.get_target() == null, "target cleared when destroyed (C8)")
 
+	# L4: shots damage solid scenery; destroyed scenery stays destroyed.
+	var scene_root_l4: Node = get_tree().get_first_node_in_group(&"system_scene")
+	var space: LocalSpace = scene_root_l4.local_space
+	var rock: Scenery = null
+	for node: Node in space.find_children("*", "Scenery", true, false):
+		if (node as Scenery).def.solid and (node as Scenery).def.armor >= 30.0:
+			rock = node
+			break
+	_check(rock != null, "found solid scenery to shoot")
+	if rock != null:
+		var rock_chunk: Vector2i = rock.placement.chunk
+		var rock_index: int = rock.placement.index
+		var rock_id: String = rock.def.id
+		await _teleport(player, rock.global_position + Vector2(0.0, 120.0))
+		var armor_before: float = rock.health.armor
+		Input.action_press(&"fire_primary")
+		await _frames(20)
+		Input.action_release(&"fire_primary")
+		await _frames(10)
+		_check(not is_instance_valid(rock) or rock.health.armor < armor_before, "shots damage solid scenery")
+		if is_instance_valid(rock):
+			rock.health.apply_damage(0.0, 100000.0)
+		await _frames(2)
+		_check(space.destroyed.has(rock_chunk, rock_id, rock_index), "destroyed scenery recorded")
+		_check(space.find_children("*", "Fragment", true, false).size() > 0 or rock_id == "small_debris", "fragments spawned")
+		await _teleport(player, Vector2(60000.0, 0.0))
+		await _teleport(player, Vector2(rock_chunk) * space.chunk_size)
+		var back: bool = false
+		var holder: Node = space.chunk_node(rock_chunk)
+		if holder != null:
+			for node: Node in holder.get_children():
+				var sc: Scenery = node
+				if sc.def.id == rock_id and sc.placement.index == rock_index:
+					back = true
+		_check(holder != null and not back, "destroyed scenery does not come back on revisit")
+
 	# D2: ship swap keeps position and velocity.
 	var pos_before: Vector2 = player.position
 	var vel_before: Vector2 = player.get_velocity()
@@ -166,6 +202,7 @@ func _run() -> void:
 			hulls += 1
 	_check(hulls > 0, "graveyard ring has derelict hulls")
 	_check(not _debug.switch_system("nowhere"), "unknown system is refused")
+	_check(local_space.destroyed.size() == 0, "destroyed set cleared on system change")
 	await _frames(5)
 	_finish()
 

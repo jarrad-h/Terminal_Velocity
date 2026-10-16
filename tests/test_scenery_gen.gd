@@ -4,8 +4,9 @@ extends TestCase
 const CHUNK: float = 1000.0
 
 
-func _def(behaviour: String = "static") -> SceneryDef:
+func _def(behaviour: String = "static", solid: bool = false) -> SceneryDef:
 	var d := SceneryDef.new()
+	d.solid = solid
 	d.id = "rock"
 	d.size = Vector2(10.0, 20.0)
 	d.spin = Vector2(-10.0, 10.0)
@@ -105,3 +106,43 @@ func test_region_does_not_shift_objects() -> void:
 	var circle: Array[Vector2] = _positions(_gen(Vector2i.ZERO, LocalSpaceEntry.create("rock", 50.0, "circle", Vector2(500.0, 500.0), 300.0)))
 	for p: Vector2 in circle:
 		assert_true(p in whole, "filtered object keeps its place")
+
+
+func test_destroyed_objects_are_skipped_and_others_unchanged() -> void:
+	var entry := LocalSpaceEntry.create("rock", 20.0)
+	var all: Array[SceneryPlacement] = _gen(Vector2i(2, 2), entry)
+	var gone: SceneryPlacement = all[1]
+	var destroyed := DestroyedScenery.new()
+	destroyed.add(Vector2i(2, 2), "rock", gone.index)
+	var after: Array[SceneryPlacement] = SceneryGen.generate(42, Vector2i(2, 2), CHUNK, entry, _def(), 0.0, destroyed)
+	assert_true(after.size() == all.size() - 1, "one fewer object")
+	assert_true(not _positions(after).has(gone.position), "destroyed object not regenerated")
+	var others: Array[Vector2] = _positions(all)
+	others.erase(gone.position)
+	assert_true(_positions(after) == others, "the rest are unchanged")
+
+
+func test_destroyed_key_is_per_chunk_and_type() -> void:
+	var destroyed := DestroyedScenery.new()
+	destroyed.add(Vector2i(0, 0), "rock", 3)
+	assert_true(destroyed.has(Vector2i(0, 0), "rock", 3), "same key")
+	assert_true(not destroyed.has(Vector2i(1, 0), "rock", 3), "other chunk")
+	assert_true(not destroyed.has(Vector2i(0, 0), "dust", 3), "other type")
+	destroyed.clear()
+	assert_true(destroyed.size() == 0, "cleared")
+
+
+func test_drifting_solid_scenery_moves_with_elapsed_time() -> void:
+	var entry := LocalSpaceEntry.create("rock", 20.0)
+	var start: Array[SceneryPlacement] = SceneryGen.generate(42, Vector2i.ZERO, CHUNK, entry, _def("drift", true), 0.0)
+	var later: Array[SceneryPlacement] = SceneryGen.generate(42, Vector2i.ZERO, CHUNK, entry, _def("drift", true), 10.0)
+	assert_true(start.size() == later.size(), "same objects")
+	for i: int in start.size():
+		assert_vec_near(later[i].position, start[i].position + start[i].velocity * 10.0, "offset by velocity × elapsed")
+
+
+func test_non_solid_scenery_skips_drift_offset() -> void:
+	var entry := LocalSpaceEntry.create("dust", 20.0)
+	var start: Array[Vector2] = _positions(SceneryGen.generate(42, Vector2i.ZERO, CHUNK, entry, _def("drift", false), 0.0))
+	var later: Array[Vector2] = _positions(SceneryGen.generate(42, Vector2i.ZERO, CHUNK, entry, _def("drift", false), 10.0))
+	assert_true(start == later, "dust stays at its generated place")

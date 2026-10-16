@@ -85,6 +85,8 @@ Kinds: `gun` fires along the heading; `turret` leads the selected target within 
 
 One generic Scenery scene is built from these fields; a new kind of object (wrecks, flora, fauna) is a new file, not code.
 
+Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroyed until you switch system (it survives a data reload). Drifting solid scenery is generated where its drift has carried it since you entered the system; non-solid scenery (dust) always appears at its start position.
+
 | Field | Meaning | Default |
 | --- | --- | --- |
 | `name` | Display name | **required** |
@@ -96,7 +98,10 @@ One generic Scenery scene is built from these fields; a new kind of object (wrec
 | `depth` | Parallax depth range; 1 = moves with the world, below 1 further away. Non-solid only | `[1, 1]` |
 | `solid` | Has a hitbox and armour (weapons hit it from milestone 3) | `false` |
 | `armor` | Armour points when solid | `0` |
-| `fragments` | `[{"scenery": <scenery ID>, "count": n}]` spawned when destroyed (milestone 3) | `[]` |
+| `fragments` | `[{"scenery": <scenery ID>, "count": n}]` thrown off as cosmetic pieces when destroyed | `[]` |
+| `fragment_speed` | Fragment launch speed range in px/s | `[20, 80]` |
+| `fragment_lifetime` | Seconds before fragments fade out | `6` |
+| `radar` | Shown on the radar | `false` |
 | `placeholder.colour` | Placeholder polygon colour | `"#999999"` |
 | `placeholder.sides` | Polygon corners (≥ 3) | `7` |
 | `placeholder.roughness` | 0 = regular, 1 = very jagged | `0.3` |

@@ -6,6 +6,7 @@
   "solid": true,
   "armor": 400,
   "fragments": [{"scenery": "rock", "count": 3}, {"scenery": "small_debris", "count": 5}],
+  "radar": true,
   "behaviour": "static",
   "placeholder": {"colour": "#5a5048", "sides": 12, "roughness": 0.25}
 }

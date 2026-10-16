@@ -21,7 +21,12 @@ var solid: bool
 var armor: float
 ## [{"scenery": String, "count": int}] spawned when destroyed (milestone 3).
 var fragments: Array[Dictionary] = []
+## Fragment launch speed range in px/s and how long fragments last (s).
+var fragment_speed: Vector2
+var fragment_lifetime: float
 var behaviour: String
+## H2: shown on the radar.
+var radar: bool
 ## Placeholder art when no sprite exists: a rough polygon.
 var colour: Color
 var sides: int
@@ -43,7 +48,10 @@ static func parse(r: DefReader) -> SceneryDef:
 	d.armor = r.number("armor", 0.0, false, 0.0)
 	for f: DefReader in r.objects("fragments"):
 		d.fragments.append({"scenery": f.ref("scenery", "scenery", "", true), "count": f.integer("count", 1, false, 1)})
+	d.fragment_speed = r.range2("fragment_speed", Vector2(20.0, 80.0), 0.0)
+	d.fragment_lifetime = r.number("fragment_lifetime", 6.0, false, 0.0)
 	d.behaviour = r.choice("behaviour", BEHAVIOURS, "static")
+	d.radar = r.boolean("radar", false)
 	var art: DefReader = r.object("placeholder")
 	d.colour = art.colour("colour", Color(0.6, 0.6, 0.6))
 	d.sides = art.integer("sides", 7, false, 3)
