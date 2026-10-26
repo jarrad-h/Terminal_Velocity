@@ -1,6 +1,6 @@
 # Terminal Velocity Prototype — Requirements & Scope
 
-Exported from the planning doc on 16 Oct 2026. The planning doc is the source of truth; refresh this copy when it changes.
+Source of truth for design. Edit this file (not a chat or external doc) when design changes. Requirement IDs are stable; never renumber.
 
 ## Purpose and success criteria
 
@@ -12,7 +12,7 @@ The prototype is done when:
 2. Traders, warships and a hostile pirate faction behave visibly differently, driven by government relationships.
 3. Adding a new ship or weapon needs only a new data file and a sprite, with no code change.
 4. Tuning a stat (speed, shield, damage) in a data file changes the game on the next run.
-5. Landing on a planet opens a stub screen that repairs the ship, proving the space-to-landed transition.
+5. Landing on a planet opens a stub screen that repairs and refuels the ship, proving the space-to-landed transition.
 
 ## Scope
 
@@ -27,14 +27,14 @@ One system, one player ship, combat and AI first; everything that needs more tha
 | AI | Trader, warship and pirate behaviours, flee threshold | Interceptor scanning, bribes, hailing |
 | Governments | 3 governments with ally/enemy relations and a legal record | Reputation spreading to allies, ranks |
 | Boarding | Board a disabled ship for credits | Plunder of cargo and outfits, capture odds |
-| Landing | Stub screen: repair, take off | Shipyard, outfitter, trade, bar, missions |
+| Landing | Stub screen: repair, refuel, take off | Shipyard, outfitter, trade, bar, missions |
 | Data | Ships, weapons, governments, AI pools, system definition | Missions, flags, crons, persons, plugins |
 | Presentation | Placeholder art, basic HUD, radar | Final art, audio polish, menus, save/load |
 | Debug | Debug panel and console: ship swap, spawning, invulnerability, time scale, data hot-reload, overlays | Player-facing cheats, mission and flag debugging |
 
 ## Functional requirements
 
-Each requirement has an ID so milestones, commits and tests can refer to it.
+Each requirement has an ID so later milestones and tests can refer to it.
 
 **Flight**
 
@@ -50,7 +50,7 @@ Each requirement has an ID so milestones, commits and tests can refer to it.
 - L1: Local space is filled with scenery in world space, from dust through to large asteroids, moving past at true speed so it carries the sense of motion. Dust is cosmetic only and may use a depth of 0.9–1.1 for slight layering.
 - L2: Scenery is generated in chunks around the player from the system seed, so the same place always holds the same objects; distant chunks unload.
 - L3: Each scenery type is a data definition; a system lists the types it uses, each with a density and an optional region (whole system, ring or circle). Swapping dust and asteroids for wrecks, flora or fauna is a data change, and a behaviour field (static or drift now) leaves room for moving fauna later.
-- L4: Solid scenery uses the same Health component as ships (armour only), so weapons can hit it from milestone 3; destroyed objects can spawn fragment scenery as cosmetic RigidBody2D pieces. Ships pass through scenery, as they pass through each other. Destroyed scenery stays destroyed until the player leaves the system, held in an in-memory set that is cleared on system change. Drifting solid scenery spawns at its start position plus velocity × elapsed game time; dust and other non-solid scenery skip this.
+- L4: Solid scenery uses the same Health component as ships (armour only), so weapons can hit it from milestone 3; destroyed objects can spawn fragment scenery as cosmetic RigidBody2D pieces. Ships pass through scenery, as they pass through each other. Destroyed scenery stays destroyed until the player leaves the system (an in-memory set, cleared on system change). Drifting solid scenery spawns at its start position plus velocity × elapsed game time, so reloaded chunks don't snap it back; dust and other non-solid scenery skip this.
 
 **Combat**
 
@@ -90,7 +90,7 @@ Each requirement has an ID so milestones, commits and tests can refer to it.
 **HUD**
 
 - H1: Shield and armour bars; credits.
-- H2: A small radar in a screen corner shows ships, system objects and the selected target around the player. Ships are coloured by government until hostility exists in milestone 4. Scenery shows only when its definition sets `radar: true` (in the prototype data: large_asteroid and derelict_hull). Radar range comes from data.
+- H2: A small radar in a screen corner shows ships, system objects (star, planets, stations) and the selected target around the player. Ships are coloured by government until hostility exists (milestone 4), then by hostility. Scenery appears only when its definition sets radar visibility, which the prototype data sets on large asteroids and derelict hulls; dust, small debris and rocks never show. Radar range comes from data.
 - H3: Target panel: name, government, shield and armour.
 - H4: Message line for events (target disabled, landing refused).
 
@@ -113,52 +113,57 @@ Six definition types load from JSON files at startup; IDs are readable strings, 
 
 | Type | Defines | Key fields |
 | --- | --- | --- |
-| `ship` | A hull class | name, sprite, mass, accel, top_speed, turn_rate, shield, shield_regen, armor, hardpoints (gun/turret/guided/beam exit points), default_weapons, strength, crew |
-| `weapon` | A gun, turret, missile or beam | kind, damage_shield, damage_armor, range or lifetime, speed, reload, turn_rate (guided), arc (turret), sprite or colour, sound |
-| `government` | A faction | name, colour, allies, enemies, crime_threshold, penalties (shoot, disable, board, kill), max_odds, flee_shield_pct |
+| `ship` | A hull class | name, sprite, mass, accel, top\_speed, turn\_rate, shield, shield\_regen, armor, hardpoints (gun/turret/guided/beam exit points), default\_weapons, strength, crew |
+| `weapon` | A gun, turret, missile or beam | kind, damage\_shield, damage\_armor, range or lifetime, speed, reload, turn\_rate (guided), arc (turret), sprite or colour, sound |
+| `government` | A faction | name, colour, allies, enemies, crime\_threshold, penalties (shoot, disable, board, kill), max\_odds, flee\_shield\_pct |
 | `ai_pool` | A traffic type (Nova's dude) | government, behaviour (trader, warship, pirate), weighted list of ship IDs |
-| `system` | The one star system | name, objects (star, planets, station with position, sprite, description, landable, min_record), traffic (pool ID + target count), backdrop (B2 settings), local_space (scenery IDs with density and region), seed |
-| `scenery` | A local-space object type | name, sprites (random pick), size range, spin range, drift range, depth, solid, armor, fragments (scenery ID + count), behaviour, radar (default false) |
+| `system` | The one star system | name, objects (star, planets, station with position, sprite, description, landable, min\_record), traffic (pool ID + target count), backdrop (B2 settings), local\_space (scenery IDs with density and region), seed |
+| `scenery` | A local-space object type | name, sprites (random pick), size range, spin range, drift range, depth, solid, armor, fragments (scenery ID + count), behaviour, radar (shown on radar or not) |
 
-See `data/ships/courier.json` for an example ship file.
+An example ship file:
+
+```json
+{
+  "id": "courier",
+  "name": "Courier",
+  "sprite": "ships/courier.png",
+  "mass": 40,
+  "accel": 300,
+  "top_speed": 320,
+  "turn_rate": 180,
+  "shield": 200,
+  "shield_regen": 6,
+  "armor": 120,
+  "strength": 10,
+  "crew": 2,
+  "hardpoints": {
+    "gun": [[-6, -18], [6, -18]],
+    "turret": [[0, 4]]
+  },
+  "default_weapons": [
+    {"weapon": "light_laser", "count": 2}
+  ]
+}
+```
 
 Rules the loader enforces:
 
 - Every reference (weapon ID in a ship, ship ID in a pool) must resolve, or the game refuses to start and names the bad file and field.
 - Missing optional fields take documented defaults.
 - Units are stated once: speed in pixels per second, turn rate in degrees per second, regen in points per second.
-- Files load in order from `data/` then `mods/`; a later file with the same ID replaces the earlier one (the plugin override rule, kept from day one).
+- Files load in order from a base folder then a mods folder; a later file with the same ID replaces the earlier one (the plugin override rule, kept from day one).
 
 ## Technical architecture
 
 One Ship scene serves both the player and every AI ship; swapping its controller is the only difference, so flight and combat are tuned once.
 
-```
-Data files (JSON) ──► DataRegistry (autoload: load, validate, mod overrides)
-                                │ definitions
-GameState (autoload: credits, legal record per government)
-                                │ record changes
-SystemScene (one star system)
-  ├─ TrafficSpawner   spawns ships from ai_pools to target counts
-  ├─ System objects   star, planets, station from the system file
-  ├─ Backdrop         noise stars + nebula on a slow parallax layer
-  ├─ LocalSpace       streams scenery chunks around the camera
-  ├─ Ship (player and AI)
-  │    ├─ ShipBody      flight model
-  │    ├─ WeaponMounts  hardpoints
-  │    ├─ Health        shield, armour, disable
-  │    └─ Controller    PlayerController | AIController (trader, warship, pirate)
-  └─ Shots            projectiles, missiles, beams; apply damage
-HUD           shield, armour, radar, target, messages (reads the player ship)
-LandedScreen  repair and take off; checks the landing record
-DebugCommands (autoload) ◄── DebugPanel, Console
-```
-
 - **Autoloads:** DataRegistry holds every definition after load; GameState holds credits and the legal record so they survive scene changes.
 - **Composition over inheritance:** ShipBody, WeaponMounts and Health are child nodes, so a future station turret can reuse WeaponMounts and Health without flight.
 - **Signals for events:** Health emits `disabled` and `destroyed`; GameState listens to apply legal penalties, and the HUD listens to show messages.
 - **Simulation separate from visuals:** flight and damage maths live in plain classes the scene calls each physics frame, so they can be unit-tested.
+
 - **Debug layer:** a DebugCommands autoload holds every debug action; the DebugPanel scene and the console both call it, so the same commands can also drive automated tests. Both are excluded from release builds.
+
 - **Backdrop and local space:** a Backdrop node renders stars and nebula with a shader on a parallax layer; a LocalSpace node streams scenery chunks around the camera. Each scenery object is one generic Scenery scene configured from its definition, so new object kinds need data and sprites, not code.
 
 ## Prototype content
@@ -182,10 +187,10 @@ Six steps, each ending in something playable; the data loader comes second so no
 
 1. **Fly:** player ship, flight model, camera, starfield. Done when flight feels right (F1–F4).
 2. **Data loader and local space:** JSON definitions for all six types, typed resource classes, reference validation, mod override and hot reload; then the system file drives the backdrop and local-space scenery, replacing the milestone 1 starfield. Done when changing the backdrop or scenery in JSON changes the scene (B1–B2, L1–L3) and the player ship loads from `courier.json`.
-3. **Fight:** four weapon kinds, shields and armour, disable and destroy, targeting, a static dummy target, the radar and placeholder drawing of system objects. Done when C1–C8 work against a dummy, shots damage solid scenery (L4) and the radar works (H2).
+3. **Fight:** four weapon kinds, shields and armour, disable and destroy, targeting, a static dummy target. Placeholder drawing of system objects and the radar (H2) come forward into this milestone. Done when C1–C8 work against a dummy, shots damage and destroy solid scenery (L4), and the radar shows the dummy, system objects and large scenery.
 4. **AI and governments:** trader, warship and pirate behaviours, traffic spawning, government relations and the legal record. Done when a pirate raid on traders draws in the patrol (A1–A6, G1–G3).
 5. **Board and land:** boarding for credits, landing with the repair stub, respawn. Done when C9–C10, G4 and S1–S3 work.
-6. **HUD and tuning pass:** radar polish, target panel, messages, then a balance pass on the data files only. Done when the success criteria in the first section are met.
+6. **HUD and tuning pass:** target panel, messages, radar polish, then a balance pass on the data files only. Done when the success criteria in the first section are met.
 
 Debug tools grow with the milestones rather than waiting for the end: the toggle, time scale and overlays in milestone 1; ship swap and data hot-reload in 2; invulnerability, target kill and spawning in 3; AI pause, legal record and government overrides in 4; the console in 5.
 
@@ -195,9 +200,11 @@ Rough effort for one part-time developer: 6–10 weekends, most of it in milesto
 
 All six are settled and apply from milestone 1.
 
-- **Data format:** JSON.
-- **Language:** GDScript throughout.
-- **Godot version:** Godot 4.x stable.
-- **Controls:** keyboard thrust/turn like Nova; no mouse-aim.
-- **Physics:** custom kinematic movement for ships. Ships turn at a fixed rate with no spin-up, drift, and stop at a hard speed cap, so data values map one-to-one to behaviour and AI steering stays predictable. RigidBody2D would add angular momentum, fight the speed cap and make ships collide (Nova ships pass through each other). RigidBody2D is used only for cosmetic debris, cargo boxes and asteroid fragments.
-- **Project name and repo:** Terminal Velocity, in its own repo separate from the strategy game.
+- [x] **Data format:** JSON.
+- [x] **Language:** GDScript throughout.
+- [x] **Godot version:** Godot 4.x stable.
+
+- [x] **Controls:** keyboard thrust/turn like Nova; no mouse-aim.
+
+- [x] **Physics:** custom kinematic movement for ships. Ships turn at a fixed rate with no spin-up, drift, and stop at a hard speed cap, so data values map one-to-one to behaviour and AI steering stays predictable. RigidBody2D would add angular momentum, fight the speed cap and make ships collide (Nova ships pass through each other). RigidBody2D is used only for cosmetic debris, cargo boxes and asteroid fragments.
+- [x] **Project name and repo:** Terminal Velocity, in its own repo separate from the strategy game.

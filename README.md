@@ -2,7 +2,7 @@
 
 A top-down space trading and combat game in the spirit of EV Nova, built in Godot 4.
 
-Current stage: single-system prototype. See [docs/prototype-spec.md](docs/prototype-spec.md) for scope, requirements and milestones.
+Current stage: single-system prototype. See [docs/spec.md](docs/spec.md) for scope, requirements and milestones.
 
 ## Running
 
