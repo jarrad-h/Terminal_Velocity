@@ -245,6 +245,11 @@ func _run() -> void:
 	law_patrol.health.apply_damage(1.0, 1.0, player)
 	_check(other_patrol.is_hostile_to(player), "provoked: the government's other warships are hostile (A8)")
 
+	# C11: AI shots on allies scale by combat.friendly_fire_pct.
+	var pct: float = float(DataRegistry.settings["combat"]["friendly_fire_pct"])
+	_check(is_equal_approx(HitQuery.damage_scale(law_patrol, victim), pct / 100.0), "AI on ally: friendly_fire_pct (C11)")
+	_check(is_equal_approx(HitQuery.damage_scale(player, law_patrol), 1.0), "player always full damage (C11)")
+
 	# D4: AI pause.
 	_debug.ai_paused = true
 	await _frames(3)

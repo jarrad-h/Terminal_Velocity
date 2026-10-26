@@ -63,3 +63,12 @@ func test_odds() -> void:
 	assert_true(not Relations.odds_ok(10.0, 16.0, 1.5), "beyond odds")
 	assert_true(Relations.odds_ok(10.0, 0.0, 0.5), "no enemies always ok")
 	assert_true(not Relations.odds_ok(0.0, 5.0, 10.0), "no strength of our own")
+
+
+func test_friendly_fire_scale() -> void:
+	var law := _gov("law", ["traders"], ["pirates"])
+	assert_near(Relations.damage_scale(false, law, _gov("traders"), 25.0), 0.25, "AI hitting an ally: 25% (C11)")
+	assert_near(Relations.damage_scale(false, law, law, 0.0), 0.0, "own government, friendly fire off")
+	assert_near(Relations.damage_scale(false, law, _gov("pirates"), 0.0), 1.0, "enemies always full damage")
+	assert_near(Relations.damage_scale(true, null, law, 0.0), 1.0, "player shots always full damage")
+	assert_near(Relations.damage_scale(false, law, null, 0.0), 1.0, "targets with no government (dummy, scenery)")

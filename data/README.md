@@ -25,7 +25,7 @@ Fields marked **required** have no default.
 | `radar.size` | Radar diameter in px (bottom-right corner) | `200` |
 | `radar.range` | World distance from the player to the radar rim, px | `3000` |
 | `radar.margin` | Gap from the screen edges, px | `16` |
-| `radar.colours` | `background`, `rim`, `player`, `neutral` (ships with no government), `target` (ring round the selected target), `scenery` | see `game.json` |
+| `radar.colours` | `background`, `rim`, `player`, `hostile` (ships hostile to you), `friendly` (non-hostile ships with a government), `neutral` (ships with no government), `target` (ring round the selected target), `scenery` | see `game.json` |
 | `ai.landing_speed` | AI ships land when slower than this, px/s (A1) | `60` |
 | `ai.land_radius_fraction` | …and within this fraction of the planet's radius of its centre | `0.6` |
 | `ai.thrust_angle` | AI thrusts only when within this many degrees of the direction it wants | `35` |

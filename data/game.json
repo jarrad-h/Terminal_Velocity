@@ -33,7 +33,9 @@
       "player": "#ffffff",
       "neutral": "#b0b0b0",
       "target": "#ffee40",
-      "scenery": "#8a7a68"
+      "scenery": "#8a7a68",
+      "hostile": "#ff4040",
+      "friendly": "#40d080"
     }
   },
   "debug": {

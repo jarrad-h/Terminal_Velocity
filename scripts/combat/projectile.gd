@@ -37,7 +37,9 @@ func _physics_process(delta: float) -> void:
 	var next: Vector2 = position + velocity * delta
 	var hit: Dictionary = HitQuery.ray(self, position, next, _exclude)
 	if not hit.is_empty():
-		hit["target"].health.apply_damage(weapon.damage_shield, weapon.damage_armor, shooter if is_instance_valid(shooter) else null)
+		var scale: float = HitQuery.damage_scale(shooter, hit["target"])
+		if scale > 0.0:
+			hit["target"].health.apply_damage(weapon.damage_shield * scale, weapon.damage_armor * scale, shooter if is_instance_valid(shooter) else null)
 		Flash.spawn(get_parent(), hit["position"], 6.0 if weapon.kind != "guided" else 18.0, weapon.colour, 0.25)
 		queue_free()
 		return

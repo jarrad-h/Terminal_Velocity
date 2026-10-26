@@ -38,3 +38,11 @@ static func odds_ok(own_strength: float, enemy_strength: float, max_odds: float)
 	if enemy_strength <= 0.0:
 		return true
 	return own_strength > 0.0 and enemy_strength <= max_odds * own_strength
+
+
+## C11: damage multiplier for a hit. AI shots on their own or allied
+## governments' ships do `friendly_fire_pct` %; everything else does full damage.
+static func damage_scale(shooter_is_player: bool, shooter_gov: GovernmentDef, target_gov: GovernmentDef, friendly_fire_pct: float) -> float:
+	if shooter_is_player or not allied(shooter_gov, target_gov):
+		return 1.0
+	return maxf(friendly_fire_pct, 0.0) / 100.0

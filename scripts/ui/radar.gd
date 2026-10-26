@@ -1,7 +1,8 @@
 class_name Radar
 extends Control
 ## H2: a round radar in the bottom-right corner, centred on the player.
-## Ships are coloured by government (hostility arrives in M4); system objects
+## Ships are coloured by hostility to the player (hostile, friendly, neutral when
+## they have no government); system objects
 ## beyond range sit on the rim as hollow pips; scenery appears only for types
 ## with radar: true, read from LocalSpace's short list rather than by scanning
 ## every scenery node. Size, range and colours come from game.json "radar".
@@ -70,6 +71,8 @@ func _dot(centre: Vector2, p: Vector2, size: float, colour: Color) -> void:
 		draw_rect(Rect2(centre + p - Vector2(size, size), Vector2(size, size) * 2.0), colour)
 
 
+## H2: by hostility to the player; ships with no government are neutral.
 func _ship_colour(ship: Ship) -> Color:
-	var gov: GovernmentDef = DataRegistry.get_government(ship.government) if ship.government != "" else null
-	return gov.colour if gov != null else _colours["neutral"]
+	if player.is_hostile_to(ship):
+		return _colours["hostile"]
+	return _colours["friendly"] if ship.government != "" else _colours["neutral"]
