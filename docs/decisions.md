@@ -39,3 +39,25 @@ Rejected: a refuel button on the landing stub now (fuel with no use is dead UI).
 Why: 4.7.2 is the current stable release. The project, all unit tests, the smoke and scenario tests and a windowed run pass on it unchanged, and GUT 9.7.1 (built for 4.7) also removes a harmless timer-leak warning GUT 9.6.1 printed on every `--import`.
 Both PCs must run the same version: opening the project in a different Godot version rewrites project and scene files.
 Rejected: staying on 4.6.1 (no reason to lag the stable release this early).
+
+## 2026-10-26 — AI behaviour has a group level and an individual level (A7)
+The group (government + AI pool) decides standing and broad behaviour: friends and foes, role, base odds and flee threshold. Each AI ship also gets a personality (a new `personality` definition type, picked by weight from its pool) that shades behaviour within those rules: odds tolerance, flee threshold, fight-or-flee when attacked, and whether it starts fights. Personalities never change who is a friend or enemy.
+Why: traders, warships and pirates should not all act alike within a faction (a brave trader fights back, a skittish one bolts), while faction relations stay predictable and data-driven. Personalities are their own type so one "brave" can be reused across pools.
+Rejected: personality fields inline in each AI pool (duplicated values); per-ship-hull temperament (hull and pilot are different things).
+
+## 2026-10-26 — Provoked ships retaliate regardless of legal record (A8)
+A ship the player damages, and its government's warships, are hostile to the player until the player leaves the system. Allies don't react.
+Why: without it, the patrol ignores the player shooting traders for many hits, because the record falls slowly (3 per ship). Nova-like.
+Rejected: strict threshold-only hostility (feels unresponsive).
+
+## 2026-10-26 — Legal penalties apply once per ship per kind of act (G2)
+The attack ("shoot") penalty applies on the first hit on a ship, not per hit; disable, board and destroy once each. Lasers fire 4 times a second, so per-hit penalties would swamp the record.
+
+## 2026-10-26 — Traders dock and relaunch as the same ship (A1)
+A landed trader stays docked (hidden, untargetable) for a dwell time, then takes off again. Rejected: despawn on landing and spawn a fresh trader (loses continuity).
+
+## 2026-10-26 — AI friendly fire is a data percentage (C11)
+AI shots hit own and allied ships at `combat.friendly_fire_pct` (game.json; 0 = off). Player shots always do full damage. Only the player's legal record is tracked.
+
+## 2026-10-26 — R targets the nearest hostile (C8)
+R selects the nearest hostile ship (falling back to the nearest ship if none are hostile); Tab still cycles all ships nearest first.

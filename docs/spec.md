@@ -64,20 +64,23 @@ Each requirement has an ID so later milestones and tests can refer to it.
 - C8: The player can select the nearest hostile or cycle targets; the HUD shows the target's shield and armour.
 - C9: A disabled ship can be boarded by stopping alongside it, granting credits.
 - C10: When the player is destroyed, they respawn at the station after a short delay.
+- C11: AI shots damage ships of their own and allied governments at a percentage set in data (100 = full damage, 0 = friendly fire off). The player's shots always do full damage.
 
 **AI**
 
-- A1: Traders fly between planets, land, and take off again; they flee when attacked.
+- A1: Traders fly between planets, land, and take off again (the same ship docks for a while, then launches); they flee when attacked unless their personality makes them fight back (A7).
 - A2: Warships patrol and attack ships of enemy governments, including the player when hostile.
 - A3: Pirates attack traders and the player on sight.
 - A4: Each AI ship retreats below a shield threshold set by its government.
 - A5: Before engaging, AI compares the summed strength of each side against its government's maximum odds.
 - A6: Traffic spawns at the system edge or from planets to keep a target population, and leaves when its job is done.
+- A7: AI behaviour works at two levels. The **group** (government plus AI pool) sets standing and broad behaviour: who is friend or foe, the role (trader, warship, pirate), base odds and flee threshold. The **individual** gets a personality, picked by weight from its AI pool, that shades behaviour within those rules: how long the odds it accepts, how early it runs, whether it fights back when attacked and whether it starts fights with its enemies. A personality never changes who a ship's friends and enemies are.
+- A8: Provoked: a ship the player damages, and the warships of its government, treat the player as hostile until the player leaves the system, whatever the legal record. Allies don't react (reputation spreading is out of scope).
 
 **Governments and legal record**
 
 - G1: Each ship belongs to a government; governments declare allies and enemies.
-- G2: Attacking, disabling, boarding or destroying a government's ship lowers the player's record with it by set amounts.
+- G2: Attacking, disabling, boarding or destroying a government's ship lowers the player's record with it by set amounts. The attack penalty applies once per ship, on the player's first hit; disable, board and destroy apply once each.
 - G3: Below a crime threshold, that government's warships turn hostile to the player.
 - G4: A planet refuses landing when the player's record with its government is below its minimum.
 
@@ -109,15 +112,16 @@ Each requirement has an ID so later milestones and tests can refer to it.
 
 ## Data requirements
 
-Six definition types load from JSON files at startup; IDs are readable strings, and references use explicit fields rather than Nova's numeric offsets.
+Seven definition types load from JSON files at startup; IDs are readable strings, and references use explicit fields rather than Nova's numeric offsets.
 
 | Type | Defines | Key fields |
 | --- | --- | --- |
 | `ship` | A hull class | name, sprite, mass, accel, top\_speed, turn\_rate, shield, shield\_regen, armor, hardpoints (gun/turret/guided/beam exit points), default\_weapons, strength, crew |
 | `weapon` | A gun, turret, missile or beam | kind, damage\_shield, damage\_armor, range or lifetime, speed, reload, turn\_rate (guided), arc (turret), sprite or colour, sound |
 | `government` | A faction | name, colour, allies, enemies, crime\_threshold, penalties (shoot, disable, board, kill), max\_odds, flee\_shield\_pct |
-| `ai_pool` | A traffic type (Nova's dude) | government, behaviour (trader, warship, pirate), weighted list of ship IDs |
-| `system` | The one star system | name, objects (star, planets, station with position, sprite, description, landable, min\_record), traffic (pool ID + target count), backdrop (B2 settings), local\_space (scenery IDs with density and region), seed |
+| `ai_pool` | A traffic type (Nova's dude) | government, behaviour (trader, warship, pirate), weighted list of ship IDs, weighted list of personality IDs, sensor range, stay and dwell times |
+| `personality` | An individual AI temperament (A7) | name, odds factor, flee threshold offset, response when attacked, whether it starts fights |
+| `system` | The one star system | name, objects (star, planets, station with position, sprite, description, landable, min\_record), traffic (pool ID + target count), edge radius, backdrop (B2 settings), local\_space (scenery IDs with density and region), seed |
 | `scenery` | A local-space object type | name, sprites (random pick), size range, spin range, drift range, depth, solid, armor, fragments (scenery ID + count), behaviour, radar (shown on radar or not) |
 
 An example ship file:
@@ -209,7 +213,7 @@ Six steps, each ending in something playable; the data loader comes second so no
 1. ✅ (merged 2026-10-26) **Fly:** player ship, flight model, camera, starfield. Done when flight feels right (F1–F4).
 2. ✅ (merged 2026-10-26) **Data loader and local space:** JSON definitions for all six types, typed resource classes, reference validation, mod override and hot reload; then the system file drives the backdrop and local-space scenery, replacing the milestone 1 starfield. Done when changing the backdrop or scenery in JSON changes the scene (B1–B2, L1–L3) and the player ship loads from `courier.json`.
 3. ✅ (merged 2026-10-26) **Fight:** four weapon kinds, shields and armour, disable and destroy, targeting, a static dummy target. Placeholder drawing of system objects and the radar (H2) come forward into this milestone. Done when C1–C8 work against a dummy, shots damage and destroy solid scenery (L4), and the radar shows the dummy, system objects and large scenery.
-4. **AI and governments:** trader, warship and pirate behaviours, traffic spawning, government relations and the legal record. Done when a pirate raid on traders draws in the patrol (A1–A6, G1–G3).
+4. **AI and governments:** trader, warship and pirate behaviours, traffic spawning, government relations and the legal record. Done when a pirate raid on traders draws in the patrol (A1–A8, G1–G3, C11).
 5. **Board and land:** boarding for credits, landing with the repair stub, respawn. Done when C9–C10, G4 and S1–S3 work.
 6. **HUD and tuning pass:** target panel, messages, radar polish, then a balance pass on the data files only. Done when the success criteria in the first section are met.
 
