@@ -57,14 +57,15 @@ Each requirement has an ID so later milestones and tests can refer to it.
 - C1: Weapons fire from named exit points on the ship (gun, turret, guided, beam).
 - C2: Fixed guns fire along the ship's heading; turrets track the selected target within an arc.
 - C3: Guided missiles home on the target with their own turn rate and lifetime.
-- C4: Beams hit instantly along their length while held.
+- C4: Beams hit instantly along their length while held; their damage can fall off with distance (C12).
 - C5: Damage hits shields first, then armour; weapons can weight shield vs armour damage differently.
-- C6: Shields recharge over time; armour does not in the prototype.
+- C6: Shields start recharging only after a set time without taking damage (any hit resets it), then refill at a set rate up to their cap; armour does not recharge in the prototype. Recharge delay, rate and cap are per-ship stats that later upgrades will modify.
 - C7: A ship is disabled at 33% armour (drifts, cannot fire) and destroyed at 0%.
-- C8: The player can select the nearest hostile or cycle targets; the HUD shows the target's shield and armour.
+- C8: R selects the nearest hostile ship and Tab the nearest ship of any kind; Shift+R cycles through hostile ships and Shift+Tab through all ships, nearest first. The HUD shows the target's shield and armour.
 - C9: A disabled ship can be boarded by stopping alongside it, granting credits.
 - C10: When the player is destroyed, they respawn at the station after a short delay.
 - C11: AI shots damage ships of their own and allied governments at a percentage set in data (100 = full damage, 0 = friendly fire off). The player's shots always do full damage.
+- C12: A weapon's damage can fall off with distance (shot travel or beam length): full damage up to a set fraction of its range, falling linearly to a set minimum at full range. Shots and beams fade with distance so the falloff is visible.
 
 **AI**
 
@@ -75,12 +76,12 @@ Each requirement has an ID so later milestones and tests can refer to it.
 - A5: Before engaging, AI compares the summed strength of each side against its government's maximum odds.
 - A6: Traffic spawns at the system edge or from planets to keep a target population, and leaves when its job is done.
 - A7: AI behaviour works at two levels. The **group** (government plus AI pool) sets standing and broad behaviour: who is friend or foe, the role (trader, warship, pirate), base odds and flee threshold. The **individual** gets a personality, picked by weight from its AI pool, that shades behaviour within those rules: how long the odds it accepts, how early it runs, whether it fights back when attacked and whether it starts fights with its enemies. A personality never changes who a ship's friends and enemies are.
-- A8: Provoked: a ship the player damages, and the warships of its government, treat the player as hostile until the player leaves the system, whatever the legal record. Allies don't react (reputation spreading is out of scope).
+- A8: Leniency (replaces the earlier "provoked" rule, 2026-10-26): damage the player does to a ship that isn't hostile to them builds that ship's grievance, measured as a share of its total shield plus armour, which drains over time. Only when grievance passes the ship's government's tolerance (shaded by its personality) does that one ship turn hostile to the player; accidental shots are forgiven. Other ships of its government turn hostile only through the legal record (G3), and allies ignore it. Pirates follow the same rules; they simply start hostile.
 
 **Governments and legal record**
 
 - G1: Each ship belongs to a government; governments declare allies and enemies.
-- G2: Attacking, disabling, boarding or destroying a government's ship lowers the player's record with it by set amounts. The attack penalty applies once per ship, on the player's first hit; disable, board and destroy apply once each.
+- G2: Attacking, disabling, boarding or destroying a government's ship lowers the player's record with it by set amounts. The attack penalty applies once per ship, when that ship's grievance passes its tolerance (A8); disable, board and destroy apply once each, immediately.
 - G3: Below a crime threshold, that government's ships turn hostile to the player; its warships attack, while traders and other non-combat roles only act on it as their personality allows (A7). A government with a very high threshold (pirates) is hostile from the start until the player's record with it rises.
 - G4: A planet refuses landing when the player's record with its government is below its minimum.
 
@@ -93,7 +94,7 @@ Each requirement has an ID so later milestones and tests can refer to it.
 **HUD**
 
 - H1: Shield and armour bars; credits.
-- H2: A small radar in a screen corner shows ships, system objects (star, planets, stations) and the selected target around the player. Ships are coloured by government until hostility exists (milestone 4), then by hostility. Scenery appears only when its definition sets radar visibility, which the prototype data sets on large asteroids and derelict hulls; dust, small debris and rocks never show. Radar range comes from data.
+- H2: A small radar in a screen corner shows ships, system objects (star, planets, stations) and the selected target around the player. Ships are coloured by government until hostility exists (milestone 4), then by hostility; a ship with grievance against the player that isn't yet hostile shows as a warning colour. Scenery appears only when its definition sets radar visibility, which the prototype data sets on large asteroids and derelict hulls; dust, small debris and rocks never show. Radar range comes from data.
 - H3: Target panel: name, government, shield and armour.
 - H4: Message line for events (target disabled, landing refused).
 
@@ -116,11 +117,11 @@ Seven definition types load from JSON files at startup; IDs are readable strings
 
 | Type | Defines | Key fields |
 | --- | --- | --- |
-| `ship` | A hull class | name, sprite, mass, accel, top\_speed, turn\_rate, shield, shield\_regen, armor, hardpoints (gun/turret/guided/beam exit points), default\_weapons, strength, crew |
-| `weapon` | A gun, turret, missile or beam | kind, damage\_shield, damage\_armor, range or lifetime, speed, reload, turn\_rate (guided), arc (turret), sprite or colour, sound |
-| `government` | A faction | name, colour, allies, enemies, crime\_threshold, penalties (shoot, disable, board, kill), max\_odds, flee\_shield\_pct |
+| `ship` | A hull class | name, sprite, mass, accel, top\_speed, turn\_rate, shield, shield\_regen, armor, hardpoints (gun/turret/guided/beam exit points), default\_weapons, strength, crew, shield recharge delay |
+| `weapon` | A gun, turret, missile or beam | kind, damage\_shield, damage\_armor, range or lifetime, speed, reload, turn\_rate (guided), arc (turret), damage falloff (C12), sprite or colour, sound |
+| `government` | A faction | name, colour, allies, enemies, crime\_threshold, penalties (shoot, disable, board, kill), max\_odds, flee\_shield\_pct, tolerance and forgiveness (A8) |
 | `ai_pool` | A traffic type (Nova's dude) | government, behaviour (trader, warship, pirate), weighted list of ship IDs, weighted list of personality IDs, sensor range, stay and dwell times |
-| `personality` | An individual AI temperament (A7) | name, odds factor, flee threshold offset, response when attacked, whether it starts fights |
+| `personality` | An individual AI temperament (A7) | name, odds factor, flee threshold offset, response when attacked, whether it starts fights, tolerance factor (A8) |
 | `system` | The one star system | name, objects (star, planets, station with position, sprite, description, landable, min\_record), traffic (pool ID + target count), edge radius, backdrop (B2 settings), local\_space (scenery IDs with density and region), seed |
 | `scenery` | A local-space object type | name, sprites (random pick), size range, spin range, drift range, depth, solid, armor, fragments (scenery ID + count), behaviour, radar (shown on radar or not) |
 
@@ -213,7 +214,7 @@ Six steps, each ending in something playable; the data loader comes second so no
 1. ✅ (merged 2026-10-26) **Fly:** player ship, flight model, camera, starfield. Done when flight feels right (F1–F4).
 2. ✅ (merged 2026-10-26) **Data loader and local space:** JSON definitions for all six types, typed resource classes, reference validation, mod override and hot reload; then the system file drives the backdrop and local-space scenery, replacing the milestone 1 starfield. Done when changing the backdrop or scenery in JSON changes the scene (B1–B2, L1–L3) and the player ship loads from `courier.json`.
 3. ✅ (merged 2026-10-26) **Fight:** four weapon kinds, shields and armour, disable and destroy, targeting, a static dummy target. Placeholder drawing of system objects and the radar (H2) come forward into this milestone. Done when C1–C8 work against a dummy, shots damage and destroy solid scenery (L4), and the radar shows the dummy, system objects and large scenery.
-4. **AI and governments:** trader, warship and pirate behaviours, traffic spawning, government relations and the legal record. Done when a pirate raid on traders draws in the patrol (A1–A8, G1–G3, C11).
+4. **AI and governments:** trader, warship and pirate behaviours, traffic spawning, government relations and the legal record. Done when a pirate raid on traders draws in the patrol (A1–A8, G1–G3, C11, C12, and the C6/C8 playtest changes).
 5. **Board and land:** boarding for credits, landing with the repair stub, respawn. Done when C9–C10, G4 and S1–S3 work.
 6. **HUD and tuning pass:** target panel, messages, radar polish, then a balance pass on the data files only. Done when the success criteria in the first section are met.
 

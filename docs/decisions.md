@@ -65,3 +65,18 @@ R selects the nearest hostile ship (falling back to the nearest ship if none are
 ## 2026-10-26 — G3 applies to every ship of a government, not only warships
 Below a government's crime threshold all its ships are hostile to the player; role and personality decide whether they actually fight. Pirates are hostile from the start through their high threshold, so future missions that raise the player's pirate record can make pirates non-hostile with no special case.
 Rejected: warships-only hostility plus a separate "pirates are always hostile" rule (two mechanisms, and no path to siding with pirates).
+
+## 2026-10-26 — Leniency replaces faction-wide provocation (A8, G2)
+Damage from the player builds a per-ship grievance (share of the ship's total shield + armour) that drains over time; the ship turns hostile only when it passes its government's tolerance (shaded by personality). Crossing it charges the attack penalty; disable and destroy still charge immediately. Other ships of the government react only through the legal record (G3); allies ignore it. Pirates follow the same rules.
+Why: accidental shots are common in a crowded fight; one stray hit shouldn't turn a neutral or ally red, and one ship's grudge shouldn't turn a whole faction.
+Rejected: hit counts within a time window (unfair between 4-shots-a-second lasers and slow missiles); warn-then-hostile (no proportion); keeping the earlier "provoke all its warships" rule (too punishing).
+
+## 2026-10-26 — Shields recharge after a delay without damage (C6)
+Any hit resets a per-ship recharge delay; after it, shields refill at shield_regen up to the cap. Delay, rate and cap are the stats future upgrades (outfits) will modify, so they stay separate ship fields.
+
+## 2026-10-26 — Targeting keys: R / Tab nearest, Shift+R / Shift+Tab cycle (C8)
+R nearest hostile, Tab nearest of any kind, Shift+R cycles hostiles, Shift+Tab cycles all, nearest first. Replaces "R nearest hostile, Tab cycles all".
+
+## 2026-10-26 — Weapon damage falloff with distance (C12)
+Any weapon can lose damage with distance (full damage to a set fraction of range, linear down to a set minimum at full range); shots and beams fade to show it. The mining beam's range rises to cross the screen, balanced by falloff.
+Rejected: keeping the beam short (Jarrad wants it long).
