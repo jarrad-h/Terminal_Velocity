@@ -4,6 +4,81 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Milestone 4: AI and governments (26 Oct 2026) — awaiting playtest
+
+Branch `m4-ai-governments`. Built in the cloud session (no godot MCP there; runs checked headless and under a virtual display).
+
+### Built
+
+- **G1–G3, A8 relations.** `Relations` (pure, tested) decides hostility. Governments are hostile if either lists the other as an enemy. A government's ships treat the player as hostile below its `crime_threshold`; pirates' 1000 threshold makes them hostile from the start. **A8:** a ship the player damages, and its government's warships, stay hostile until the player leaves the system. Ships also remember non-allied attackers.
+- **G2 legal record.** A `GameState` autoload holds credits and the record per government (starting values in `game.json` → `player`). Penalties apply once per ship per act (first hit, disable, kill); boarding comes in M5.
+- **A1–A4, A7 AI.** One `AIController` produces the same `FlightInput` as the player, so AI obeys the same flight model and weapons.
+  - **Traders:** fly planet to planet, dock (hidden, untargetable) for `dwell_time`, relaunch, and leave via the edge after `stops` planets.
+  - **Warships:** patrol near system objects.
+  - **Pirates:** roam.
+  - **Group vs individual (A7):** the government plus AI pool set friends and foes, role, base odds and flee threshold. A personality (new `personality` type: steady, brave, aggressive, cautious, skittish, weighted per pool) shades the odds factor, the flee offset, fight-or-flee when attacked, and whether it starts fights.
+  - **A5:** before starting a fight, compares friendly against hostile strength within `sensor_range`.
+  - **A4:** below the flee threshold, traders run to the nearest planet and land for good; others jump out at the edge.
+  - **Steering** (`Steering`, pure, tested against the real flight model): arrive with turn-around braking, lead aiming, fire only when aligned (turrets fire whenever in range).
+- **A6 traffic.** `TrafficSpawner` keeps each system traffic entry at its count. The system starts populated, outside the player's sensor range. Replacements jump in at `edge_radius` or take off from a landable planet after `respawn_delay`.
+- **C11 friendly fire.** AI shots on their own or allied governments' ships do `combat.friendly_fire_pct` % (100 now; 0 turns it off). Player shots always do full damage.
+- **C8:** R targets the nearest hostile ship.
+- **H1:** the HUD shows credits.
+- **H2:** radar ships are red (hostile), green (friendly) or grey (no government).
+- **Debug.**
+  - D3: spawn an AI pool with a count and government override.
+  - D4: AI paused; radar shows all ships.
+  - D6: set credits and the record per government (the panel marks governments hostile below threshold).
+  - Traffic on/off.
+  - The panel now scrolls.
+- **Tests.** Unit tests for Relations (incl. friendly fire), Behaviour, WeightedPick and Steering. The scenario test covers:
+  - a pirate raid on a trader drawing in the patrol
+  - a steady trader fleeing and a brave trader fighting back
+  - G2 once per ship, the G3 threshold, A8 provocation
+  - C11 scaling, AI pause, D3/D6, and the A6 refill
+
+### Deviations and why
+
+- **Two-level AI behaviour (A7)**, provoked (A8), friendly-fire % (C11), once-per-ship penalties and docking traders were agreed in design before building. See `docs/decisions.md` (2026-10-26).
+- **Disabled AI ships stay in space** (boarding is M5) but stop counting towards traffic, so replacements still arrive.
+- **The odds check runs only before starting a fight.** Ships that fight back when attacked do so whatever the odds; retreat is left to the A4 shield threshold.
+- **Single-ship debug spawns stay idle;** pool spawns get AI.
+- **Initial traffic spawns outside the player's sensor range** (× 1.2) so nothing opens fire the moment the system loads.
+
+### Known issues
+
+- **Radar colour for low-record traders:** hostility to the player is a government's record rule, so traders turn red on radar below their own threshold even though they never attack (they only flee).
+- **AI dogfighting is simple:** face the lead point, thrust until within `standoff_fraction` of weapon range, so fights look like jousting passes.
+- **AI doesn't finish off disabled ships** and doesn't board (M5).
+- **AI friendly fire changes no records;** only the player's record is tracked.
+- **Spec question (G3, open):** the spec says "that government's **warships** turn hostile" below the crime threshold. The code makes **every** ship of that government hostile, which pirates rely on for A3. So low-record traders show red and brave or aggressive traders may fight. Waiting on Jarrad.
+
+### Review (godot-reviewer, before handover)
+
+Verdict was "fix first"; all fixed in `m4: review fixes`:
+- docked traders reappeared after a hot reload;
+- disabled traffic ships were never freed on a system switch;
+- attacks didn't end when the target stopped being hostile;
+- a freed-ship filter used a typed lambda;
+- friendly fire was lost when the shooter died;
+- zero-weight pools were accepted;
+- several hard-coded spawn and patrol numbers (now `game.json` → `ai.*`);
+- personality and game.json sections had no loader tests.
+
+### Key tuning values
+
+| | Sensor range | Stay | Personality weights |
+| --- | --- | --- | --- |
+| trader_traffic | 1200 | — (dwell 6–12 s, 1–3 stops) | skittish 3, cautious 3, steady 2, brave 1, aggressive 1 |
+| authority_patrol | 1800 | 90–180 s | steady 3, brave 2, aggressive 1, cautious 1 |
+| pirate_raid | 1600 | 60–120 s | aggressive 3, brave 2, steady 2, cautious 1 |
+
+Personalities (odds × / flee offset / when attacked / starts fights): steady 1/0/role/role · brave 1.5/−15/fight/role · aggressive 1.25/−10/fight/on sight · cautious 0.6/+20/role/role · skittish 0.3/+40/flee/never.
+
+Governments (max_odds / flee %): local_authority 1.5/15 · independent_traders 0.5/60 · pirates 2.0/30. Edge radius: test_nebula 7000, test_graveyard 6000. AI: landing speed 60, thrust angle 35°, standoff 0.4 × range, think every 0.25 s. Friendly fire 100%.
+
+---
+
 ## Milestone 3: Fight (16 Oct 2026)
 
 ### Built
