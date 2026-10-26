@@ -61,3 +61,7 @@ AI shots hit own and allied ships at `combat.friendly_fire_pct` (game.json; 0 = 
 
 ## 2026-10-26 — R targets the nearest hostile (C8)
 R selects the nearest hostile ship (falling back to the nearest ship if none are hostile); Tab still cycles all ships nearest first.
+
+## 2026-10-26 — G3 applies to every ship of a government, not only warships
+Below a government's crime threshold all its ships are hostile to the player; role and personality decide whether they actually fight. Pirates are hostile from the start through their high threshold, so future missions that raise the player's pirate record can make pirates non-hostile with no special case.
+Rejected: warships-only hostility plus a separate "pirates are always hostile" rule (two mechanisms, and no path to siding with pirates).

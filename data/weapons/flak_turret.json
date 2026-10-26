@@ -4,7 +4,7 @@
   "kind": "turret",
   "damage_shield": 6,
   "damage_armor": 8,
-  "range": 450,
+  "range": 1000,
   "speed": 600,
   "reload": 0.6,
   "arc": 270,
