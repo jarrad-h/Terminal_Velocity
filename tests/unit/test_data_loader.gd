@@ -1,4 +1,4 @@
-extends TestCase
+extends TvTest
 ## Data loader: override rule, defaults, reference validation, error messages.
 
 const BASE: String = "res://tests/fixtures/loader/base"

@@ -1,4 +1,4 @@
-extends TestCase
+extends TvTest
 ## C5–C7: damage, recharge and disable threshold.
 
 

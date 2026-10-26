@@ -1,4 +1,4 @@
-extends TestCase
+extends TvTest
 ## F1–F3: flight maths.
 
 const DT: float = 1.0 / 60.0
@@ -78,3 +78,17 @@ func test_step_does_not_modify_input_state() -> void:
 	var start := FlightState.new(Vector2.ZERO, Vector2.ZERO, 0.0)
 	FlightModel.step(start, FlightInput.new(true, 1.0), _stats(), DT)
 	assert_vec_near(start.velocity, Vector2.ZERO, "original state untouched")
+
+
+## F3: flight values come from the ship definition, one-to-one.
+func test_flight_stats_come_from_ship_json() -> void:
+	var raw: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/ships/courier.json"))
+	var data: DataSet = DataLoader.load_roots(["res://data"])
+	var stats: FlightStats = FlightStats.from_ship_def(data.get_def("ships", "courier"))
+	assert_near(stats.accel, float(raw["accel"]), "accel")
+	assert_near(stats.top_speed, float(raw["top_speed"]), "top_speed")
+	assert_near(stats.turn_rate, float(raw["turn_rate"]), "turn_rate")
+	var s: FlightState = FlightState.new()
+	for i: int in 600:
+		s = FlightModel.step(s, FlightInput.new(true), stats, DT)
+	assert_near(s.velocity.length(), float(raw["top_speed"]), "speed caps at the JSON top_speed")

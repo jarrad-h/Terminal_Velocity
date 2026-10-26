@@ -1,7 +1,7 @@
 extends Node
-## Smoke test: runs the system scene, presses flight keys and exercises every
+## Scenario test: runs the system scene, presses flight keys and exercises every
 ## debug command. Run as a scene so autoloads exist:
-##   godot --headless --path . res://tests/smoke_system.tscn
+##   godot --headless --path . res://tests/smoke/scenario.tscn
 
 var _errors: Array[String] = []
 var _debug: Node
@@ -249,5 +249,5 @@ func _chunk_snapshot(local_space: LocalSpace, chunk: Vector2i) -> Array[String]:
 func _finish() -> void:
 	for e: String in _errors:
 		print("FAIL ", e)
-	print("smoke: %d failures" % _errors.size())
+	print("scenario: %d failures" % _errors.size())
 	get_tree().quit(1 if _errors.size() > 0 else 0)

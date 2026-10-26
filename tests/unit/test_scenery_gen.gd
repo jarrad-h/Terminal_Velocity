@@ -1,4 +1,4 @@
-extends TestCase
+extends TvTest
 ## L2/L3: deterministic chunk generation, density and regions.
 
 const CHUNK: float = 1000.0

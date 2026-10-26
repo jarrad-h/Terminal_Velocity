@@ -1,4 +1,4 @@
-extends TestCase
+extends TvTest
 ## C8: nearest and cycle.
 
 var _points: Array[Vector2] = [Vector2(300, 0), Vector2(100, 0), Vector2(0, 200)]

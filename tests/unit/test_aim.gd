@@ -1,4 +1,4 @@
-extends TestCase
+extends TvTest
 ## C2–C3: intercept, turret arc and homing.
 
 
