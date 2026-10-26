@@ -21,7 +21,7 @@ func fire(shooter: Node, exclude: Array[RID], delta: float) -> void:
 		_length = weapon.beam_length()
 	else:
 		_length = from.distance_to(hit["position"])
-		var scale: float = HitQuery.damage_scale(shooter, hit["target"]) * delta
+		var scale: float = HitQuery.damage_scale_from(shooter, hit["target"]) * delta
 		if scale > 0.0:
 			hit["target"].health.apply_damage(weapon.damage_shield * scale, weapon.damage_armor * scale, shooter)
 	visible = true

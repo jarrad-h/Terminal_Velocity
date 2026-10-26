@@ -6,6 +6,9 @@ extends Node2D
 var weapon: WeaponDef
 var velocity: Vector2
 var shooter: Node = null
+## C11: the shooter's side, recorded at launch.
+var shooter_is_player: bool = false
+var shooter_government: String = ""
 ## Missiles only: what to home on (null = fly straight).
 var target: Ship = null
 var _life: float = 0.0
@@ -21,6 +24,9 @@ static func fire(parent: Node, p_weapon: WeaponDef, at: Vector2, direction: Vect
 	if p_weapon.kind != "guided" and p_weapon.inherit_velocity:
 		shot.velocity += base_velocity
 	shot.shooter = p_shooter
+	if p_shooter is Ship:
+		shot.shooter_is_player = (p_shooter as Ship).is_player()
+		shot.shooter_government = (p_shooter as Ship).government
 	shot.target = p_target
 	shot._exclude = exclude
 	shot._life = p_weapon.shot_lifetime()
@@ -37,7 +43,7 @@ func _physics_process(delta: float) -> void:
 	var next: Vector2 = position + velocity * delta
 	var hit: Dictionary = HitQuery.ray(self, position, next, _exclude)
 	if not hit.is_empty():
-		var scale: float = HitQuery.damage_scale(shooter, hit["target"])
+		var scale: float = HitQuery.damage_scale(shooter_is_player, shooter_government, hit["target"])
 		if scale > 0.0:
 			hit["target"].health.apply_damage(weapon.damage_shield * scale, weapon.damage_armor * scale, shooter if is_instance_valid(shooter) else null)
 		Flash.spawn(get_parent(), hit["position"], 6.0 if weapon.kind != "guided" else 18.0, weapon.colour, 0.25)

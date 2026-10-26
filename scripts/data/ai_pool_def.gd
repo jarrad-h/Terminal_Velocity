@@ -35,6 +35,10 @@ static func parse(r: DefReader) -> AiPoolDef:
 		d.ships.append({"ship": s.ref("ship", "ships", "", true), "weight": s.number("weight", 1.0, false, 0.0)})
 	for p: DefReader in r.objects("personalities"):
 		d.personalities.append({"personality": p.ref("personality", "personalities", "", true), "weight": p.number("weight", 1.0, false, 0.0)})
+	if not d.ships.is_empty() and _total_weight(d.ships) <= 0.0:
+		r.error("ships", "weights add up to 0; at least one ship needs a weight above 0")
+	if not d.personalities.is_empty() and _total_weight(d.personalities) <= 0.0:
+		r.error("personalities", "weights add up to 0; at least one personality needs a weight above 0")
 	d.sensor_range = r.number("sensor_range", 1500.0, false, 0.0)
 	d.stay_time = r.range2("stay_time", Vector2(60.0, 120.0), 0.0)
 	d.dwell_time = r.range2("dwell_time", Vector2(6.0, 12.0), 0.0)
@@ -43,3 +47,10 @@ static func parse(r: DefReader) -> AiPoolDef:
 	d.spawn_from_planets = r.boolean("spawn_from_planets", d.behaviour == "trader")
 	d.fire_angle = r.number("fire_angle", 8.0, false, 0.0)
 	return d
+
+
+static func _total_weight(list: Array[Dictionary]) -> float:
+	var total: float = 0.0
+	for item: Dictionary in list:
+		total += item["weight"]
+	return total

@@ -247,8 +247,8 @@ func _run() -> void:
 
 	# C11: AI shots on allies scale by combat.friendly_fire_pct.
 	var pct: float = float(DataRegistry.settings["combat"]["friendly_fire_pct"])
-	_check(is_equal_approx(HitQuery.damage_scale(law_patrol, victim), pct / 100.0), "AI on ally: friendly_fire_pct (C11)")
-	_check(is_equal_approx(HitQuery.damage_scale(player, law_patrol), 1.0), "player always full damage (C11)")
+	_check(is_equal_approx(HitQuery.damage_scale_from(law_patrol, victim), pct / 100.0), "AI on ally: friendly_fire_pct (C11)")
+	_check(is_equal_approx(HitQuery.damage_scale_from(player, law_patrol), 1.0), "player always full damage (C11)")
 
 	# D4: AI pause.
 	_debug.set_ai_paused(true)

@@ -9,8 +9,16 @@ extends Node
 class Entry:
 	var pool: AiPoolDef
 	var count: int
-	var ships: Array[Ship] = []
+	## Every live ship from this entry, disabled ones included (so they can be
+	## freed on clear); only non-disabled ones count towards `count`.
+	var ships: Array = []
 	var cooldown: float = 0.0
+
+	func prune() -> void:
+		ships = ships.filter(func(ship: Variant) -> bool: return is_instance_valid(ship) and not ship.is_queued_for_deletion())
+
+	func active_count() -> int:
+		return ships.filter(func(ship: Variant) -> bool: return not ship.health.is_disabled).size()
 
 
 var system: SystemDef = null
@@ -29,6 +37,7 @@ func configure(p_system: SystemDef, fill: bool) -> void:
 	var keep: Dictionary = {}
 	if not fill:
 		for entry: Entry in _entries:
+			entry.prune()
 			keep[entry.pool.id] = entry.ships
 	clear_traffic(fill)
 	system = p_system
@@ -47,17 +56,19 @@ func configure(p_system: SystemDef, fill: bool) -> void:
 func clear_traffic(free_ships: bool = true) -> void:
 	if free_ships:
 		for entry: Entry in _entries:
-			for ship: Ship in entry.ships:
-				if is_instance_valid(ship):
-					ship.remove_from_group(&"ships")
-					ship.queue_free()
+			entry.prune()
+			for ship: Variant in entry.ships:
+				ship.remove_from_group(&"ships")
+				ship.queue_free()
 	_entries.clear()
 
 
+## Ships counting towards the population (not disabled).
 func live_count() -> int:
 	var n: int = 0
 	for entry: Entry in _entries:
-		n += entry.ships.size()
+		entry.prune()
+		n += entry.active_count()
 	return n
 
 
@@ -66,13 +77,13 @@ func _physics_process(delta: float) -> void:
 		return
 	for entry: Entry in _entries:
 		# Disabled ships stay in space (boarding comes in M5) but no longer count.
-		entry.ships = entry.ships.filter(func(ship: Ship) -> bool:
-			return is_instance_valid(ship) and not ship.is_queued_for_deletion() and not ship.health.is_disabled)
-		if entry.ships.size() >= entry.count:
+		entry.prune()
+		if entry.active_count() >= entry.count:
 			continue
 		entry.cooldown -= delta
 		if entry.cooldown <= 0.0:
-			var from_planet: bool = entry.pool.spawn_from_planets and not _landable().is_empty() and _rng.randf() < 0.5
+			var from_planet: bool = entry.pool.spawn_from_planets and not _landable().is_empty() \
+				and _rng.randf() < _ai("planet_spawn_chance")
 			_spawn(entry, "takeoff" if from_planet else "arrive")
 			entry.cooldown = _rng.randf_range(system.respawn_delay.x, system.respawn_delay.y)
 
@@ -81,13 +92,14 @@ func _physics_process(delta: float) -> void:
 ## government or with a fixed personality (tests).
 func spawn_from_pool(pool: AiPoolDef, at: Vector2, government_override: String = "", personality_id: String = "") -> Ship:
 	var personality: PersonalityDef = DataRegistry.get_personality(personality_id) if personality_id != "" else null
-	return _make(pool, at, _rng.randf() * TAU, Vector2.ZERO, "inside", null, government_override, personality)
+	return _make(pool, at, _rng.randf() * TAU, Vector2.ZERO, 0.0, "inside", null, government_override, personality)
 
 
 func _spawn(entry: Entry, mode: String) -> void:
 	var at: Vector2
 	var heading: float = _rng.randf() * TAU
-	var velocity := Vector2.ZERO
+	var direction := Vector2.ZERO
+	var speed_fraction: float = 0.0
 	var start_planet: SystemObjectDef = null
 	match mode:
 		"takeoff":
@@ -98,24 +110,26 @@ func _spawn(entry: Entry, mode: String) -> void:
 			var dir: Vector2 = Vector2.from_angle(_rng.randf() * TAU)
 			at = dir * system.edge_radius
 			heading = Aim.rotation_of(-dir)
-			velocity = -dir * _ship_speed_hint(entry.pool) * 0.5
+			direction = -dir
+			speed_fraction = _ai("arrival_speed_fraction")
 		_:
 			at = _inside_point(entry.pool)
-	var ship: Ship = _make(entry.pool, at, heading, velocity, mode, start_planet)
+	var ship: Ship = _make(entry.pool, at, heading, direction, speed_fraction, mode, start_planet)
 	if ship != null:
 		entry.ships.append(ship)
 		if mode == "arrive":
 			Flash.spawn(ship.get_parent(), at, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
 
 
-func _make(pool: AiPoolDef, at: Vector2, heading: float, velocity: Vector2, mode: String, start_planet: SystemObjectDef,
+## `direction` × `speed_fraction` of the picked ship's top speed is its starting velocity.
+func _make(pool: AiPoolDef, at: Vector2, heading: float, direction: Vector2, speed_fraction: float, mode: String, start_planet: SystemObjectDef,
 		government_override: String = "", personality: PersonalityDef = null) -> Ship:
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
 	var ship_id: String = pool.ships[WeightedPick.pick(_weights(pool.ships), _rng.randf())]["ship"]
 	var ship: Ship = scene.spawn_ship(ship_id, at, government_override if government_override != "" else pool.government)
 	if ship == null:
 		return null
-	ship.place(at, heading, velocity.limit_length(ship.body.stats.top_speed))
+	ship.place(at, heading, direction * ship.body.stats.top_speed * speed_fraction)
 	var controller := AIController.new()
 	controller.setup(pool, personality if personality != null else _pick_personality(pool), system, mode, start_planet, _rng.randi())
 	ship.set_controller(controller)
@@ -144,19 +158,21 @@ func _landable() -> Array[SystemObjectDef]:
 	return result
 
 
-func _ship_speed_hint(pool: AiPoolDef) -> float:
-	var def: ShipDef = DataRegistry.get_ship(pool.ships[0]["ship"])
-	return def.top_speed if def != null else 0.0
 
-
-## A spot inside the system, kept out of sensor range (× 1.2) of the player so
-## nothing opens fire the moment the system loads.
+## A spot inside the system (ai.inside_spawn_band × edge radius), kept out of
+## sensor range × ai.spawn_keep_away_factor of the player so nothing opens
+## fire the moment the system loads.
 func _inside_point(pool: AiPoolDef) -> Vector2:
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
-	var keep_away: float = pool.sensor_range * 1.2
+	var keep_away: float = pool.sensor_range * _ai("spawn_keep_away_factor")
+	var band: Array = DataRegistry.settings["ai"]["inside_spawn_band"]
 	var at := Vector2.ZERO
 	for attempt: int in 20:
-		at = Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(0.15, 0.7) * system.edge_radius
+		at = Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(band[0], band[1]) * system.edge_radius
 		if player == null or at.distance_to(player.global_position) > keep_away:
 			break
 	return at
+
+
+func _ai(key: String) -> float:
+	return float(DataRegistry.settings["ai"][key])

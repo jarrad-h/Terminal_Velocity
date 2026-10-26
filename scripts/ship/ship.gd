@@ -60,6 +60,8 @@ func setup(ship_def: ShipDef) -> void:
 	visual.modulate = Color.WHITE
 	body.set_physics_process(true)
 	_build_visual()
+	if docked:
+		set_docked(true)  # a docked trader stays docked through swap/reload
 
 
 func set_controller(new_controller: Node) -> void:

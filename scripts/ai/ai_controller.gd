@@ -12,8 +12,6 @@ const STATE_NAMES: Dictionary = {
 	State.TRAVEL: "travelling", State.DOCKED: "docked", State.PATROL: "patrolling",
 	State.ATTACK: "attacking", State.FLEE: "fleeing", State.LEAVE: "leaving",
 }
-## How close counts as "reached" for patrol waypoints, as a fraction of sensor range.
-const WAYPOINT_REACHED_FRACTION: float = 0.1
 
 var pool: AiPoolDef
 var personality: PersonalityDef
@@ -98,7 +96,7 @@ func _think(elapsed: float) -> void:
 		if _timer <= 0.0:
 			_take_off()
 		return
-	if state == State.ATTACK and not _valid_target(target):
+	if state == State.ATTACK and (not _valid_target(target) or not ship.is_hostile_to(target)):
 		_end_attack()
 	if state == State.ATTACK and ship.global_position.distance_to(target.global_position) > pool.sensor_range * _ai("disengage_factor"):
 		_end_attack()
@@ -118,7 +116,7 @@ func _think(elapsed: float) -> void:
 			_timer -= elapsed
 			if _timer <= 0.0:
 				_start_leave()
-			elif ship.global_position.distance_to(destination) < pool.sensor_range * WAYPOINT_REACHED_FRACTION:
+			elif ship.global_position.distance_to(destination) < pool.sensor_range * _ai("waypoint_reached_fraction"):
 				_new_waypoint()
 		State.LEAVE, State.FLEE:
 			if planet == null and ship.global_position.length() >= system.edge_radius:
@@ -182,11 +180,12 @@ func _travel_to_next_planet() -> void:
 
 func _new_waypoint() -> void:
 	# Warships patrol near the system's objects; pirates roam anywhere inside.
-	if pool.behaviour == "warship" and not system.objects.is_empty() and _rng.randf() < 0.6:
+	if pool.behaviour == "warship" and not system.objects.is_empty() and _rng.randf() < _ai("object_patrol_chance"):
 		var obj: SystemObjectDef = system.objects[_rng.randi() % system.objects.size()]
-		destination = obj.position + Vector2.from_angle(_rng.randf() * TAU) * (obj.radius + pool.sensor_range * 0.3)
+		destination = obj.position + Vector2.from_angle(_rng.randf() * TAU) * (obj.radius + pool.sensor_range * _ai("object_patrol_offset_factor"))
 	else:
-		destination = Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(0.1, 0.6) * system.edge_radius
+		var band: Vector2 = _ai_band("roam_band")
+		destination = Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(band.x, band.y) * system.edge_radius
 
 
 func _land() -> void:
@@ -330,11 +329,16 @@ func _edge_point_away_from_centre() -> Vector2:
 	var dir: Vector2 = ship.global_position.normalized()
 	if dir.is_zero_approx():
 		dir = Vector2.from_angle(_rng.randf() * TAU)
-	return dir * system.edge_radius * 1.05
+	return dir * system.edge_radius * _ai("jump_out_factor")
 
 
 func _ai(key: String) -> float:
 	return float(DataRegistry.settings["ai"][key])
+
+
+func _ai_band(key: String) -> Vector2:
+	var band: Array = DataRegistry.settings["ai"][key]
+	return Vector2(band[0], band[1])
 
 
 ## D8: pick up retuned pool and personality definitions by ID.

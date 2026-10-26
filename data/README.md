@@ -32,6 +32,15 @@ Fields marked **required** have no default.
 | `ai.standoff_fraction` | In a fight, AI stops closing at this fraction of its weapon range | `0.4` |
 | `ai.think_interval` | Seconds between AI decisions (steering runs every frame) | `0.25` |
 | `ai.disengage_factor` | AI gives up a chase beyond sensor range × this | `1.5` |
+| `ai.waypoint_reached_fraction` | A patrol waypoint counts as reached within sensor range × this | `0.1` |
+| `ai.object_patrol_chance` | Chance a warship's next waypoint is near a system object (else anywhere in `roam_band`) | `0.6` |
+| `ai.object_patrol_offset_factor` | Warship waypoints sit object radius + sensor range × this from the object | `0.3` |
+| `ai.roam_band` | Roaming waypoints lie between these fractions of the edge radius `[min, max]` | `[0.1, 0.6]` |
+| `ai.jump_out_factor` | Leaving ships head for edge radius × this before jumping out | `1.05` |
+| `ai.planet_spawn_chance` | For pools with `spawn_from_planets`: chance a replacement takes off from a planet rather than jumping in at the edge | `0.5` |
+| `ai.arrival_speed_fraction` | Ships jumping in at the edge start at this fraction of their top speed | `0.5` |
+| `ai.spawn_keep_away_factor` | Traffic placed at system load starts beyond sensor range × this from the player | `1.2` |
+| `ai.inside_spawn_band` | …and between these fractions of the edge radius `[min, max]` | `[0.15, 0.7]` |
 | `debug.time_scales` | Time-scale buttons in the debug panel | `[0.25, 0.5, 1, 2, 4]` |
 | `debug.velocity_vector_seconds` | Velocity overlay length, as seconds of travel | `0.5` |
 | `debug.spawn_distance` | How far from the player debug-spawned ships appear (px) | `350` |
@@ -94,13 +103,13 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | --- | --- | --- |
 | `government` | Government ID | **required** |
 | `behaviour` | `trader`, `warship` or `pirate` | **required** |
-| `ships` | `[{"ship": <ship ID>, "weight": w}]`, at least one; `weight` defaults to 1 | **required** |
+| `ships` | `[{"ship": <ship ID>, "weight": w}]`, at least one, weights adding up to more than 0; `weight` defaults to 1 | **required** |
 | `personalities` | `[{"personality": <personality ID>, "weight": w}]`; one is picked per ship (A7). Empty = neutral | `[]` |
 | `sensor_range` | How far its ships notice others, px | `1500` |
 | `stay_time` | Warships and pirates leave after this many seconds with nothing to fight `[min, max]` | `[60, 120]` |
 | `dwell_time` | Traders stay docked this long at each planet, s | `[6, 12]` |
 | `stops` | Traders visit this many planets before leaving `[min, max]` | `[1, 3]` |
-| `spawn_from_planets` | New ships may take off from landable planets instead of arriving at the edge | `true` for traders |
+| `spawn_from_planets` | New ships may take off from landable planets (chance `ai.planet_spawn_chance`) instead of arriving at the edge | `true` for traders |
 | `fire_angle` | Fire only when aimed within this many degrees | `8` |
 
 Roles (A1–A3): **trader** flies planet to planet, docks for `dwell_time`, leaves after `stops`; **warship** patrols and attacks enemies of its government and a hostile player; **pirate** roams and attacks traders and the player on sight. Any ship retreats below its government's `flee_shield_pct` (shifted by its personality) and leaves the system (A4). Before starting a fight it compares the strength of each side within `sensor_range` against `max_odds` × its personality's `odds_factor` (A5).
