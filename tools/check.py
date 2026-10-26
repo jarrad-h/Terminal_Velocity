@@ -21,9 +21,6 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GODOT = os.environ.get("GODOT_PATH") or shutil.which("godot") or shutil.which("godot4")
 ERROR_MARKERS = ("SCRIPT ERROR", "Parse Error", "ERROR:", "USER ERROR", "WARNING:")
-# Known harmless output of the import step only: the GUT editor plugin starts a 1 s
-# SceneTreeTimer in _enter_tree, and --import quits before it fires.
-IMPORT_NOISE = ("WARNING: ObjectDB instances leaked at exit",)
 failed = []
 
 
@@ -55,12 +52,14 @@ for f in glob.glob(os.path.join(ROOT, "data", "**", "*.json"), recursive=True):
 step("data JSON parses", not bad, "\n".join(bad))
 
 if not GODOT:
-    print("Godot not found (set GODOT_PATH or put godot on PATH); skipping engine checks.")
-    sys.exit(1 if failed else 0)
+    step("Godot found", False, "Set GODOT_PATH to the Godot console exe (or put godot on PATH). "
+         "Engine checks (import, unit tests, smoke, scenario) did not run.")
+    print(f"\nRED: {', '.join(failed)}")
+    sys.exit(1)
 
 # 2. Import
 code, text = run_godot(["--import"])
-p = [l for l in problems(text) if not l.startswith(IMPORT_NOISE)]
+p = problems(text)
 step("project imports cleanly", code == 0 and not p, "\n".join(p[:30]))
 
 # 3. Unit tests
