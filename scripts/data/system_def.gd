@@ -9,6 +9,10 @@ var objects: Array[SystemObjectDef] = []
 var traffic: Array[Dictionary] = []
 var backdrop: BackdropDef
 var local_space: Array[LocalSpaceEntry] = []
+## A6: traffic arrives and leaves at this distance from the system centre, px.
+var edge_radius: float
+## A6: seconds before replacing a ship that left or died.
+var respawn_delay: Vector2
 
 
 static func parse(r: DefReader) -> SystemDef:
@@ -22,6 +26,8 @@ static func parse(r: DefReader) -> SystemDef:
 	d.backdrop = BackdropDef.parse(r.object("backdrop"))
 	for e: DefReader in r.objects("local_space"):
 		d.local_space.append(LocalSpaceEntry.parse(e))
+	d.edge_radius = r.number("edge_radius", 6000.0, false, 100.0)
+	d.respawn_delay = r.range2("respawn_delay", Vector2(5.0, 15.0), 0.0)
 	return d
 
 

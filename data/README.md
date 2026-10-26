@@ -26,6 +26,12 @@ Fields marked **required** have no default.
 | `radar.range` | World distance from the player to the radar rim, px | `3000` |
 | `radar.margin` | Gap from the screen edges, px | `16` |
 | `radar.colours` | `background`, `rim`, `player`, `neutral` (ships with no government), `target` (ring round the selected target), `scenery` | see `game.json` |
+| `ai.landing_speed` | AI ships land when slower than this, px/s (A1) | `60` |
+| `ai.land_radius_fraction` | …and within this fraction of the planet's radius of its centre | `0.6` |
+| `ai.thrust_angle` | AI thrusts only when within this many degrees of the direction it wants | `35` |
+| `ai.standoff_fraction` | In a fight, AI stops closing at this fraction of its weapon range | `0.4` |
+| `ai.think_interval` | Seconds between AI decisions (steering runs every frame) | `0.25` |
+| `ai.disengage_factor` | AI gives up a chase beyond sensor range × this | `1.5` |
 | `debug.time_scales` | Time-scale buttons in the debug panel | `[0.25, 0.5, 1, 2, 4]` |
 | `debug.velocity_vector_seconds` | Velocity overlay length, as seconds of travel | `0.5` |
 | `debug.spawn_distance` | How far from the player debug-spawned ships appear (px) | `350` |
@@ -89,6 +95,27 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `government` | Government ID | **required** |
 | `behaviour` | `trader`, `warship` or `pirate` | **required** |
 | `ships` | `[{"ship": <ship ID>, "weight": w}]`, at least one; `weight` defaults to 1 | **required** |
+| `personalities` | `[{"personality": <personality ID>, "weight": w}]`; one is picked per ship (A7). Empty = neutral | `[]` |
+| `sensor_range` | How far its ships notice others, px | `1500` |
+| `stay_time` | Warships and pirates leave after this many seconds with nothing to fight `[min, max]` | `[60, 120]` |
+| `dwell_time` | Traders stay docked this long at each planet, s | `[6, 12]` |
+| `stops` | Traders visit this many planets before leaving `[min, max]` | `[1, 3]` |
+| `spawn_from_planets` | New ships may take off from landable planets instead of arriving at the edge | `true` for traders |
+| `fire_angle` | Fire only when aimed within this many degrees | `8` |
+
+Roles (A1–A3): **trader** flies planet to planet, docks for `dwell_time`, leaves after `stops`; **warship** patrols and attacks enemies of its government and a hostile player; **pirate** roams and attacks traders and the player on sight. Any ship retreats below its government's `flee_shield_pct` (shifted by its personality) and leaves the system (A4). Before starting a fight it compares the strength of each side within `sensor_range` against `max_odds` × its personality's `odds_factor` (A5).
+
+## `personalities/` — individual AI temperament (A7)
+
+Group level (government + AI pool) decides who is friend or foe and the role; a personality only shades how the ship behaves within that.
+
+| Field | Meaning | Default |
+| --- | --- | --- |
+| `name` | Display name | **required** |
+| `odds_factor` | Multiplies the government's `max_odds` (1.5 = takes longer odds) | `1` |
+| `flee_shield_offset` | Percentage points added to the government's `flee_shield_pct` (−15 = stays in longer); result clamped 0–100 | `0` |
+| `when_attacked` | `role` (traders flee, others fight), `fight` or `flee` | `"role"` |
+| `starts_fights` | `role` (warships and pirates on sight, traders never), `never` or `on_sight` | `"role"` |
 
 ## `scenery/` — local-space object types
 
@@ -126,6 +153,8 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `traffic` | `[{"pool": <AI pool ID>, "count": n}]` target population (milestone 4) | `[]` |
 | `backdrop` | Distant stars and nebula (see below) | all defaults |
 | `local_space` | `[{"scenery": <scenery ID>, "density": d, "region": {…}}]` | `[]` |
+| `edge_radius` | Traffic arrives and leaves this far from the system centre, px (A6) | `6000` |
+| `respawn_delay` | Seconds before replacing a ship that left or died `[min, max]` | `[5, 15]` |
 
 **`objects[]`:** `id` (**required**, unique in the system), `type` (`star`, `planet`, `station`; **required**), `name` (**required**), `position` (**required**), `radius` (`100`), `colour` (`"#7f99cc"`), `sprite` (`""`), `description` (`""`), `landable` (`false`), `government` (government ID, `""`), `min_record` (`-1000`).
 

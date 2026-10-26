@@ -66,6 +66,13 @@ func test_typed_nested_values() -> void:
 	assert_near(ring.inner_radius, 100.0, "ring inner radius")
 
 
+func test_ai_pool_defaults_follow_role() -> void:
+	var pool: AiPoolDef = _load([BASE]).get_def("ai_pools", "raiders")
+	assert_true(pool.personalities.is_empty(), "no personalities listed -> neutral")
+	assert_true(not pool.spawn_from_planets, "pirates arrive at the edge by default")
+	assert_near(pool.sensor_range, 1500.0, "sensor_range default")
+
+
 func test_mod_file_replaces_same_id() -> void:
 	var set: DataSet = _load([BASE, MOD])
 	var ship: ShipDef = set.get_def("ships", "alpha")
@@ -121,6 +128,7 @@ func test_field_errors_name_file_and_field() -> void:
 	_expect_error(set, ["bad_kind.json", "kind", "laser"])
 	_expect_error(set, ["confused.json", "also listed in 'enemies'"])
 	_expect_error(set, ["solid_dust.json", "depth", "solid"])
+	_expect_error(set, ["ghost_fleet.json", "personalities[0].personality", "nobody_home"])
 	_expect_error(set, ["no_hardpoint.json", "default_weapons[0]", "no beam exit points"])
 	_expect_error(set, ["bad_ring.json", "local_space[1].region.inner_radius", "smaller than radius"])
 
@@ -140,4 +148,5 @@ func test_real_game_data_is_valid() -> void:
 	assert_true(set.ids("governments").size() == 3, "3 governments")
 	assert_true(set.ids("ai_pools").size() == 3, "3 AI pools")
 	assert_true(set.ids("scenery").size() == 5, "5 scenery types")
+	assert_true(set.ids("personalities").size() == 5, "5 personalities")
 	assert_true(set.ids("systems") == ["test_graveyard", "test_nebula"], "2 test systems")

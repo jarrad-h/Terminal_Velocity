@@ -12,6 +12,14 @@
     "zoom": 1.0,
     "smoothing_speed": 0
   },
+  "ai": {
+    "landing_speed": 60,
+    "land_radius_fraction": 0.6,
+    "thrust_angle": 35,
+    "standoff_fraction": 0.4,
+    "think_interval": 0.25,
+    "disengage_factor": 1.5
+  },
   "local_space": {
     "chunk_size": 1024
   },

@@ -1,6 +1,8 @@
 {
   "id": "test_nebula",
   "name": "Test Nebula",
+  "edge_radius": 7000,
+  "respawn_delay": [5, 15],
   "seed": 1001,
   "objects": [
     {"id": "sol", "type": "star", "name": "Vela", "position": [0, -6000], "radius": 400, "colour": "#fff0c0"},
