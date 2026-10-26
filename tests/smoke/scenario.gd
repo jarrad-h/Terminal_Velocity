@@ -251,11 +251,20 @@ func _run() -> void:
 	_check(is_equal_approx(HitQuery.damage_scale(player, law_patrol), 1.0), "player always full damage (C11)")
 
 	# D4: AI pause.
-	_debug.ai_paused = true
+	_debug.set_ai_paused(true)
 	await _frames(3)
 	var paused_input: FlightInput = other_patrol.get_flight_input()
 	_check(not paused_input.thrust and paused_input.turn == 0.0 and not paused_input.fire_primary, "AI paused gives no input (D4)")
-	_debug.ai_paused = false
+	_debug.set_ai_paused(false)
+	# D3: spawn a pool with a government override; D6: credits and record.
+	var raid: Array[Ship] = _debug.spawn_pool("pirate_raid", 2, "local_authority")
+	_check(raid.size() == 2 and raid.all(func(sh: Ship) -> bool: return sh.government == "local_authority" and sh.controller is AIController),
+		"spawn pool with government override (D3)")
+	_debug.set_credits(1234)
+	_check(GameState.credits == 1234, "set credits (D6)")
+	_debug.set_record("pirates", 1500.0)
+	_check(GameState.get_record("pirates") == 1500.0, "set record (D6)")
+	_debug.set_record("pirates", 0.0)
 	_debug.clear_ships()
 	await _frames(2)
 

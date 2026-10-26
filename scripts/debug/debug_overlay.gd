@@ -8,6 +8,7 @@ const SCENERY_HITBOX_COLOUR := Color(0.3, 0.8, 1.0, 0.6)
 const VELOCITY_COLOUR := Color(1.0, 0.8, 0.2)
 const LABEL_COLOUR := Color(0.8, 0.9, 1.0)
 const LABEL_FONT_SIZE: int = 12
+const LABEL_WIDTH: float = 320.0
 
 
 func _ready() -> void:
@@ -41,5 +42,5 @@ func _draw() -> void:
 		if show_velocity:
 			draw_line(pos, pos + ship.get_velocity() * vector_seconds, VELOCITY_COLOUR, 2.0)
 		if show_labels:
-			var at := pos + Vector2(-50.0, -ship.hit_radius - 6.0)
-			draw_string(font, at, ship.get_state_label(), HORIZONTAL_ALIGNMENT_CENTER, 100.0, LABEL_FONT_SIZE, LABEL_COLOUR)
+			var at := pos + Vector2(-LABEL_WIDTH / 2.0, -ship.hit_radius - 6.0)
+			draw_string(font, at, ship.get_state_label(), HORIZONTAL_ALIGNMENT_CENTER, LABEL_WIDTH, LABEL_FONT_SIZE, LABEL_COLOUR)

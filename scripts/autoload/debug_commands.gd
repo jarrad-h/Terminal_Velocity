@@ -222,3 +222,50 @@ func set_traffic_enabled(enabled: bool) -> void:
 func is_traffic_enabled() -> bool:
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
 	return scene != null and scene.traffic.enabled
+
+
+## D4
+func set_ai_paused(enabled: bool) -> void:
+	if not OS.is_debug_build():
+		return
+	ai_paused = enabled
+	toggles_changed.emit()
+
+
+## D4: radar draws ships beyond its range on the rim.
+func set_radar_show_all(enabled: bool) -> void:
+	if not OS.is_debug_build():
+		return
+	radar_show_all = enabled
+	toggles_changed.emit()
+
+
+## D3: spawns `count` AI ships from a pool ahead of the player, with their
+## pool's behaviour and a personality each; optional government override.
+func spawn_pool(pool_id: String, count: int = 1, government: String = "") -> Array[Ship]:
+	var spawned: Array[Ship] = []
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	var player: Ship = _player()
+	var pool: AiPoolDef = DataRegistry.get_ai_pool(pool_id)
+	if not OS.is_debug_build() or scene == null or player == null or pool == null:
+		return spawned
+	var distance: float = float(DataRegistry.settings["debug"]["spawn_distance"])
+	var ahead: Vector2 = player.global_position + FlightModel.heading(player.global_rotation) * distance
+	for i: int in count:
+		var offset := Vector2.from_angle(TAU * i / maxf(count, 1)) * (distance * 0.3 if count > 1 else 0.0)
+		var ship: Ship = scene.traffic.spawn_from_pool(pool, ahead + offset, government)
+		if ship != null:
+			spawned.append(ship)
+	return spawned
+
+
+## D6
+func set_credits(value: int) -> void:
+	if OS.is_debug_build():
+		GameState.set_credits(value)
+
+
+## D6
+func set_record(government: String, value: float) -> void:
+	if OS.is_debug_build() and DataRegistry.get_government(government) != null:
+		GameState.set_record(government, value)

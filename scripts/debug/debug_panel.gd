@@ -21,6 +21,10 @@ var _location_label: Label
 var _spawn_count: SpinBox
 var _government_select: OptionButton
 var _invulnerable_check: CheckBox
+var _pool_select: OptionButton
+var _toggle_checks: Dictionary = {}
+var _credits_spin: SpinBox
+var _record_rows: VBoxContainer
 
 
 func _ready() -> void:
@@ -34,6 +38,7 @@ func _ready() -> void:
 	DebugCommands.overlay_changed.connect(_on_overlay_changed)
 	DebugCommands.data_reload_finished.connect(_on_data_reload_finished)
 	DataRegistry.data_reloaded.connect(_fill_selects)
+	DataRegistry.data_reloaded.connect(_build_record_rows)
 	_refresh()
 
 
@@ -62,8 +67,14 @@ func _build() -> void:
 	_panel = PanelContainer.new()
 	_panel.position = Vector2(12.0, 36.0)
 	add_child(_panel)
+	# Scrolls when taller than the window.
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(470.0, get_viewport().get_visible_rect().size.y - 60.0)
+	_panel.add_child(scroll)
 	var box := VBoxContainer.new()
-	_panel.add_child(box)
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(box)
 	box.add_child(_make_label("Debug  ( ` to close )"))
 	_location_label = _make_label("")
 	box.add_child(_location_label)
@@ -110,6 +121,13 @@ func _build() -> void:
 		var gov: String = "" if _government_select.selected <= 0 else _government_select.get_item_text(_government_select.selected)
 		DebugCommands.spawn_ships(_ship_select.get_item_text(_ship_select.selected), int(_spawn_count.value), gov)))
 	spawn_row.add_child(_make_button("Clear ships", DebugCommands.clear_ships))
+	var pool_row := HBoxContainer.new()
+	box.add_child(pool_row)
+	_pool_select = _make_select()
+	pool_row.add_child(_pool_select)
+	pool_row.add_child(_make_button("Spawn pool", func() -> void:
+		var gov: String = "" if _government_select.selected <= 0 else _government_select.get_item_text(_government_select.selected)
+		DebugCommands.spawn_pool(_pool_select.get_item_text(_pool_select.selected), int(_spawn_count.value), gov)))
 	var system_row := HBoxContainer.new()
 	box.add_child(system_row)
 	_system_select = _make_select()
@@ -127,10 +145,29 @@ func _build() -> void:
 	_invulnerable_check.toggled.connect(DebugCommands.set_player_invulnerable)
 	box.add_child(_invulnerable_check)
 	DebugCommands.invulnerable_changed.connect(func(on: bool) -> void: _invulnerable_check.set_pressed_no_signal(on))
+	box.add_child(_make_toggle("AI paused", DebugCommands.set_ai_paused, func() -> bool: return DebugCommands.ai_paused))
+	box.add_child(_make_toggle("Traffic on", DebugCommands.set_traffic_enabled, DebugCommands.is_traffic_enabled))
+	box.add_child(_make_toggle("Radar shows all ships", DebugCommands.set_radar_show_all, func() -> bool: return DebugCommands.radar_show_all))
+	DebugCommands.toggles_changed.connect(_refresh_toggles)
 	var target_row := HBoxContainer.new()
 	box.add_child(target_row)
 	target_row.add_child(_make_button("Disable target", DebugCommands.disable_target))
 	target_row.add_child(_make_button("Destroy target", DebugCommands.destroy_target))
+
+	box.add_child(HSeparator.new())
+	box.add_child(_make_label("Player state (D6)"))
+	var credits_row := HBoxContainer.new()
+	box.add_child(credits_row)
+	credits_row.add_child(_make_label("Credits"))
+	_credits_spin = _make_spin(0.0, 10000000.0, 100.0)
+	_credits_spin.value = GameState.credits
+	credits_row.add_child(_credits_spin)
+	credits_row.add_child(_make_button("Set", func() -> void: DebugCommands.set_credits(int(_credits_spin.value))))
+	_record_rows = VBoxContainer.new()
+	box.add_child(_record_rows)
+	_build_record_rows()
+	GameState.record_changed.connect(func(_g: String, _v: float) -> void: _refresh_record_labels())
+	GameState.credits_changed.connect(func(c: int) -> void: _credits_spin.value = c)
 
 	box.add_child(HSeparator.new())
 	box.add_child(_make_label("Overlays"))
@@ -144,6 +181,64 @@ func _build() -> void:
 		_overlay_checks[overlay] = check
 
 
+func _make_toggle(text: String, setter: Callable, getter: Callable) -> CheckBox:
+	var check := CheckBox.new()
+	check.text = text
+	check.focus_mode = Control.FOCUS_NONE
+	check.button_pressed = getter.call()
+	check.toggled.connect(setter)
+	check.set_meta("getter", getter)
+	_toggle_checks[text] = check
+	return check
+
+
+func _refresh_toggles() -> void:
+	for check: CheckBox in _toggle_checks.values():
+		check.set_pressed_no_signal((check.get_meta("getter") as Callable).call())
+
+
+func _make_spin(min_value: float, max_value: float, step: float) -> SpinBox:
+	var spin := SpinBox.new()
+	spin.min_value = min_value
+	spin.max_value = max_value
+	spin.step = step
+	spin.allow_greater = true
+	spin.allow_lesser = true
+	spin.focus_mode = Control.FOCUS_NONE
+	spin.get_line_edit().focus_mode = Control.FOCUS_NONE
+	spin.custom_minimum_size.x = 110.0
+	return spin
+
+
+## D6: one row per government: current record, a value and Set.
+func _build_record_rows() -> void:
+	for child: Node in _record_rows.get_children():
+		child.queue_free()
+	for gov_id: String in DataRegistry.ids("governments"):
+		var row := HBoxContainer.new()
+		_record_rows.add_child(row)
+		var label := _make_label("")
+		label.custom_minimum_size.x = 230.0
+		label.set_meta("government", gov_id)
+		row.add_child(label)
+		var spin := _make_spin(-1000.0, 1000.0, 5.0)
+		spin.value = GameState.get_record(gov_id)
+		row.add_child(spin)
+		row.add_child(_make_button("Set", func() -> void: DebugCommands.set_record(gov_id, spin.value)))
+	_refresh_record_labels()
+
+
+func _refresh_record_labels() -> void:
+	for row: Node in _record_rows.get_children():
+		var label: Label = row.get_child(0)
+		var gov_id: String = label.get_meta("government", "")
+		var gov: GovernmentDef = DataRegistry.get_government(gov_id)
+		if gov == null:
+			continue
+		var record: float = GameState.get_record(gov_id)
+		label.text = "%s: %.0f%s" % [gov.name, record, "  (hostile)" if record < gov.crime_threshold else ""]
+
+
 func _on_overlay_changed(overlay: StringName, enabled: bool) -> void:
 	var check: CheckBox = _overlay_checks.get(overlay)
 	if check != null:
@@ -154,6 +249,8 @@ func _on_panel_toggled(panel_visible: bool) -> void:
 	_panel.visible = panel_visible
 	if panel_visible:
 		_fill_selects()
+		_refresh_toggles()
+		_refresh_record_labels()
 
 
 func _fill_selects() -> void:
@@ -162,6 +259,9 @@ func _fill_selects() -> void:
 	_fill(_system_select, DataRegistry.ids("systems"), DebugCommands.current_system_id())
 	var governments: Array[String] = ["(no government)"]
 	governments.append_array(DataRegistry.ids("governments"))
+	var current_pool: String = "" if _pool_select.selected < 0 else _pool_select.get_item_text(_pool_select.selected)
+	var pools: Array[String] = DataRegistry.ids("ai_pools")
+	_fill(_pool_select, pools, current_pool if current_pool != "" else (pools[0] if not pools.is_empty() else ""))
 	var current: String = "" if _government_select.selected < 0 else _government_select.get_item_text(_government_select.selected)
 	_fill(_government_select, governments, current if current != "" else governments[0])
 

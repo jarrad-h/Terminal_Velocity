@@ -56,6 +56,8 @@ func _draw() -> void:
 		if ship == player or not ship.visible:
 			continue
 		var p: Vector2 = _to_radar(ship.global_position - origin)
+		if DebugCommands.radar_show_all and p.length() > _radius - 2.5:
+			p = p.limit_length(_radius - 2.5)  # D4: show every ship, on the rim
 		_dot(centre, p, 2.5, _ship_colour(ship))
 		if ship == target and p.length() <= _radius:
 			draw_arc(centre + p, 6.0, 0.0, TAU, 16, _colours["target"], 1.5)
