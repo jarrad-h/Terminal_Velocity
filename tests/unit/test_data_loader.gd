@@ -66,6 +66,17 @@ func test_typed_nested_values() -> void:
 	assert_near(ring.inner_radius, 100.0, "ring inner radius")
 
 
+func test_playtest_field_defaults() -> void:
+	var data: DataSet = _load([BASE])
+	var ship: ShipDef = data.get_def("ships", "alpha")
+	assert_near(ship.shield_recharge_delay, 3.0, "C6 recharge delay default")
+	var weapon: WeaponDef = data.get_def("weapons", "zap")
+	assert_near(weapon.falloff_at(10000.0), 1.0, "C12 no falloff by default")
+	var law: GovernmentDef = data.get_def("governments", "law")
+	assert_near(law.tolerance_pct, 20.0, "A8 tolerance default")
+	assert_near(law.forgiveness_pct_per_s, 4.0, "A8 forgiveness default")
+
+
 func test_ai_pool_defaults_follow_role() -> void:
 	var pool: AiPoolDef = _load([BASE]).get_def("ai_pools", "raiders")
 	assert_true(pool.personalities.is_empty(), "no personalities listed -> neutral")
@@ -142,6 +153,12 @@ func test_field_errors_name_file_and_field() -> void:
 	_expect_error(set, ["game.json", "ai.roam_band", "greater than max"])
 	_expect_error(set, ["game.json", "combat.friendly_fire_pct", "at least 0"])
 	_expect_error(set, ["game.json", "player.credits", "expected a number"])
+	_expect_error(set, ["bad_falloff.json", "falloff_start_pct", "at most 100"])
+	_expect_error(set, ["bad_falloff.json", "falloff_min_pct", "at most 100"])
+	_expect_error(set, ["bad_recharge.json", "shield_recharge_delay", "at least 0"])
+	_expect_error(set, ["grumpy.json", "tolerance_pct", "at least 0"])
+	_expect_error(set, ["grumpy.json", "forgiveness_pct_per_s", "expected a number"])
+	_expect_error(set, ["hothead.json", "tolerance_factor", "at least 0"])
 	_expect_error(set, ["no_hardpoint.json", "default_weapons[0]", "no beam exit points"])
 	_expect_error(set, ["bad_ring.json", "local_space[1].region.inner_radius", "smaller than radius"])
 

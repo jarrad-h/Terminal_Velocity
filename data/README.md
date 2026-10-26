@@ -82,13 +82,13 @@ Kinds: `gun` fires along the heading; `turret` leads the selected target within 
 | `turn_rate` | Missile turn rate (guided) | `0` |
 | `arc` | Turret tracking arc in degrees, centred on the heading; the turret holds fire when the lead point is outside it | `360` |
 | `inherit_velocity` | Guns and turrets: shots add the ship's velocity | `true` |
-| `falloff_start_pct` | Full damage up to this % of the weapon's reach (C12); 100 = no falloff | `100` |
-| `falloff_min_pct` | Damage % at full reach (and beyond), falling linearly from `falloff_start_pct`. Shots and beams fade to match | `100` |
+| `falloff_start_pct` | Full damage up to this % of the weapon's reach (C12), 0–100; 100 = no falloff. Shots measure their own travel (speed × time), so the ship's speed doesn't change it | `100` |
+| `falloff_min_pct` | Damage % at full reach, 0–100, falling linearly from `falloff_start_pct`. Shots and beams fade to match | `100` |
 | `colour`, `sprite`, `sound` | Look and sound | `"#ffffff"`, `""`, `""` |
 
 ## `governments/`
 
-Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. All of a government's ships treat the player as hostile while the player's record with it is below `crime_threshold` (pirates start there). Damage the player does to a non-hostile ship builds that ship's grievance (% of its total shield + armour, draining at `forgiveness_pct_per_s`); past `tolerance_pct` × its personality's `tolerance_factor`, that ship alone turns hostile and the attack ("shoot") penalty is charged. Disable, board and kill penalties apply immediately, once each per ship.
+Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. All of a government's ships treat the player as hostile while the player's record with it is below `crime_threshold` (pirates start there). Damage the player does to a non-hostile ship builds that ship's grievance (% of its total shield + armour, draining at `forgiveness_pct_per_s`); past `tolerance_pct` × its personality's `tolerance_factor`, that ship alone turns hostile and the attack ("shoot") penalty is charged. Disable, board and kill penalties apply immediately, once each per ship. A ship that is already hostile (record below threshold) charges the attack penalty on the first hit. Ships with no government use the default tolerance (20%) and forgiveness (4%/s).
 
 | Field | Meaning | Default |
 | --- | --- | --- |

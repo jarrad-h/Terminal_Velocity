@@ -40,8 +40,11 @@ static func parse(r: DefReader) -> WeaponDef:
 	d.arc = r.number("arc", 360.0, false, 0.0)
 	d.colour = r.colour("colour", Color.WHITE)
 	d.inherit_velocity = r.boolean("inherit_velocity", true)
-	d.falloff_start_pct = clampf(r.number("falloff_start_pct", 100.0, false, 0.0), 0.0, 100.0)
+	d.falloff_start_pct = r.number("falloff_start_pct", 100.0, false, 0.0)
 	d.falloff_min_pct = r.number("falloff_min_pct", 100.0, false, 0.0)
+	for key: String in ["falloff_start_pct", "falloff_min_pct"]:
+		if r.has(key) and float(r.data[key]) > 100.0:
+			r.error(key, "must be at most 100")
 	d.sprite = r.string("sprite")
 	d.sound = r.string("sound")
 	return d

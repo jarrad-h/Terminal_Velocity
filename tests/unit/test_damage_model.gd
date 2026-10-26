@@ -58,3 +58,9 @@ func test_falloff() -> void:
 	assert_near(DamageModel.falloff(1000.0, 1000.0, 30.0, 10.0), 0.1, "minimum at full range")
 	assert_near(DamageModel.falloff(1500.0, 1000.0, 30.0, 10.0), 0.1, "beyond range stays at minimum")
 	assert_near(DamageModel.falloff(900.0, 1000.0, 100.0, 10.0), 1.0, "start 100% = no falloff")
+
+
+func test_falloff_edge_cases() -> void:
+	assert_near(DamageModel.falloff(500.0, 0.0, 30.0, 10.0), 1.0, "no range: no falloff")
+	assert_near(DamageModel.falloff(0.0, 1000.0, 0.0, 10.0), 1.0, "start 0: full at the muzzle")
+	assert_near(DamageModel.falloff(500.0, 1000.0, 0.0, 10.0), 0.55, "start 0: linear from the muzzle")

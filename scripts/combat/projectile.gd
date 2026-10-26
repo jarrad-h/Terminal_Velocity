@@ -45,14 +45,17 @@ func _physics_process(delta: float) -> void:
 	var next: Vector2 = position + velocity * delta
 	var hit: Dictionary = HitQuery.ray(self, position, next, _exclude)
 	if not hit.is_empty():
-		var at_distance: float = _travelled + position.distance_to(hit["position"])
+		var step_fraction: float = position.distance_to(hit["position"]) / maxf(position.distance_to(next), 0.001)
+		var at_distance: float = _travelled + weapon.speed * delta * step_fraction
 		var scale: float = HitQuery.damage_scale(shooter_is_player, shooter_government, hit["target"]) * weapon.falloff_at(at_distance)
 		if scale > 0.0:
 			hit["target"].health.apply_damage(weapon.damage_shield * scale, weapon.damage_armor * scale, shooter if is_instance_valid(shooter) else null)
 		Flash.spawn(get_parent(), hit["position"], 6.0 if weapon.kind != "guided" else 18.0, weapon.colour, 0.25)
 		queue_free()
 		return
-	_travelled += position.distance_to(next)
+	# C12: falloff follows the shot's own travel (speed × time), not world
+	# distance, so it doesn't depend on how fast the shooter was moving.
+	_travelled += weapon.speed * delta
 	position = next
 	# C12: fade with damage falloff (never fully invisible).
 	if weapon.falloff_start_pct < 100.0:

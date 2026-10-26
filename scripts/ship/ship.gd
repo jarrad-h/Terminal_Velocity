@@ -30,6 +30,7 @@ var tolerance_factor: float = 1.0
 ## ships at once, the player once grievance passes tolerance (A8).
 var _aggressors: Dictionary = {}
 var _last_attacker: Ship = null
+static var _DEFAULT_GOV: GovernmentDef = GovernmentDef.parse(DefReader.new({}, "", []))
 var _target: Ship = null
 
 @onready var body: ShipBody = $ShipBody
@@ -206,15 +207,19 @@ func _on_player_damage(player_ship: Ship, amount: float) -> void:
 		GameState.report_player_act(self, "shoot")
 
 
-func _tolerance() -> float:
+## Ships with no government use the GovernmentDef defaults (documented in data/README.md).
+func _leniency_gov() -> GovernmentDef:
 	var mine: GovernmentDef = gov_def()
-	return Grievance.tolerance(mine.tolerance_pct if mine != null else 0.0, tolerance_factor)
+	return mine if mine != null else _DEFAULT_GOV
+
+
+func _tolerance() -> float:
+	return Grievance.tolerance(_leniency_gov().tolerance_pct, tolerance_factor)
 
 
 func _physics_process(delta: float) -> void:
 	if grievance > 0.0:
-		var mine: GovernmentDef = gov_def()
-		grievance = Grievance.decay(grievance, mine.forgiveness_pct_per_s if mine != null else 0.0, delta)
+		grievance = Grievance.decay(grievance, _leniency_gov().forgiveness_pct_per_s, delta)
 
 
 func _attacked_by_player() -> bool:

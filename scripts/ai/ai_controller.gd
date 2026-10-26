@@ -351,6 +351,7 @@ func _on_data_reloaded() -> void:
 		var fresh: PersonalityDef = DataRegistry.get_personality(personality.id)
 		if fresh != null:
 			personality = fresh
+			ship.tolerance_factor = personality.tolerance_factor
 	var fresh_system: SystemDef = DataRegistry.get_system(system.id)
 	if fresh_system != null:
 		system = fresh_system
