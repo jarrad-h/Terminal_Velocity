@@ -7,7 +7,7 @@ Terminal Velocity is a top-down space trading and combat game in the style of EV
 - **Source of truth:** `docs/spec.md` (what), `docs/decisions.md` (why), `docs/devlog.md` (what happened). Nothing lives only in chat. If a conversation changes the design, the spec changes in the same session.
 - **Skills:** `design` for design talk (no code), `milestone` to build requirement IDs (plan → approve → build → test → playtest handover), `playtest` for Jarrad's feedback (bug / tuning / design change). Use them even if Jarrad doesn't name them.
 - **Two PCs:** Jarrad switches between two Windows machines. Run the `start` skill at the beginning of every session and `wrap-up` at the end, even if he doesn't name them. Session history doesn't travel between machines; the devlog "Stopped at / Next step" note does.
-- **Pinned Godot version:** 4.6.1-stable (`4.6.1.stable.official.14d19694e`) — both machines must match.
+- **Pinned Godot version:** 4.7.2-stable (`4.7.2.stable.official.ed1daf0bf`) — both machines must match.
 - **Commit** Godot `.uid` files; never commit `.godot/`.
 - **Requirement IDs** (F1, C3, D8 …) are stable references. Cite them in commits, tests and devlog entries.
 - **Verify, don't guess:** after code changes, run `python tools/check.py` and run the game via the `godot` MCP server to read real runtime errors. "It should work" is not done; GREEN plus a clean run is.
@@ -47,7 +47,7 @@ scripts/
   debug/      DebugPanel, Console, overlays
   world/      SystemScene, camera, Backdrop, LocalSpace, Scenery
 assets/       sprites/, audio/, shaders/ (placeholder art is fine)
-addons/gut/   GUT unit-test framework (vendored, 9.6.1 for Godot 4.6)
+addons/gut/   GUT unit-test framework (vendored, 9.7.1 for Godot 4.7)
 tests/
   unit/       GUT tests (test_*.gd) for scripts/sim and the data loader
   fixtures/   Data folders the loader tests read

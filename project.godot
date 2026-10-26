@@ -8,7 +8,7 @@ config_version=5
 config/name="Terminal Velocity"
 config/description="Top-down space trading and combat in the spirit of EV Nova."
 run/main_scene="res://scenes/system.tscn"
-config/features=PackedStringArray("4.6")
+config/features=PackedStringArray("4.7")
 
 [autoload]
 

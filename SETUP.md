@@ -24,11 +24,11 @@ $p = [Environment]::GetEnvironmentVariable('PATH', 'User')
 
 ## 2. Pin a Godot path Claude can use headless
 
-Use the **console** build of Godot (`Godot_v4.x-stable_win64_console.exe`, it ships in the same zip as the normal exe). The console exe prints errors to the terminal, which is how Claude reads them.
+Use the **console** build of Godot (`Godot_v4.7.2-stable_win64_console.exe`, it ships in the same zip as the normal exe). The console exe prints errors to the terminal, which is how Claude reads them.
 
 ```powershell
 # adjust to where your Godot lives
-setx GODOT_PATH "C:\Tools\Godot\Godot_v4.5-stable_win64_console.exe"
+setx GODOT_PATH "C:\Tools\Godot\Godot_v4.7.2-stable_win64_console.exe"
 ```
 
 Reopen PowerShell, then check: `& $env:GODOT_PATH --version`
