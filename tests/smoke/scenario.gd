@@ -79,11 +79,13 @@ func _run() -> void:
 	await _frames(5)
 
 	# C8: the target dummy spawns in debug builds and can be selected.
-	player.target_nearest()
+	player.target_nearest(false)
 	var target: Ship = player.get_target()
 	_check(target != null and target.def.id == "target_dummy", "nearest target is the dummy")
-	player.cycle_target()
+	player.cycle_target(false)
 	_check(player.get_target() == target, "cycling with one candidate keeps it")
+	player.target_nearest(true)
+	_check(player.get_target() == target, "R with no hostiles keeps the current target (C8)")
 
 	# C1–C7: fire every weapon kind at the dummy.
 	var dummy: Ship = target
@@ -95,6 +97,13 @@ func _run() -> void:
 	await _frames(30)
 	_check(dummy.health.shield < shield_before, "gun shots (C1/C2) hit the dummy's shield (%f -> %f)" % [shield_before, dummy.health.shield])
 	_check(is_equal_approx(dummy.health.armor, dummy.health.max_armor), "shields absorb before armour (C5)")
+	# C6: shields wait out the recharge delay after the last hit, then recharge.
+	dummy.health.apply_damage(50.0, 0.0)
+	var shield_hit: float = dummy.health.shield
+	await _frames(60)
+	_check(is_equal_approx(dummy.health.shield, shield_hit), "no recharge inside the delay (C6)")
+	await _frames(roundi(dummy.health.recharge_delay * 60.0))
+	_check(dummy.health.shield > shield_hit, "recharging after the delay (C6)")
 
 	_debug.swap_player_ship("patrol_corvette")
 	await _teleport(player, dummy.global_position + Vector2(300.0, 300.0))  # off to one side, facing up
@@ -218,17 +227,28 @@ func _run() -> void:
 	var trader_label: String = trader.get_state_label() if is_instance_valid(trader) else ""
 	_check(trader_label == "" or trader_label.begins_with("trader/steady"), "label shows role and personality (A7): %s" % trader_label)
 
-	# G2: shooting a trader costs record once per ship; it then treats the player as hostile (A8).
+	# A8 + G2: accidental hits are forgiven; sustained fire turns that ship hostile and costs record once.
 	var victim: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("trader_traffic"), Vector2(-4600.0, 5000.0), "", "brave")
 	await _frames(2)
 	var record_before: float = GameState.get_record("independent_traders")
 	victim.health.apply_damage(1.0, 1.0, player)
 	victim.health.apply_damage(1.0, 1.0, player)
-	var shoot_penalty: float = DataRegistry.get_government("independent_traders").penalties["shoot"]
-	_check(is_equal_approx(GameState.get_record("independent_traders"), record_before - shoot_penalty), "shoot penalty once per ship (G2)")
-	_check(victim.is_hostile_to(player) and player.is_hostile_to(victim), "damaged ship is hostile to the player (A8)")
+	_check(victim.grievance > 0.0 and not victim.is_hostile_to(player), "a couple of stray hits are forgiven (A8)")
+	_check(is_equal_approx(GameState.get_record("independent_traders"), record_before), "no record penalty for forgiven hits (G2)")
 	await _frames(30)
-	_check((victim.controller as AIController).state == AIController.State.ATTACK, "brave trader fights back (A7): %s" % victim.get_state_label())
+	_check((victim.controller as AIController).state != AIController.State.ATTACK, "forgiven: the brave trader doesn't fight back")
+	var total: float = victim.health.max_shield + victim.health.max_armor
+	victim.health.apply_damage(total * 0.4, total * 0.4, player)
+	var shoot_penalty: float = DataRegistry.get_government("independent_traders").penalties["shoot"]
+	_check(victim.is_hostile_to(player) and player.is_hostile_to(victim), "sustained fire passes tolerance: hostile (A8)")
+	_check(is_equal_approx(GameState.get_record("independent_traders"), record_before - shoot_penalty), "attack penalty charged once, at the tolerance (G2)")
+	victim.health.apply_damage(1.0, 1.0, player)
+	_check(is_equal_approx(GameState.get_record("independent_traders"), record_before - shoot_penalty), "and only once")
+	await _frames(30)
+	if is_instance_valid(victim) and victim.can_act():
+		var reaction: AIController.State = (victim.controller as AIController).state
+		# Brave traders fight back (A7) unless the hit also took them under their flee threshold (A4).
+		_check(reaction == AIController.State.ATTACK or reaction == AIController.State.FLEE, "the trader reacts once hostile: %s" % victim.get_state_label())
 
 	# G3: below the crime threshold, warships turn hostile.
 	var law_patrol: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), Vector2(-3000.0, 3000.0), "", "steady")
@@ -239,11 +259,13 @@ func _run() -> void:
 	_check(law_patrol.is_hostile_to(player), "patrol hostile below the crime threshold (G3)")
 	GameState.set_record("local_authority", 0.0)
 	_check(not law_patrol.is_hostile_to(player), "neutral again above it")
-	# A8: hitting one patrol ship turns its government's warships hostile.
+	# A8: one ship's grievance doesn't turn the rest of its government.
 	var other_patrol: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), Vector2(3000.0, 3000.0), "", "steady")
 	await _frames(2)
-	law_patrol.health.apply_damage(1.0, 1.0, player)
-	_check(other_patrol.is_hostile_to(player), "provoked: the government's other warships are hostile (A8)")
+	var patrol_total: float = law_patrol.health.max_shield + law_patrol.health.max_armor
+	law_patrol.health.apply_damage(patrol_total * 0.4, patrol_total * 0.4, player)
+	_check(law_patrol.is_hostile_to(player), "the patrol ship you attacked is hostile (A8)")
+	_check(not other_patrol.is_hostile_to(player), "other ships of its government stay neutral (A8)")
 
 	# C11: AI shots on allies scale by combat.friendly_fire_pct.
 	var pct: float = float(DataRegistry.settings["combat"]["friendly_fire_pct"])

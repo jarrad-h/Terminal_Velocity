@@ -25,7 +25,7 @@ Fields marked **required** have no default.
 | `radar.size` | Radar diameter in px (bottom-right corner) | `200` |
 | `radar.range` | World distance from the player to the radar rim, px | `3000` |
 | `radar.margin` | Gap from the screen edges, px | `16` |
-| `radar.colours` | `background`, `rim`, `player`, `hostile` (ships hostile to you), `friendly` (non-hostile ships with a government), `neutral` (ships with no government), `target` (ring round the selected target), `scenery` | see `game.json` |
+| `radar.colours` | `background`, `rim`, `player`, `hostile` (ships hostile to you), `warned` (ships with a grievance against you, not yet hostile), `friendly` (non-hostile ships with a government), `neutral` (ships with no government), `target` (ring round the selected target), `scenery` | see `game.json` |
 | `ai.landing_speed` | AI ships land when slower than this, px/s (A1) | `60` |
 | `ai.land_radius_fraction` | …and within this fraction of the planet's radius of its centre | `0.6` |
 | `ai.thrust_angle` | AI thrusts only when within this many degrees of the direction it wants | `35` |
@@ -57,6 +57,7 @@ Fields marked **required** have no default.
 | `sprite` | Path under `assets/sprites/`, art facing up; placeholder arrow if missing | `""` |
 | `mass` | Mass (unused until boarding/capture) | `50` |
 | `shield`, `shield_regen` | Shield points and recharge per second (no recharge while disabled) | `0`, `0` |
+| `shield_recharge_delay` | Seconds without taking damage before shields start recharging; any hit resets it (C6) | `3` |
 | `armor` | Armour points | `100` |
 | `disable_armor_pct` | Disabled (drifts, can't fire) at or below this % of max armour; destroyed at 0 | `33` |
 | `strength` | Combat strength for AI odds | `1` |
@@ -81,11 +82,13 @@ Kinds: `gun` fires along the heading; `turret` leads the selected target within 
 | `turn_rate` | Missile turn rate (guided) | `0` |
 | `arc` | Turret tracking arc in degrees, centred on the heading; the turret holds fire when the lead point is outside it | `360` |
 | `inherit_velocity` | Guns and turrets: shots add the ship's velocity | `true` |
+| `falloff_start_pct` | Full damage up to this % of the weapon's reach (C12); 100 = no falloff | `100` |
+| `falloff_min_pct` | Damage % at full reach (and beyond), falling linearly from `falloff_start_pct`. Shots and beams fade to match | `100` |
 | `colour`, `sprite`, `sound` | Look and sound | `"#ffffff"`, `""`, `""` |
 
 ## `governments/`
 
-Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. A government's ships treat the player as hostile while the player's record with it is below `crime_threshold`; a ship the player damages, and that government's warships, stay hostile until the player leaves the system. Penalties apply once per ship per act (the first hit, disable, board, kill).
+Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. All of a government's ships treat the player as hostile while the player's record with it is below `crime_threshold` (pirates start there). Damage the player does to a non-hostile ship builds that ship's grievance (% of its total shield + armour, draining at `forgiveness_pct_per_s`); past `tolerance_pct` × its personality's `tolerance_factor`, that ship alone turns hostile and the attack ("shoot") penalty is charged. Disable, board and kill penalties apply immediately, once each per ship.
 
 | Field | Meaning | Default |
 | --- | --- | --- |
@@ -96,6 +99,8 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `penalties` | `{"shoot", "disable", "board", "kill"}`: record lost per act | all `0` |
 | `max_odds` | Engages only if enemy strength ÷ own strength ≤ this | `1` |
 | `flee_shield_pct` | Retreats below this shield % | `25` |
+| `tolerance_pct` | A8: how much of a ship's total shield + armour the player can damage before that ship turns hostile (grievance) | `20` |
+| `forgiveness_pct_per_s` | A8: how fast grievance drains, % per second | `4` |
 
 ## `ai_pools/` — traffic types
 
@@ -125,6 +130,7 @@ Group level (government + AI pool) decides who is friend or foe and the role; a 
 | `flee_shield_offset` | Percentage points added to the government's `flee_shield_pct` (−15 = stays in longer); result clamped 0–100 | `0` |
 | `when_attacked` | `role` (traders flee, others fight), `fight` or `flee` | `"role"` |
 | `starts_fights` | `role` (warships and pirates on sight, traders never), `never` or `on_sight` | `"role"` |
+| `tolerance_factor` | Multiplies the government's `tolerance_pct` (A8; below 1 = quicker to anger) | `1` |
 
 ## `scenery/` — local-space object types
 

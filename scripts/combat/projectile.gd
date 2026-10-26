@@ -12,6 +12,8 @@ var shooter_government: String = ""
 ## Missiles only: what to home on (null = fly straight).
 var target: Ship = null
 var _life: float = 0.0
+## C12: path length so far.
+var _travelled: float = 0.0
 var _exclude: Array[RID] = []
 
 
@@ -43,13 +45,18 @@ func _physics_process(delta: float) -> void:
 	var next: Vector2 = position + velocity * delta
 	var hit: Dictionary = HitQuery.ray(self, position, next, _exclude)
 	if not hit.is_empty():
-		var scale: float = HitQuery.damage_scale(shooter_is_player, shooter_government, hit["target"])
+		var at_distance: float = _travelled + position.distance_to(hit["position"])
+		var scale: float = HitQuery.damage_scale(shooter_is_player, shooter_government, hit["target"]) * weapon.falloff_at(at_distance)
 		if scale > 0.0:
 			hit["target"].health.apply_damage(weapon.damage_shield * scale, weapon.damage_armor * scale, shooter if is_instance_valid(shooter) else null)
 		Flash.spawn(get_parent(), hit["position"], 6.0 if weapon.kind != "guided" else 18.0, weapon.colour, 0.25)
 		queue_free()
 		return
+	_travelled += position.distance_to(next)
 	position = next
+	# C12: fade with damage falloff (never fully invisible).
+	if weapon.falloff_start_pct < 100.0:
+		modulate.a = lerpf(0.2, 1.0, weapon.falloff_at(_travelled))
 	_life -= delta
 	if _life <= 0.0:
 		queue_free()

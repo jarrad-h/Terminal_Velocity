@@ -22,7 +22,12 @@ var role: String = ""
 var docked: bool = false
 ## G2: acts the player has already been charged for against this ship.
 var player_acts: Dictionary = {}
-## A8: ships that have damaged this one (non-allied); treated as hostile.
+## A8: the player's damage so far, as % of total shield + armour; drains over time.
+var grievance: float = 0.0
+## A8: personality's tolerance factor (set by the AI controller).
+var tolerance_factor: float = 1.0
+## Ships this one treats as hostile because they attacked it: non-allied AI
+## ships at once, the player once grievance passes tolerance (A8).
 var _aggressors: Dictionary = {}
 var _last_attacker: Ship = null
 var _target: Ship = null
@@ -53,7 +58,7 @@ func setup(ship_def: ShipDef) -> void:
 	var circle := CircleShape2D.new()
 	circle.radius = hit_radius
 	hitbox_shape.shape = circle
-	health.setup(def.shield, def.armor, def.shield_regen, def.disable_armor_pct / 100.0)
+	health.setup(def.shield, def.armor, def.shield_regen, def.disable_armor_pct / 100.0, def.shield_recharge_delay)
 	hitbox_shape.set_deferred(&"disabled", false)
 	weapons.setup(def)
 	visible = true
@@ -114,27 +119,28 @@ func set_target(ship: Ship) -> void:
 	target_changed.emit(ship)
 
 
-## C8: nearest hostile ship, or the nearest ship if none are hostile.
-func target_nearest() -> void:
-	var candidates: Array[Ship] = _target_candidates()
-	var hostile: Array[Ship] = candidates.filter(func(ship: Ship) -> bool: return is_hostile_to(ship))
-	if not hostile.is_empty():
-		candidates = hostile
+## C8: nearest ship (only hostile ones when `hostile_only`). With no
+## candidates the current target is kept.
+func target_nearest(hostile_only: bool) -> void:
+	var candidates: Array[Ship] = _target_candidates(hostile_only)
 	var index: int = Targeting.nearest(global_position, _positions(candidates))
-	set_target(candidates[index] if index >= 0 else null)
+	if index >= 0:
+		set_target(candidates[index])
 
 
-func cycle_target() -> void:
-	var candidates: Array[Ship] = _target_candidates()
+## C8: next target after the current one, nearest first, wrapping round.
+func cycle_target(hostile_only: bool) -> void:
+	var candidates: Array[Ship] = _target_candidates(hostile_only)
 	var index: int = Targeting.cycle(global_position, _positions(candidates), candidates.find(get_target()))
-	set_target(candidates[index] if index >= 0 else null)
+	if index >= 0:
+		set_target(candidates[index])
 
 
-func _target_candidates() -> Array[Ship]:
+func _target_candidates(hostile_only: bool = false) -> Array[Ship]:
 	var result: Array[Ship] = []
 	for node: Node in get_tree().get_nodes_in_group(&"ships"):
 		var ship: Ship = node
-		if ship != self and ship.is_active():
+		if ship != self and ship.is_active() and (not hostile_only or is_hostile_to(ship)):
 			result.append(ship)
 	return result
 
@@ -163,8 +169,7 @@ func is_hostile_to(other: Ship) -> bool:
 	if other.is_player():
 		if mine == null:
 			return false
-		var provoked: bool = role == "warship" and GameState.is_provoked(government)
-		return Relations.hostile_to_player(mine, GameState.get_record(government), provoked)
+		return Relations.hostile_to_player(mine, GameState.get_record(government))
 	return Relations.governments_hostile(mine, other.gov_def())
 
 
@@ -177,18 +182,39 @@ func forget_aggressor(ship: Ship) -> void:
 	_aggressors.erase(ship)
 
 
-func _on_damaged(source: Node) -> void:
+func _on_damaged(source: Node, amount: float) -> void:
 	if not source is Ship or source == self or not is_instance_valid(source):
 		return
 	var attacker: Ship = source
 	_last_attacker = attacker
-	if not Relations.allied(gov_def(), attacker.gov_def()):
-		_aggressors[attacker] = true
 	if attacker.is_player():
-		GameState.report_player_act(self, "shoot")
-		if government != "":
-			GameState.provoke(government)
+		_on_player_damage(attacker, amount)
+	elif not Relations.allied(gov_def(), attacker.gov_def()):
+		_aggressors[attacker] = true
 	attacked.emit(attacker)
+
+
+## A8 + G2: accidental fire is forgiven; past the tolerance this ship (only)
+## turns hostile and the attack penalty is charged.
+func _on_player_damage(player_ship: Ship, amount: float) -> void:
+	if is_hostile_to(player_ship):
+		GameState.report_player_act(self, "shoot")
+		return
+	grievance = Grievance.add(grievance, amount, health.max_shield + health.max_armor)
+	if Grievance.exceeded(grievance, _tolerance()):
+		_aggressors[player_ship] = true
+		GameState.report_player_act(self, "shoot")
+
+
+func _tolerance() -> float:
+	var mine: GovernmentDef = gov_def()
+	return Grievance.tolerance(mine.tolerance_pct if mine != null else 0.0, tolerance_factor)
+
+
+func _physics_process(delta: float) -> void:
+	if grievance > 0.0:
+		var mine: GovernmentDef = gov_def()
+		grievance = Grievance.decay(grievance, mine.forgiveness_pct_per_s if mine != null else 0.0, delta)
 
 
 func _attacked_by_player() -> bool:

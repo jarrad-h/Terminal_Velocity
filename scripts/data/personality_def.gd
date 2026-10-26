@@ -16,6 +16,8 @@ var flee_shield_offset: float = 0.0
 var when_attacked: String = "role"
 ## "role" (warships and pirates on sight, traders never), "never" or "on_sight".
 var starts_fights: String = "role"
+## A8: multiplies the government's tolerance (below 1 = quicker to anger).
+var tolerance_factor: float = 1.0
 
 
 static func parse(r: DefReader) -> PersonalityDef:
@@ -25,6 +27,7 @@ static func parse(r: DefReader) -> PersonalityDef:
 	d.flee_shield_offset = r.number("flee_shield_offset", 0.0)
 	d.when_attacked = r.choice("when_attacked", RESPONSES, "role")
 	d.starts_fights = r.choice("starts_fights", INITIATIVE, "role")
+	d.tolerance_factor = r.number("tolerance_factor", 1.0, false, 0.0)
 	return d
 
 

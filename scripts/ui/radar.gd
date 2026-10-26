@@ -77,4 +77,6 @@ func _dot(centre: Vector2, p: Vector2, size: float, colour: Color) -> void:
 func _ship_colour(ship: Ship) -> Color:
 	if player.is_hostile_to(ship):
 		return _colours["hostile"]
+	if ship.grievance > 0.0:
+		return _colours["warned"]  # A8: annoyed, not yet hostile
 	return _colours["friendly"] if ship.government != "" else _colours["neutral"]

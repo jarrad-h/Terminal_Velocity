@@ -12,6 +12,8 @@ var top_speed: float
 var turn_rate: float
 var shield: float
 var shield_regen: float
+## C6: seconds without damage before shields recharge.
+var shield_recharge_delay: float
 var armor: float
 ## C7: disabled at or below this % of max armour.
 var disable_armor_pct: float
@@ -34,6 +36,7 @@ static func parse(r: DefReader) -> ShipDef:
 	d.turn_rate = r.number("turn_rate", 0.0, true, 0.0)
 	d.shield = r.number("shield", 0.0, false, 0.0)
 	d.shield_regen = r.number("shield_regen", 0.0, false, 0.0)
+	d.shield_recharge_delay = r.number("shield_recharge_delay", 3.0, false, 0.0)
 	d.armor = r.number("armor", 100.0, false, 0.0)
 	d.disable_armor_pct = r.number("disable_armor_pct", 33.0, false, 0.0)
 	d.strength = r.number("strength", 1.0, false, 0.0)

@@ -56,8 +56,6 @@ func load_system(system_id: String) -> bool:
 		push_error("No system with id '%s'" % system_id)
 		return false
 	var new_system: bool = system == null or system.id != next.id
-	if system != null and new_system:
-		GameState.clear_system_state()
 	system = next
 	backdrop.configure(system.backdrop)
 	system_objects.configure(system)

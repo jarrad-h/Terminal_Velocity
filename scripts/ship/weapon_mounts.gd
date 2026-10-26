@@ -101,6 +101,5 @@ func _reach(want: Callable) -> float:
 	for mount: Mount in mounts:
 		if not want.call(mount.weapon.kind):
 			continue
-		var w: WeaponDef = mount.weapon
-		best = maxf(best, w.beam_length() if w.kind == "beam" else w.speed * w.shot_lifetime())
+		best = maxf(best, mount.weapon.reach())
 	return best

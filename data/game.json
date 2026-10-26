@@ -44,7 +44,8 @@
       "target": "#ffee40",
       "scenery": "#8a7a68",
       "hostile": "#ff4040",
-      "friendly": "#40d080"
+      "friendly": "#40d080",
+      "warned": "#ffb030"
     }
   },
   "debug": {

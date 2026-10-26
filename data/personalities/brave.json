@@ -1,1 +1,1 @@
-{"id": "brave", "name": "Brave", "odds_factor": 1.5, "flee_shield_offset": -15, "when_attacked": "fight", "starts_fights": "role"}
+{"id": "brave", "name": "Brave", "odds_factor": 1.5, "flee_shield_offset": -15, "when_attacked": "fight", "starts_fights": "role", "tolerance_factor": 1}

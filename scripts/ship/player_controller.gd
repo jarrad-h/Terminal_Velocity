@@ -19,12 +19,18 @@ func get_state_label() -> String:
 	return "player"
 
 
+## C8: R nearest hostile, Tab nearest of any kind, Shift+R cycle hostiles,
+## Shift+Tab cycle all. Exact matching keeps Shift+R from also firing R.
 func _unhandled_input(event: InputEvent) -> void:
 	var ship: Ship = get_parent()
-	if event.is_action_pressed(&"target_nearest"):
-		ship.target_nearest()
-	elif event.is_action_pressed(&"target_cycle"):
-		ship.cycle_target()
+	if event.is_action_pressed(&"target_cycle_hostile", false, true):
+		ship.cycle_target(true)
+	elif event.is_action_pressed(&"target_cycle", false, true):
+		ship.cycle_target(false)
+	elif event.is_action_pressed(&"target_nearest", false, true):
+		ship.target_nearest(true)
+	elif event.is_action_pressed(&"target_nearest_any", false, true):
+		ship.target_nearest(false)
 	else:
 		return
 	get_viewport().set_input_as_handled()

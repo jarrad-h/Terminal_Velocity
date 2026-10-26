@@ -4,7 +4,8 @@ extends Node
 ## DamageModel for the maths. Disabled at `disable_fraction` of max armour
 ## (never, when 0), destroyed at 0.
 
-signal damaged(source: Node)
+## `amount`: shield + armour actually lost.
+signal damaged(source: Node, amount: float)
 signal disabled
 signal destroyed
 
@@ -13,6 +14,9 @@ var max_armor: float = 0.0
 var shield: float = 0.0
 var armor: float = 0.0
 var shield_regen: float = 0.0
+## C6: seconds without damage before shields start to recharge.
+var recharge_delay: float = 0.0
+var _since_damage: float = INF
 var disable_fraction: float = 0.0
 ## D4: ignores all damage.
 var invulnerable: bool = false
@@ -21,13 +25,15 @@ var is_destroyed: bool = false
 
 
 ## Resets to full shield and armour.
-func setup(p_max_shield: float, p_max_armor: float, p_shield_regen: float = 0.0, p_disable_fraction: float = 0.0) -> void:
+func setup(p_max_shield: float, p_max_armor: float, p_shield_regen: float = 0.0, p_disable_fraction: float = 0.0, p_recharge_delay: float = 0.0) -> void:
 	max_shield = p_max_shield
 	max_armor = p_max_armor
 	shield = p_max_shield
 	armor = p_max_armor
 	shield_regen = p_shield_regen
 	disable_fraction = p_disable_fraction
+	recharge_delay = p_recharge_delay
+	_since_damage = INF
 	is_disabled = false
 	is_destroyed = false
 	set_physics_process(shield_regen > 0.0 and max_shield > 0.0)
@@ -37,9 +43,11 @@ func apply_damage(damage_shield: float, damage_armor: float, source: Node = null
 	if invulnerable or is_destroyed:
 		return
 	var result: Vector2 = DamageModel.apply(shield, armor, damage_shield, damage_armor)
+	var lost: float = (shield - result.x) + (armor - result.y)
 	shield = result.x
 	armor = result.y
-	damaged.emit(source)
+	_since_damage = 0.0
+	damaged.emit(source, lost)
 	_update_state()
 
 
@@ -61,9 +69,10 @@ func force_destroy() -> void:
 	_update_state()
 
 
-## C6: shields recharge, except while disabled.
+## C6: shields recharge after recharge_delay without damage, except while disabled.
 func _physics_process(delta: float) -> void:
-	if not is_disabled and not is_destroyed:
+	_since_damage += delta
+	if not is_disabled and not is_destroyed and DamageModel.can_regen(_since_damage, recharge_delay):
 		shield = DamageModel.regen(shield, max_shield, shield_regen, delta)
 
 

@@ -49,6 +49,7 @@ func setup(p_pool: AiPoolDef, p_personality: PersonalityDef, p_system: SystemDef
 func _ready() -> void:
 	process_physics_priority = -10  # decide before the ship flies and fires
 	ship.role = pool.behaviour
+	ship.tolerance_factor = personality.tolerance_factor
 	ship.attacked.connect(_on_attacked)
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
 	_stops_left = _rng.randi_range(pool.stops.x, pool.stops.y)

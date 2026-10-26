@@ -17,6 +17,9 @@ var reload: float
 var turn_rate: float
 var arc: float
 var colour: Color
+## C12: full damage up to this % of range, then linear down to falloff_min_pct.
+var falloff_start_pct: float
+var falloff_min_pct: float
 ## Guns and turrets: shots add the firing ship's velocity.
 var inherit_velocity: bool
 var sprite: String
@@ -37,6 +40,8 @@ static func parse(r: DefReader) -> WeaponDef:
 	d.arc = r.number("arc", 360.0, false, 0.0)
 	d.colour = r.colour("colour", Color.WHITE)
 	d.inherit_velocity = r.boolean("inherit_velocity", true)
+	d.falloff_start_pct = clampf(r.number("falloff_start_pct", 100.0, false, 0.0), 0.0, 100.0)
+	d.falloff_min_pct = r.number("falloff_min_pct", 100.0, false, 0.0)
 	d.sprite = r.string("sprite")
 	d.sound = r.string("sound")
 	return d
@@ -52,3 +57,13 @@ func shot_lifetime() -> float:
 ## Beam length: the range, or speed × lifetime when no range is set.
 func beam_length() -> float:
 	return max_range if max_range > 0.0 else speed * lifetime
+
+
+## Distance at which damage stops falling (beam length, or how far a shot can travel).
+func reach() -> float:
+	return beam_length() if kind == "beam" else speed * shot_lifetime()
+
+
+## C12: damage multiplier after `distance`.
+func falloff_at(distance: float) -> float:
+	return DamageModel.falloff(distance, reach(), falloff_start_pct, falloff_min_pct)

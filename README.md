@@ -19,8 +19,10 @@ Current stage: single-system prototype. See [docs/spec.md](docs/spec.md) for sco
 | Down / S | Reverse: turn to face against your drift (hold thrust too to brake) |
 | Space | Fire primary weapons (guns, turrets, beams) |
 | F / Left Ctrl | Fire secondary weapons (guided missiles) |
-| R | Target nearest ship |
-| Tab | Cycle targets, nearest first |
+| R | Target nearest hostile ship |
+| Tab | Target nearest ship of any kind |
+| Shift+R | Cycle hostile ships, nearest first |
+| Shift+Tab | Cycle all ships, nearest first |
 | ` (backtick) | Debug panel (debug builds only) |
 
 ## Data and mods

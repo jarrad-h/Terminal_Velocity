@@ -39,16 +39,16 @@ func test_allied_includes_own_government() -> void:
 
 func test_record_below_threshold_is_hostile() -> void:
 	var law := _gov("law", [], [], -50.0)
-	assert_true(not Relations.hostile_to_player(law, -49.0, false), "above threshold")
-	assert_true(Relations.hostile_to_player(law, -51.0, false), "below threshold (G3)")
+	assert_true(not Relations.hostile_to_player(law, -49.0), "above threshold")
+	assert_true(Relations.hostile_to_player(law, -51.0), "below threshold (G3)")
 
 
 func test_pirates_high_threshold_means_hostile_from_the_start() -> void:
-	assert_true(Relations.hostile_to_player(_gov("pirates", [], [], 1000.0), 0.0, false), "record 0 < 1000 (A3)")
+	assert_true(Relations.hostile_to_player(_gov("pirates", [], [], 1000.0), 0.0), "record 0 < 1000 (A3)")
 
 
-func test_provoked_overrides_good_record() -> void:
-	assert_true(Relations.hostile_to_player(_gov("law"), 500.0, true), "A8 provoked")
+func test_no_government_is_never_hostile_by_record() -> void:
+	assert_true(not Relations.hostile_to_player(null, -1000.0), "no government, no record")
 
 
 func test_penalties_by_act() -> void:

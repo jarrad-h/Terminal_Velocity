@@ -18,12 +18,11 @@ static func allied(a: GovernmentDef, b: GovernmentDef) -> bool:
 	return a.id == b.id or b.id in a.allies or a.id in b.allies
 
 
-## G3 / A8: a government's ship treats the player as hostile when the player's
-## record is below its crime threshold, or when provoked this visit.
-static func hostile_to_player(gov: GovernmentDef, record: float, provoked: bool) -> bool:
-	if gov == null:
-		return provoked
-	return provoked or record < gov.crime_threshold
+## G3: a government's ships treat the player as hostile while the player's
+## record with it is below its crime threshold. (A8 per-ship grievance is
+## tracked on the ship itself.)
+static func hostile_to_player(gov: GovernmentDef, record: float) -> bool:
+	return gov != null and record < gov.crime_threshold
 
 
 ## G2: the record after one act ("shoot", "disable", "board", "kill").

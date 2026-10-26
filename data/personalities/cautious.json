@@ -1,1 +1,1 @@
-{"id": "cautious", "name": "Cautious", "odds_factor": 0.6, "flee_shield_offset": 20, "when_attacked": "role", "starts_fights": "role"}
+{"id": "cautious", "name": "Cautious", "odds_factor": 0.6, "flee_shield_offset": 20, "when_attacked": "role", "starts_fights": "role", "tolerance_factor": 1.5}

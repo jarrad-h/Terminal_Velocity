@@ -26,7 +26,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"radar": {"size": 200.0, "range": 3000.0, "margin": 16.0, "colours": {
 		"background": "#0a1426c0", "rim": "#5a7aa0", "player": "#ffffff",
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
-		"hostile": "#ff4040", "friendly": "#40d080"}},
+		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
 	"debug": {"time_scales": [0.25, 0.5, 1.0, 2.0, 4.0], "velocity_vector_seconds": 0.5,
 		"spawn_distance": 350.0, "spawn_at_start": []},
 }
