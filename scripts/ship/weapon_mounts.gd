@@ -73,3 +73,34 @@ func _fire(mount: Mount) -> bool:
 
 func _exclude() -> Array[RID]:
 	return [ship.hitbox.get_rid()]
+
+
+## AI helpers: longest reach of primary weapons (guns, turrets, beams), and
+## of guided weapons; speed of the first gun or turret shot (for lead).
+func primary_range() -> float:
+	return _reach(func(kind: String) -> bool: return kind != "guided")
+
+
+func guided_range() -> float:
+	return _reach(func(kind: String) -> bool: return kind == "guided")
+
+
+func primary_shot_speed() -> float:
+	for mount: Mount in mounts:
+		if mount.weapon.kind == "gun" or mount.weapon.kind == "turret":
+			return mount.weapon.speed
+	return 0.0
+
+
+func has_turret() -> bool:
+	return mounts.any(func(m: Mount) -> bool: return m.weapon.kind == "turret")
+
+
+func _reach(want: Callable) -> float:
+	var best: float = 0.0
+	for mount: Mount in mounts:
+		if not want.call(mount.weapon.kind):
+			continue
+		var w: WeaponDef = mount.weapon
+		best = maxf(best, w.beam_length() if w.kind == "beam" else w.speed * w.shot_lifetime())
+	return best

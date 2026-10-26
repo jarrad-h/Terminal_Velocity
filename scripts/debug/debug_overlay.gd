@@ -33,6 +33,8 @@ func _draw() -> void:
 			draw_arc(scenery.global_position, scenery.hit_radius, 0.0, TAU, 24, SCENERY_HITBOX_COLOUR, 1.0)
 	for node: Node in get_tree().get_nodes_in_group(&"ships"):
 		var ship: Ship = node
+		if not ship.visible:
+			continue
 		var pos: Vector2 = ship.global_position
 		if show_hitboxes:
 			draw_arc(pos, ship.hit_radius, 0.0, TAU, 32, HITBOX_COLOUR, 1.0)

@@ -99,7 +99,7 @@ func get_velocity() -> Vector2:
 
 ## C8: the selected target, or null once it is gone.
 func get_target() -> Ship:
-	if _target != null and (not is_instance_valid(_target) or _target.health.is_destroyed):
+	if _target != null and (not is_instance_valid(_target) or not _target.is_active()):
 		_target = null
 		target_changed.emit(null)
 	return _target
@@ -247,3 +247,22 @@ func placeholder_colour() -> Color:
 	if gov != null:
 		return gov.colour.lerp(Color.WHITE, 0.25)
 	return Color.html(DataRegistry.settings["radar"]["colours"]["neutral"])
+
+
+## A1: docking hides the ship and takes it out of play; undocking restores it.
+func set_docked(value: bool) -> void:
+	docked = value
+	visible = not value
+	hitbox_shape.set_deferred(&"disabled", value)
+	body.set_physics_process(not value)
+	if value:
+		body.state.velocity = Vector2.ZERO
+		set_target(null)
+
+
+## Places the ship and resets interpolation (spawns, take-offs, arrivals).
+func place(at: Vector2, rotation_value: float, velocity: Vector2 = Vector2.ZERO) -> void:
+	body.state = FlightState.new(at, velocity, rotation_value)
+	position = at
+	rotation = rotation_value
+	reset_physics_interpolation()

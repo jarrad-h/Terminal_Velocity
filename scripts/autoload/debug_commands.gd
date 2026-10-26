@@ -9,12 +9,17 @@ signal overlay_changed(overlay: StringName, enabled: bool)
 ## Result of a D8 reload: empty errors means success.
 signal data_reload_finished(errors: Array[String])
 signal invulnerable_changed(enabled: bool)
+signal toggles_changed
 
 ## D9 overlays, in panel order.
 const OVERLAYS: Array[StringName] = [&"hitboxes", &"velocity", &"ai_labels", &"stats"]
 
 var panel_visible: bool = false
 var player_invulnerable: bool = false
+## D4: AI ships coast with no input.
+var ai_paused: bool = false
+## D4: radar shows ships beyond its range on the rim.
+var radar_show_all: bool = false
 var _overlays: Dictionary = {}
 
 
@@ -201,3 +206,19 @@ func _player_target() -> Ship:
 	if not OS.is_debug_build() or player == null:
 		return null
 	return player.get_target()
+
+
+## Debug: traffic on (refills the system now) or off (removes AI traffic).
+func set_traffic_enabled(enabled: bool) -> void:
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	if not OS.is_debug_build() or scene == null:
+		return
+	var traffic: TrafficSpawner = scene.traffic
+	traffic.enabled = enabled
+	traffic.configure(scene.system, true)
+	toggles_changed.emit()
+
+
+func is_traffic_enabled() -> bool:
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	return scene != null and scene.traffic.enabled

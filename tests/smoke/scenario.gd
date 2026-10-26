@@ -26,6 +26,9 @@ func _run() -> void:
 	var scene: Node = load("res://scenes/system.tscn").instantiate()
 	get_tree().root.add_child(scene)
 	await _frames(2)
+	# M1–M3 checks run in an empty system; the M4 section turns traffic back on.
+	_debug.set_traffic_enabled(false)
+	await _frames(2)
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
 	_check(player != null, "player ship spawned")
 	if player == null:
@@ -191,6 +194,75 @@ func _run() -> void:
 		saw_dust = saw_dust or scenery.def.id == "dust"
 		saw_solid = saw_solid or scenery.def.solid
 	_check(saw_dust and saw_solid, "both dust and solid scenery present")
+
+	# M4: a pirate raid on a trader draws in the patrol (A1–A3, A5, A7).
+	await _teleport(player, Vector2(-5000.0, 5000.0))  # out of the way
+	var traffic: TrafficSpawner = scene_root.traffic
+	var centre := Vector2(2500.0, -2500.0)
+	var trader: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("trader_traffic"), centre, "", "steady")
+	var pirate: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), centre + Vector2(500.0, 0.0), "", "steady")
+	await _frames(90)
+	var pirate_ai: AIController = pirate.controller
+	_check(pirate_ai.state == AIController.State.ATTACK and pirate_ai.target == trader, "pirate attacks the trader on sight (A3): %s" % pirate.get_state_label())
+	await _frames(240)
+	var trader_ai: AIController = trader.controller
+	_check(not is_instance_valid(trader) or trader_ai.state == AIController.State.FLEE or trader.health.shield < trader.health.max_shield,
+		"trader under attack (A1): %s" % (trader.get_state_label() if is_instance_valid(trader) else "gone"))
+	if is_instance_valid(trader):
+		_check(trader_ai.state == AIController.State.FLEE, "steady trader flees when attacked (A1): %s" % trader.get_state_label())
+	var patrol: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), pirate.global_position + Vector2(0.0, 900.0), "", "steady")
+	await _frames(90)
+	var patrol_ai: AIController = patrol.controller
+	_check(is_instance_valid(pirate) and patrol_ai.state == AIController.State.ATTACK and patrol_ai.target == pirate,
+		"patrol is drawn in against the pirate (A2): %s" % patrol.get_state_label())
+	var trader_label: String = trader.get_state_label() if is_instance_valid(trader) else ""
+	_check(trader_label == "" or trader_label.begins_with("trader/steady"), "label shows role and personality (A7): %s" % trader_label)
+
+	# G2: shooting a trader costs record once per ship; it then treats the player as hostile (A8).
+	var victim: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("trader_traffic"), Vector2(-4600.0, 5000.0), "", "brave")
+	await _frames(2)
+	var record_before: float = GameState.get_record("independent_traders")
+	victim.health.apply_damage(1.0, 1.0, player)
+	victim.health.apply_damage(1.0, 1.0, player)
+	var shoot_penalty: float = DataRegistry.get_government("independent_traders").penalties["shoot"]
+	_check(is_equal_approx(GameState.get_record("independent_traders"), record_before - shoot_penalty), "shoot penalty once per ship (G2)")
+	_check(victim.is_hostile_to(player) and player.is_hostile_to(victim), "damaged ship is hostile to the player (A8)")
+	await _frames(30)
+	_check((victim.controller as AIController).state == AIController.State.ATTACK, "brave trader fights back (A7): %s" % victim.get_state_label())
+
+	# G3: below the crime threshold, warships turn hostile.
+	var law_patrol: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), Vector2(-3000.0, 3000.0), "", "steady")
+	await _frames(2)
+	_check(not law_patrol.is_hostile_to(player), "patrol neutral at record 0")
+	var threshold: float = DataRegistry.get_government("local_authority").crime_threshold
+	GameState.set_record("local_authority", threshold - 1.0)
+	_check(law_patrol.is_hostile_to(player), "patrol hostile below the crime threshold (G3)")
+	GameState.set_record("local_authority", 0.0)
+	_check(not law_patrol.is_hostile_to(player), "neutral again above it")
+	# A8: hitting one patrol ship turns its government's warships hostile.
+	var other_patrol: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), Vector2(3000.0, 3000.0), "", "steady")
+	await _frames(2)
+	law_patrol.health.apply_damage(1.0, 1.0, player)
+	_check(other_patrol.is_hostile_to(player), "provoked: the government's other warships are hostile (A8)")
+
+	# D4: AI pause.
+	_debug.ai_paused = true
+	await _frames(3)
+	var paused_input: FlightInput = other_patrol.get_flight_input()
+	_check(not paused_input.thrust and paused_input.turn == 0.0 and not paused_input.fire_primary, "AI paused gives no input (D4)")
+	_debug.ai_paused = false
+	_debug.clear_ships()
+	await _frames(2)
+
+	# A6: traffic refills the system to its target counts.
+	_debug.set_traffic_enabled(true)
+	await _frames(2)
+	var target_total: int = 0
+	for t: Dictionary in scene_root.system.traffic:
+		target_total += t["count"]
+	_check(traffic.live_count() == target_total, "traffic fills to the target population (A6): %d of %d" % [traffic.live_count(), target_total])
+	_debug.set_traffic_enabled(false)
+	await _frames(2)
 
 	# System switch.
 	_check(_debug.switch_system("test_graveyard"), "switch to test_graveyard")
