@@ -1,0 +1,11 @@
+{
+  "id": "pirates",
+  "name": "Pirates",
+  "colour": "#ff4040",
+  "allies": [],
+  "enemies": ["local_authority", "independent_traders"],
+  "crime_threshold": 1000,
+  "penalties": {"shoot": 0, "disable": 0, "board": 0, "kill": 0},
+  "max_odds": 2.0,
+  "flee_shield_pct": 30
+}

@@ -1,0 +1,2 @@
+{"name": "Patched", "accel": 1, "top_speed": 1, "turn_rate": 1,
+ "default_weapons": [{"weapon": "weapon_only_in_base"}]}

@@ -1,0 +1,32 @@
+{
+  "player_ship": "courier",
+  "system": "test_nebula",
+  "camera": {
+    "zoom": 1.0,
+    "smoothing_speed": 0
+  },
+  "local_space": {
+    "chunk_size": 1024
+  },
+  "radar": {
+    "size": 200,
+    "range": 3000,
+    "margin": 16,
+    "colours": {
+      "background": "#0a1426c0",
+      "rim": "#5a7aa0",
+      "player": "#ffffff",
+      "neutral": "#b0b0b0",
+      "target": "#ffee40",
+      "scenery": "#8a7a68"
+    }
+  },
+  "debug": {
+    "time_scales": [0.25, 0.5, 1, 2, 4],
+    "velocity_vector_seconds": 0.5,
+    "spawn_distance": 350,
+    "spawn_at_start": [
+      {"ship": "target_dummy", "position": [0, -450]}
+    ]
+  }
+}

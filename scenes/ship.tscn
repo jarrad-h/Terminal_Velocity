@@ -1,0 +1,27 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ship/ship.gd" id="1_ship"]
+[ext_resource type="Script" path="res://scripts/ship/ship_body.gd" id="2_body"]
+[ext_resource type="Script" path="res://scripts/ship/health.gd" id="3_health"]
+[ext_resource type="Script" path="res://scripts/ship/weapon_mounts.gd" id="4_weapons"]
+
+[node name="Ship" type="Node2D"]
+script = ExtResource("1_ship")
+
+[node name="ShipBody" type="Node" parent="."]
+script = ExtResource("2_body")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("3_health")
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="WeaponMounts" type="Node2D" parent="."]
+script = ExtResource("4_weapons")
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]

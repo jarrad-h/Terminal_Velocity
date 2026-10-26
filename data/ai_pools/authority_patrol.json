@@ -1,0 +1,8 @@
+{
+  "id": "authority_patrol",
+  "government": "local_authority",
+  "behaviour": "warship",
+  "ships": [
+    {"ship": "patrol_corvette", "weight": 1}
+  ]
+}

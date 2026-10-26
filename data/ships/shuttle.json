@@ -1,0 +1,21 @@
+{
+  "id": "shuttle",
+  "name": "Shuttle",
+  "sprite": "ships/shuttle.png",
+  "mass": 25,
+  "accel": 220,
+  "top_speed": 260,
+  "turn_rate": 150,
+  "shield": 120,
+  "shield_regen": 4,
+  "armor": 80,
+  "strength": 5,
+  "crew": 1,
+  "hit_radius": 13,
+  "hardpoints": {
+    "gun": [[0, -14]]
+  },
+  "default_weapons": [
+    {"weapon": "light_laser", "count": 1}
+  ]
+}

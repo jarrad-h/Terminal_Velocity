@@ -1,0 +1,6 @@
+{"name": "Home", "seed": 5,
+ "traffic": [{"pool": "raiders", "count": 1}],
+ "local_space": [
+   {"scenery": "speck", "density": 10},
+   {"scenery": "boulder", "density": 1, "region": {"shape": "ring", "inner_radius": 100, "radius": 500}}
+ ]}

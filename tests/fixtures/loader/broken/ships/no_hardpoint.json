@@ -1,0 +1,1 @@
+{"name": "No Hardpoint", "accel": 1, "top_speed": 1, "turn_rate": 1, "hardpoints": {"gun": [[0, -10]]}, "default_weapons": [{"weapon": "beamer"}]}

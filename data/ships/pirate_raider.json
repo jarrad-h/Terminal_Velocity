@@ -1,0 +1,23 @@
+{
+  "id": "pirate_raider",
+  "name": "Pirate Raider",
+  "sprite": "ships/pirate_raider.png",
+  "mass": 60,
+  "accel": 320,
+  "top_speed": 340,
+  "turn_rate": 200,
+  "shield": 180,
+  "shield_regen": 5,
+  "armor": 150,
+  "strength": 20,
+  "crew": 4,
+  "hit_radius": 17,
+  "hardpoints": {
+    "gun": [[-6, -16], [6, -16]],
+    "beam": [[0, -18]]
+  },
+  "default_weapons": [
+    {"weapon": "light_laser", "count": 2},
+    {"weapon": "mining_beam", "count": 1}
+  ]
+}

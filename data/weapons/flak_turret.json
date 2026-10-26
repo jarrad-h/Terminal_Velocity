@@ -1,0 +1,12 @@
+{
+  "id": "flak_turret",
+  "name": "Flak Turret",
+  "kind": "turret",
+  "damage_shield": 6,
+  "damage_armor": 8,
+  "range": 450,
+  "speed": 600,
+  "reload": 0.6,
+  "arc": 270,
+  "colour": "#ffc040"
+}

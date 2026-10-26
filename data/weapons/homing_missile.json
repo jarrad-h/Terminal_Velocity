@@ -1,0 +1,12 @@
+{
+  "id": "homing_missile",
+  "name": "Homing Missile",
+  "kind": "guided",
+  "damage_shield": 30,
+  "damage_armor": 45,
+  "lifetime": 4,
+  "speed": 400,
+  "reload": 2.5,
+  "turn_rate": 140,
+  "colour": "#e0e0ff"
+}
