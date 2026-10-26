@@ -5,6 +5,8 @@ extends Node2D
 
 signal ship_destroyed(ship: Ship)
 signal target_changed(target: Ship)
+## Damaged by another ship (after hostility bookkeeping).
+signal attacked(attacker: Ship)
 
 const SPRITE_DIR: String = "res://assets/sprites"
 const DISABLED_TINT := Color(0.45, 0.45, 0.5)
@@ -12,8 +14,17 @@ const DISABLED_TINT := Color(0.45, 0.45, 0.5)
 var def: ShipDef = null
 var hit_radius: float = 0.0
 var controller: Node = null
-## Government ID ("" = none). Set at spawn; drives radar colour until M4.
+## Government ID ("" = none). Set at spawn.
 var government: String = ""
+## AI role from its pool ("trader", "warship", "pirate"); "" for the player and idle ships.
+var role: String = ""
+## A1: a docked trader is hidden, untargetable and ignored by AI.
+var docked: bool = false
+## G2: acts the player has already been charged for against this ship.
+var player_acts: Dictionary = {}
+## A8: ships that have damaged this one (non-allied); treated as hostile.
+var _aggressors: Dictionary = {}
+var _last_attacker: Ship = null
 var _target: Ship = null
 
 @onready var body: ShipBody = $ShipBody
@@ -29,6 +40,7 @@ func _ready() -> void:
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
 	health.disabled.connect(_on_disabled)
 	health.destroyed.connect(_on_destroyed)
+	health.damaged.connect(_on_damaged)
 
 
 ## Applies a ship definition. Call after adding to the tree. Calling it again
@@ -100,8 +112,12 @@ func set_target(ship: Ship) -> void:
 	target_changed.emit(ship)
 
 
+## C8: nearest hostile ship, or the nearest ship if none are hostile.
 func target_nearest() -> void:
 	var candidates: Array[Ship] = _target_candidates()
+	var hostile: Array[Ship] = candidates.filter(func(ship: Ship) -> bool: return is_hostile_to(ship))
+	if not hostile.is_empty():
+		candidates = hostile
 	var index: int = Targeting.nearest(global_position, _positions(candidates))
 	set_target(candidates[index] if index >= 0 else null)
 
@@ -116,7 +132,7 @@ func _target_candidates() -> Array[Ship]:
 	var result: Array[Ship] = []
 	for node: Node in get_tree().get_nodes_in_group(&"ships"):
 		var ship: Ship = node
-		if ship != self and not ship.health.is_destroyed:
+		if ship != self and ship.is_active():
 			result.append(ship)
 	return result
 
@@ -128,11 +144,64 @@ func _positions(ships: Array[Ship]) -> Array[Vector2]:
 	return result
 
 
+func gov_def() -> GovernmentDef:
+	return DataRegistry.get_government(government) if government != "" else null
+
+
+## G1, G3, A8: would this ship fight `other`? For the player, whether `other`
+## treats the player as hostile.
+func is_hostile_to(other: Ship) -> bool:
+	if other == null or other == self or not is_instance_valid(other):
+		return false
+	if is_player():
+		return other.is_hostile_to(self)
+	if _aggressors.has(other):
+		return true
+	var mine: GovernmentDef = gov_def()
+	if other.is_player():
+		if mine == null:
+			return false
+		var provoked: bool = role == "warship" and GameState.is_provoked(government)
+		return Relations.hostile_to_player(mine, GameState.get_record(government), provoked)
+	return Relations.governments_hostile(mine, other.gov_def())
+
+
+## Present in space: not destroyed, not docked.
+func is_active() -> bool:
+	return not health.is_destroyed and not docked and visible
+
+
+func forget_aggressor(ship: Ship) -> void:
+	_aggressors.erase(ship)
+
+
+func _on_damaged(source: Node) -> void:
+	if not source is Ship or source == self or not is_instance_valid(source):
+		return
+	var attacker: Ship = source
+	_last_attacker = attacker
+	if not Relations.allied(gov_def(), attacker.gov_def()):
+		_aggressors[attacker] = true
+	if attacker.is_player():
+		GameState.report_player_act(self, "shoot")
+		if government != "":
+			GameState.provoke(government)
+	attacked.emit(attacker)
+
+
+func _attacked_by_player() -> bool:
+	return _last_attacker != null and is_instance_valid(_last_attacker) and _last_attacker.is_player()
+
+
 func _on_disabled() -> void:
 	visual.modulate = DISABLED_TINT
+	if _attacked_by_player():
+		GameState.report_player_act(self, "disable")
 
 
 func _on_destroyed() -> void:
+	if _attacked_by_player():
+		GameState.report_player_act(self, "kill")
 	Flash.spawn(get_parent(), global_position, hit_radius * 2.5, Color(1.0, 0.7, 0.3), 0.8)
 	ship_destroyed.emit(self)
 	hitbox_shape.set_deferred(&"disabled", true)

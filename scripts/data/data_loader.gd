@@ -15,6 +15,8 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"player_ship": "courier",
 	"system": "test_nebula",
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
+	"player": {"credits": 0, "record": 0.0},
+	"combat": {"friendly_fire_pct": 100.0},
 	"local_space": {"chunk_size": 1024.0},
 	"radar": {"size": 200.0, "range": 3000.0, "margin": 16.0, "colours": {
 		"background": "#0a1426c0", "rim": "#5a7aa0", "player": "#ffffff",
@@ -103,6 +105,9 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var reader := DefReader.new(data_set.settings, SETTINGS_FILE, errors)
 	reader.ref("player_ship", "ships")
 	reader.ref("system", "systems")
+	reader.object("player").number("credits", 0.0)
+	reader.object("player").number("record", 0.0)
+	reader.object("combat").number("friendly_fire_pct", 100.0, false, 0.0)
 	var radar: DefReader = reader.object("radar")
 	for key: String in ["size", "range", "margin"]:
 		radar.number(key, 0.0, false, 0.0)

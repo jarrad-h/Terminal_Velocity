@@ -1,6 +1,13 @@
 {
   "player_ship": "courier",
   "system": "test_nebula",
+  "player": {
+    "credits": 0,
+    "record": 0
+  },
+  "combat": {
+    "friendly_fire_pct": 100
+  },
   "camera": {
     "zoom": 1.0,
     "smoothing_speed": 0

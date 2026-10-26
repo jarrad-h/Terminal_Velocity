@@ -16,6 +16,9 @@ Fields marked **required** have no default.
 | --- | --- | --- |
 | `player_ship` | Ship ID the player starts in | `"courier"` |
 | `system` | System ID loaded at start | `"test_nebula"` |
+| `player.credits` | Credits the player starts with | `0` |
+| `player.record` | Starting legal record with every government | `0` |
+| `combat.friendly_fire_pct` | % damage AI shots do to their own and allied governments' ships (C11); 0 = off. Player shots always do full damage | `100` |
 | `camera.zoom` | Camera zoom; above 1 zooms in | `1.0` |
 | `camera.smoothing_speed` | How fast the camera catches up; `0` locks it to the ship | `0` |
 | `local_space.chunk_size` | Side of one local-space chunk in px | `1024` |
@@ -66,6 +69,8 @@ Kinds: `gun` fires along the heading; `turret` leads the selected target within 
 | `colour`, `sprite`, `sound` | Look and sound | `"#ffffff"`, `""`, `""` |
 
 ## `governments/`
+
+Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. A government's ships treat the player as hostile while the player's record with it is below `crime_threshold`; a ship the player damages, and that government's warships, stay hostile until the player leaves the system. Penalties apply once per ship per act (the first hit, disable, board, kill).
 
 | Field | Meaning | Default |
 | --- | --- | --- |
