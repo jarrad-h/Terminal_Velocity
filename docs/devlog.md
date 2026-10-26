@@ -6,6 +6,17 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ## Milestone 4: AI and governments (26 Oct 2026) — awaiting playtest
 
+### 2026-10-26 — Milestone 4 playtest notes (Jarrad)
+
+Notes received and how they were sorted:
+- **Tuning:** weapon range looked short. Effective range equals the visible tracer (range = shot lifetime). `light_laser` range 700 → 1000, `flak_turret` 450 → 1000, so shots cross the screen (half-diagonal ≈ 920 px). `mining_beam` left at 300 pending Jarrad.
+- **Design, agreed:** G3 applies to every ship of a government, not only warships (spec and decisions updated). Pirates can become non-hostile through future missions that raise the player's pirate record.
+- **Design, proposed (not built yet):**
+  - cycle hostile targets separately from all targets (C8);
+  - leniency before neutrals and allies turn hostile from accidental fire (A8, G2);
+  - shields recharge only after a delay without damage, with delay, rate and cap as upgradeable ship stats (C6).
+
+
 Branch `m4-ai-governments`. Built in the cloud session (no godot MCP there; runs checked headless and under a virtual display).
 
 ### Built
