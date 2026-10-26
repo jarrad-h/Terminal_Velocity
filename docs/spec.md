@@ -12,7 +12,7 @@ The prototype is done when:
 2. Traders, warships and a hostile pirate faction behave visibly differently, driven by government relationships.
 3. Adding a new ship or weapon needs only a new data file and a sprite, with no code change.
 4. Tuning a stat (speed, shield, damage) in a data file changes the game on the next run.
-5. Landing on a planet opens a stub screen that repairs and refuels the ship, proving the space-to-landed transition.
+5. Landing on a planet opens a stub screen that repairs the ship, proving the space-to-landed transition.
 
 ## Scope
 
@@ -20,14 +20,14 @@ One system, one player ship, combat and AI first; everything that needs more tha
 
 | Area | In the prototype | Out (later milestones) |
 | --- | --- | --- |
-| World | One system: a star, 2–3 planets, 1 station, a noise-generated backdrop, local debris and an asteroid field | Multiple systems, hyperspace, galaxy map, fuel |
+| World | One system: a star, 2–3 planets, 1 station, a noise-generated backdrop, local debris and an asteroid field | Multiple systems, hyperspace, galaxy map, fuel (spent only on jumps and afterburners) |
 | Player ship | Fly, fire, take damage, be disabled, die and respawn | Buying ships, escorts, capture keeping the ship |
-| Weapons | Fixed gun, turret, guided missile, beam | Ammo economy, point defence, ion, jamming, cloaking |
+| Weapons | Fixed gun, turret, guided missile, beam | Afterburner, ammo economy, point defence, ion, jamming, cloaking |
 | Damage model | Shields, armour, disabled state, destruction | Armour recharge, repair systems |
 | AI | Trader, warship and pirate behaviours, flee threshold | Interceptor scanning, bribes, hailing |
 | Governments | 3 governments with ally/enemy relations and a legal record | Reputation spreading to allies, ranks |
 | Boarding | Board a disabled ship for credits | Plunder of cargo and outfits, capture odds |
-| Landing | Stub screen: repair, refuel, take off | Shipyard, outfitter, trade, bar, missions |
+| Landing | Stub screen: repair, take off | Shipyard, outfitter, trade, bar, missions |
 | Data | Ships, weapons, governments, AI pools, system definition | Missions, flags, crons, persons, plugins |
 | Presentation | Placeholder art, basic HUD, radar | Final art, audio polish, menus, save/load |
 | Debug | Debug panel and console: ship swap, spawning, invulnerability, time scale, data hot-reload, overlays | Player-facing cheats, mission and flag debugging |
@@ -156,6 +156,27 @@ Rules the loader enforces:
 ## Technical architecture
 
 One Ship scene serves both the player and every AI ship; swapping its controller is the only difference, so flight and combat are tuned once.
+
+```
+Data files (JSON) ──► DataRegistry (autoload: load, validate, mod overrides)
+                                │ definitions
+GameState (autoload: credits, legal record per government)
+                                │ record changes
+SystemScene (one star system)
+  ├─ TrafficSpawner   spawns ships from ai_pools to target counts
+  ├─ System objects   star, planets, station from the system file
+  ├─ Backdrop         noise stars + nebula on a slow parallax layer
+  ├─ LocalSpace       streams scenery chunks around the camera
+  ├─ Ship (player and AI)
+  │    ├─ ShipBody      flight model
+  │    ├─ WeaponMounts  hardpoints
+  │    ├─ Health        shield, armour, disable
+  │    └─ Controller    PlayerController | AIController (trader, warship, pirate)
+  └─ Shots            projectiles, missiles, beams; apply damage
+HUD           shield, armour, radar, target, messages (reads the player ship)
+LandedScreen  repair and take off; checks the landing record
+DebugCommands (autoload) ◄── DebugPanel, Console
+```
 
 - **Autoloads:** DataRegistry holds every definition after load; GameState holds credits and the legal record so they survive scene changes.
 - **Composition over inheritance:** ShipBody, WeaponMounts and Health are child nodes, so a future station turret can reuse WeaponMounts and Health without flight.
