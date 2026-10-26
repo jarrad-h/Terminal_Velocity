@@ -11,10 +11,17 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 Notes received and how they were sorted:
 - **Tuning:** weapon range looked short. Effective range equals the visible tracer (range = shot lifetime). `light_laser` range 700 → 1000, `flak_turret` 450 → 1000, so shots cross the screen (half-diagonal ≈ 920 px). `mining_beam` left at 300 pending Jarrad.
 - **Design, agreed:** G3 applies to every ship of a government, not only warships (spec and decisions updated). Pirates can become non-hostile through future missions that raise the player's pirate record.
-- **Design, proposed (not built yet):**
-  - cycle hostile targets separately from all targets (C8);
-  - leniency before neutrals and allies turn hostile from accidental fire (A8, G2);
-  - shields recharge only after a delay without damage, with delay, rate and cap as upgradeable ship stats (C6).
+- **Design, agreed and built** (spec and decisions updated):
+  - **C8:** R nearest hostile, Tab nearest any, Shift+R cycles hostiles, Shift+Tab cycles all.
+  - **A8 + G2 leniency:** a per-ship grievance replaces faction-wide provocation. Only the ship pushed past its tolerance turns hostile, and the attack penalty is charged then. Allies ignore it; the rest of the government reacts only through the record.
+    - Governments: `tolerance_pct` (law 20, traders 25, pirates 10) and `forgiveness_pct_per_s` (4 / 5 / 2).
+    - Personalities: `tolerance_factor` (aggressive 0.5, cautious 1.5).
+    - Radar shows annoyed ships in amber.
+  - **C6:** `shield_recharge_delay` (3 s default). Any hit resets it.
+  - **C12:** weapon damage falloff with distance; shots and beams fade to show it. `mining_beam` range 300 → 1000, falloff from 30% of range down to 10%.
+- **Tuning to watch:**
+  - Traders' high flee threshold (60%) means a damaged trader often runs rather than fighting back, even when brave.
+  - The beam's fade mostly happens off-screen at zoom 1 (screen top ≈ 450 px ≈ 80% damage). Lower `falloff_start_pct` if you want it visible.
 
 
 Branch `m4-ai-governments`. Built in the cloud session (no godot MCP there; runs checked headless and under a virtual display).
