@@ -6,6 +6,16 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ## Milestone 4: AI and governments (26 Oct 2026) — awaiting playtest
 
+### 2026-10-27 — Playtest bug: crash firing missiles after the target died (Jarrad)
+
+**Error:** `Invalid type in function 'fire' … argument 8 (previously freed)` at `weapon_mounts.gd`. It happened when firing missiles after the targeted pirate was destroyed or jumped out.
+
+**Cause:** in Godot 4 a freed object compares equal to `null`. `Ship.get_target()` guarded with `_target != null`, so it handed the freed ship to `Projectile.fire`.
+
+**Fix:** the target is tracked by instance ID (`is_instance_id_valid`). Other `!= null and is_instance_valid` guards are simplified to `is_instance_valid`.
+
+**Regression test:** the scenario test frees a targeted ship, then fires missiles and guns. It reproduced the exact error on the old code and passes now. The earlier "target cleared" check had missed it, because `get_target() == null` is also true for a freed object.
+
 ### 2026-10-26 — Milestone 4 playtest notes (Jarrad)
 
 Notes received and how they were sorted:

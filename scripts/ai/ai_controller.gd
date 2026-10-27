@@ -73,7 +73,7 @@ func get_flight_input() -> FlightInput:
 ## D9 label: role/personality: state.
 func get_state_label() -> String:
 	var who: String = "%s/%s" % [pool.behaviour, personality.name.to_lower()]
-	if state == State.ATTACK and target != null and is_instance_valid(target):
+	if state == State.ATTACK and is_instance_valid(target):
 		return "%s: attacking %s" % [who, target.def.name]
 	return "%s: %s" % [who, STATE_NAMES[state]]
 

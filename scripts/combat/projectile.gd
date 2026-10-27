@@ -39,7 +39,7 @@ static func fire(parent: Node, p_weapon: WeaponDef, at: Vector2, direction: Vect
 
 func _physics_process(delta: float) -> void:
 	if weapon.kind == "guided":
-		if target != null and is_instance_valid(target) and not target.health.is_destroyed:
+		if is_instance_valid(target) and not target.health.is_destroyed:
 			rotation = Aim.homing_rotation(rotation, position, target.global_position, weapon.turn_rate, delta)
 		velocity = FlightModel.heading(rotation) * weapon.speed
 	var next: Vector2 = position + velocity * delta

@@ -32,6 +32,7 @@ var _aggressors: Dictionary = {}
 var _last_attacker: Ship = null
 static var _DEFAULT_GOV: GovernmentDef = GovernmentDef.parse(DefReader.new({}, "", []))
 var _target: Ship = null
+var _target_id: int = 0
 
 @onready var body: ShipBody = $ShipBody
 @onready var visual: Node2D = $Visual
@@ -105,18 +106,23 @@ func get_velocity() -> Vector2:
 	return body.state.velocity
 
 
-## C8: the selected target, or null once it is gone.
+## C8: the selected target, or null once it is gone. Tracked by instance ID:
+## in Godot 4 a freed object compares equal to null, so `_target != null`
+## can't tell "no target" from "target was freed".
 func get_target() -> Ship:
-	if _target != null and (not is_instance_valid(_target) or not _target.is_active()):
+	if _target_id != 0 and (not is_instance_id_valid(_target_id) or not _target.is_active()):
 		_target = null
+		_target_id = 0
 		target_changed.emit(null)
-	return _target
+	return _target if _target_id != 0 else null
 
 
 func set_target(ship: Ship) -> void:
-	if ship == _target:
+	var new_id: int = ship.get_instance_id() if ship != null else 0
+	if new_id == _target_id:
 		return
 	_target = ship
+	_target_id = new_id
 	target_changed.emit(ship)
 
 
@@ -223,7 +229,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _attacked_by_player() -> bool:
-	return _last_attacker != null and is_instance_valid(_last_attacker) and _last_attacker.is_player()
+	return is_instance_valid(_last_attacker) and _last_attacker.is_player()
 
 
 func _on_disabled() -> void:

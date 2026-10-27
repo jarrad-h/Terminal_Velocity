@@ -131,7 +131,24 @@ func _run() -> void:
 	dummy.health.force_destroy()
 	await _frames(2)
 	_check(not is_instance_valid(dummy), "destroyed dummy removed (C7)")
-	_check(player.get_target() == null, "target cleared when destroyed (C8)")
+	# A freed object compares equal to null in Godot 4, so check validity, not == null.
+	_check(not is_instance_valid(player.get_target()) and player.get_target() == null, "target cleared when destroyed (C8)")
+
+	# Regression (M4 playtest crash): firing missiles after the target was freed
+	# (destroyed or jumped out) must not pass the freed ship on.
+	_debug.swap_player_ship("patrol_corvette")
+	var gone: Array[Ship] = _debug.spawn_ships("pirate_raider", 1)
+	await _frames(2)
+	player.set_target(gone[0])
+	gone[0].remove_from_group(&"ships")
+	gone[0].queue_free()
+	await _frames(2)
+	Input.action_press(&"fire_secondary")
+	Input.action_press(&"fire_primary")
+	await _frames(10)
+	Input.action_release(&"fire_secondary")
+	Input.action_release(&"fire_primary")
+	_check(player.get_target() == null and not is_instance_valid(player.get_target()), "freed target is dropped before firing")
 
 	# L4: shots damage solid scenery; destroyed scenery stays destroyed.
 	var scene_root_l4: Node = get_tree().get_first_node_in_group(&"system_scene")
