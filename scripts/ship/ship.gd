@@ -51,22 +51,28 @@ func _ready() -> void:
 
 
 ## Applies a ship definition. Call after adding to the tree. Calling it again
-## (ship swap, hot reload) keeps position, velocity and heading, and restores
-## full shield and armour.
-func setup(ship_def: ShipDef) -> void:
+## keeps position, velocity and heading. A ship swap (D2) restores full shield
+## and armour; a data reload (D8, `keep_health`) keeps current damage and the
+## disabled state, so reloading never heals or revives anything.
+func setup(ship_def: ShipDef, keep_health: bool = false) -> void:
 	def = ship_def
 	hit_radius = def.hit_radius
 	body.stats = FlightStats.from_ship_def(def)
 	var circle := CircleShape2D.new()
 	circle.radius = hit_radius
 	hitbox_shape.shape = circle
-	health.setup(def.shield, def.armor, def.shield_regen, def.disable_armor_pct / 100.0, def.shield_recharge_delay)
-	hitbox_shape.set_deferred(&"disabled", false)
 	weapons.setup(def)
-	visible = true
-	visual.modulate = Color.WHITE
-	body.set_physics_process(true)
 	_build_visual()
+	if keep_health:
+		health.retune(def.shield, def.armor, def.shield_regen, def.disable_armor_pct / 100.0, def.shield_recharge_delay)
+		if health.is_disabled:
+			visual.modulate = DISABLED_TINT
+	else:
+		health.setup(def.shield, def.armor, def.shield_regen, def.disable_armor_pct / 100.0, def.shield_recharge_delay)
+		hitbox_shape.set_deferred(&"disabled", false)
+		visible = true
+		visual.modulate = Color.WHITE
+		body.set_physics_process(true)
 	if docked:
 		set_docked(true)  # a docked trader stays docked through swap/reload
 
@@ -255,7 +261,7 @@ func _on_destroyed() -> void:
 func _on_data_reloaded() -> void:
 	var fresh: ShipDef = DataRegistry.get_ship(def.id)
 	if fresh != null:
-		setup(fresh)
+		setup(fresh, true)
 
 
 func _build_visual() -> void:

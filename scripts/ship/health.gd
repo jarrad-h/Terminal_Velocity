@@ -39,6 +39,21 @@ func setup(p_max_shield: float, p_max_armor: float, p_shield_regen: float = 0.0,
 	set_physics_process(shield_regen > 0.0 and max_shield > 0.0)
 
 
+## D8: new maximums and rates from reloaded data, keeping the current shield
+## and armour as fractions of max and the disabled/destroyed state.
+func retune(p_max_shield: float, p_max_armor: float, p_shield_regen: float, p_disable_fraction: float, p_recharge_delay: float) -> void:
+	var shield_fraction: float = shield / max_shield if max_shield > 0.0 else 1.0
+	var armor_fraction: float = armor / max_armor if max_armor > 0.0 else 1.0
+	max_shield = p_max_shield
+	max_armor = p_max_armor
+	shield = max_shield * shield_fraction
+	armor = max_armor * armor_fraction
+	shield_regen = p_shield_regen
+	disable_fraction = p_disable_fraction
+	recharge_delay = p_recharge_delay
+	set_physics_process(shield_regen > 0.0 and max_shield > 0.0)
+
+
 func apply_damage(damage_shield: float, damage_armor: float, source: Node = null) -> void:
 	if invulnerable or is_destroyed:
 		return
