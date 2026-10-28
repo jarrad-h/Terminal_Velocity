@@ -49,6 +49,7 @@ func _ready() -> void:
 		var overlay := DebugOverlay.new()
 		world.add_child(overlay)
 		add_child(load(DEBUG_PANEL_SCENE).instantiate())
+		add_child(DebugConsole.new())
 		for spawn: Dictionary in settings["debug"]["spawn_at_start"]:
 			var at: Array = spawn.get("position", [0, 0])
 			var ship: Ship = spawn_ship(spawn["ship"], Vector2(at[0], at[1]), spawn.get("government", ""))

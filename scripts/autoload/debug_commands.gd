@@ -20,6 +20,9 @@ var player_invulnerable: bool = false
 var ai_paused: bool = false
 ## D4: radar shows ships beyond its range on the rim.
 var radar_show_all: bool = false
+## D10: true while the console has the keyboard (the ship ignores flight keys).
+var console_open: bool = false
+signal console_toggled(open: bool)
 ## D3: when set, the next left click in the world spawns there.
 var _pending_click_spawn: Callable = Callable()
 var _overlays: Dictionary = {}
@@ -34,6 +37,9 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"debug_toggle"):
 		toggle_panel()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"debug_console"):
+		toggle_console()
 		get_viewport().set_input_as_handled()
 	elif _pending_click_spawn.is_valid() and event is InputEventMouseButton \
 			and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -284,3 +290,101 @@ func set_credits(value: int) -> void:
 func set_record(government: String, value: float) -> void:
 	if OS.is_debug_build() and DataRegistry.get_government(government) != null:
 		GameState.set_record(government, value)
+
+
+## D10
+func toggle_console() -> void:
+	if not OS.is_debug_build():
+		return
+	console_open = not console_open
+	console_toggled.emit(console_open)
+
+
+## D10: one command line, the same actions as the panel. Returns the reply.
+func run_command(line: String) -> String:
+	if not OS.is_debug_build():
+		return ""
+	var w: Array[String] = ConsoleParser.tokenize(line)
+	if w.is_empty():
+		return ""
+	var gov_arg: Callable = func(index: int) -> String: return w[index] if w.size() > index else ""
+	match w[0]:
+		"help":
+			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | system <id> | reload | " \
+				+ "time <scale> | pause | resume | step | invuln on|off | ai on|off | traffic on|off | radar all|range | " \
+				+ "kill | disable | clear | credits <n> | record <gov> <n> | overlay <name> on|off | ids <type> | pos"
+		"spawn", "pool":
+			if w.size() < 2:
+				return "Usage: %s <id> [count] [government]" % w[0]
+			var count: Variant = ConsoleParser.int_arg(w, 2, 1)
+			if count == null:
+				return "Count must be a whole number"
+			var made: Array[Ship] = spawn_ships(w[1], count, gov_arg.call(3)) if w[0] == "spawn" else spawn_pool(w[1], count, gov_arg.call(3))
+			return "Spawned %d" % made.size() if not made.is_empty() else "Nothing spawned (unknown id '%s'?)" % w[1]
+		"swap":
+			return "Swapped to %s" % w[1] if w.size() > 1 and swap_player_ship(w[1]) else "Usage: swap <ship id>"
+		"system":
+			return "Switched to %s" % w[1] if w.size() > 1 and switch_system(w[1]) else "Usage: system <system id>"
+		"reload":
+			var errors: Array[String] = reload_data()
+			return "Reloaded" if errors.is_empty() else "Reload failed:\n" + "\n".join(errors)
+		"time":
+			if w.size() < 2 or not ConsoleParser.is_number(w[1]):
+				return "Usage: time <scale>"
+			set_time_scale(w[1].to_float())
+			return "Time scale %s" % Engine.time_scale
+		"pause":
+			set_paused(true)
+			return "Paused"
+		"resume":
+			set_paused(false)
+			return "Resumed"
+		"step":
+			step_frame()
+			return "Stepped"
+		"invuln", "ai", "traffic":
+			var on: int = ConsoleParser.parse_switch(w[1]) if w.size() > 1 else -1
+			if on == -1:
+				return "Usage: %s on|off" % w[0]
+			match w[0]:
+				"invuln":
+					set_player_invulnerable(on == 1)
+				"ai":
+					set_ai_paused(on == 0)
+				"traffic":
+					set_traffic_enabled(on == 1)
+			return "%s %s" % [w[0], "on" if on == 1 else "off"]
+		"radar":
+			if w.size() < 2 or w[1] not in ["all", "range"]:
+				return "Usage: radar all|range"
+			set_radar_show_all(w[1] == "all")
+			return "Radar shows %s" % ("all ships" if w[1] == "all" else "ships in range")
+		"kill":
+			return "Target destroyed" if destroy_target() else "No target"
+		"disable":
+			return "Target disabled" if disable_target() else "No target"
+		"clear":
+			return "Removed %d ships" % clear_ships()
+		"credits":
+			if w.size() < 2 or not ConsoleParser.is_int(w[1]):
+				return "Usage: credits <n>"
+			set_credits(w[1].to_int())
+			return "Credits %d" % GameState.credits
+		"record":
+			if w.size() < 3 or not ConsoleParser.is_number(w[2]) or DataRegistry.get_government(w[1]) == null:
+				return "Usage: record <government id> <n>"
+			set_record(w[1], w[2].to_float())
+			return "Record with %s: %s" % [w[1], GameState.get_record(w[1])]
+		"overlay":
+			var on: int = ConsoleParser.parse_switch(w[2]) if w.size() > 2 else -1
+			if w.size() < 3 or StringName(w[1]) not in OVERLAYS or on == -1:
+				return "Usage: overlay %s on|off" % "|".join(OVERLAYS)
+			set_overlay(StringName(w[1]), on == 1)
+			return "Overlay %s %s" % [w[1], w[2]]
+		"ids":
+			if w.size() < 2:
+				return "Usage: ids ships|weapons|governments|ai_pools|systems|scenery|personalities"
+			return ", ".join(DataRegistry.ids(w[1]))
+		"pos":
+			return player_location_text()
+	return "Unknown command '%s' (try help)" % w[0]

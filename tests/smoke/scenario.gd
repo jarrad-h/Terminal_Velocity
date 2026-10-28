@@ -460,6 +460,24 @@ func _run() -> void:
 	_debug.clear_ships()
 	await _frames(2)
 
+	# M5: debug console (D10) drives the same command layer as the panel.
+	_check(_debug.run_command("help").begins_with("Commands:"), "help lists commands (D10)")
+	_check(_debug.run_command("spawn pirate_raider 2 pirates") == "Spawned 2", "spawn via console (D10)")
+	_check(_debug.run_command("credits 777") == "Credits 777" and GameState.credits == 777, "credits via console (D10)")
+	_check(_debug.run_command("record pirates 25").begins_with("Record with pirates"), "record via console (D10)")
+	_check(_debug.run_command("invuln on") == "invuln on" and player.health.invulnerable, "invuln via console (D10)")
+	_debug.run_command("invuln off")
+	_check(_debug.run_command("spawn pirate_raider lots").begins_with("Count must"), "bad count is reported (D10)")
+	_check(_debug.run_command("frobnicate").begins_with("Unknown command"), "unknown command is reported (D10)")
+	_debug.toggle_console()
+	Input.action_press(&"thrust")
+	_check(not player.get_flight_input().thrust, "typing in the console doesn't fly the ship (D10)")
+	Input.action_release(&"thrust")
+	_debug.toggle_console()
+	_check(_debug.run_command("clear").begins_with("Removed"), "clear via console")
+	GameState.set_record("pirates", 0.0)
+	await _frames(2)
+
 	# System switch.
 	_check(_debug.switch_system("test_graveyard"), "switch to test_graveyard")
 	_check(_debug.current_system_id() == "test_graveyard", "current system updated")

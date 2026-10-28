@@ -6,6 +6,8 @@ extends Node
 
 
 func get_flight_input() -> FlightInput:
+	if DebugCommands.console_open:
+		return FlightInput.new()  # D10: typing doesn't fly the ship
 	var input := FlightInput.new(
 		Input.is_action_pressed(&"thrust"),
 		Input.get_axis(&"turn_left", &"turn_right"),
@@ -34,6 +36,8 @@ func get_state_label() -> String:
 ## C8: R nearest hostile, Tab nearest of any kind, Shift+R cycle hostiles,
 ## Shift+Tab cycle all. Exact matching keeps Shift+R from also firing R.
 func _unhandled_input(event: InputEvent) -> void:
+	if DebugCommands.console_open:
+		return
 	var ship: Ship = get_parent()
 	if event.is_action_pressed(&"target_cycle_hostile", false, true):
 		ship.cycle_target(true)
