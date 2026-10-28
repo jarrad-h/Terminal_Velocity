@@ -27,6 +27,7 @@ var _target_armor: ProgressBar
 
 func _ready() -> void:
 	layer = 10
+	process_mode = Node.PROCESS_MODE_ALWAYS  # keep readouts current behind paused windows
 	if not DataRegistry.load_errors.is_empty():
 		set_process(false)
 		return
@@ -41,6 +42,7 @@ func _ready() -> void:
 	_board_bar.offset_top = -170.0
 	_board_bar.offset_bottom = -150.0
 	_board_bar.max_value = 1.0
+	_board_bar.show_percentage = false
 	_board_bar.visible = false
 	add_child(_board_bar)
 	radar.configure(DataRegistry.settings["radar"])
