@@ -72,3 +72,10 @@ func test_friendly_fire_scale() -> void:
 	assert_near(Relations.damage_scale(false, law, _gov("pirates"), 0.0), 1.0, "enemies always full damage")
 	assert_near(Relations.damage_scale(true, null, law, 0.0), 1.0, "player shots always full damage")
 	assert_near(Relations.damage_scale(false, law, null, 0.0), 1.0, "targets with no government (dummy, scenery)")
+
+
+func test_assist_raises_record() -> void:
+	var law := _gov("law")
+	law.assist_reward = 10.0
+	assert_near(Relations.after_assist(-5.0, law), 5.0, "assist reward (C9)")
+	assert_near(Relations.after_assist(-5.0, null), -5.0, "no government, no change")

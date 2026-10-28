@@ -78,6 +78,14 @@ func repair_full() -> void:
 	is_disabled = false
 
 
+## C9 Assist: patches a disabled ship up to `armor_pct` % of max armour.
+func recover(armor_pct: float) -> void:
+	if is_destroyed:
+		return
+	armor = maxf(armor, max_armor * armor_pct / 100.0)
+	is_disabled = false
+
+
 ## D5: drops armour to the disable threshold.
 func force_disable() -> void:
 	if is_destroyed or disable_fraction <= 0.0:

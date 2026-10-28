@@ -41,6 +41,7 @@ func _ready() -> void:
 		player.set_controller(PlayerController.new())
 		camera.target = player
 	hud.player = player
+	hud.actions = actions
 
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
 	if OS.is_debug_build():

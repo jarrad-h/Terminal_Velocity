@@ -11,6 +11,9 @@ var player: Ship = null:
 
 var radar: Radar
 var messages: MessageLine
+## Set by the system scene; boarding progress (C9).
+var actions: PlayerActions = null
+var _board_bar: ProgressBar
 
 var _player_shield: ProgressBar
 var _player_armor: ProgressBar
@@ -31,6 +34,15 @@ func _ready() -> void:
 	add_child(radar)
 	messages = MessageLine.new()
 	add_child(messages)
+	_board_bar = ProgressBar.new()
+	_board_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_board_bar.offset_left = -150.0
+	_board_bar.offset_right = 150.0
+	_board_bar.offset_top = -170.0
+	_board_bar.offset_bottom = -150.0
+	_board_bar.max_value = 1.0
+	_board_bar.visible = false
+	add_child(_board_bar)
 	radar.configure(DataRegistry.settings["radar"])
 	DataRegistry.data_reloaded.connect(func() -> void: radar.configure(DataRegistry.settings["radar"]))
 	var box := VBoxContainer.new()
@@ -59,6 +71,9 @@ func _process(_delta: float) -> void:
 	if player == null or not is_instance_valid(player):
 		return
 	_credits.text = "Credits %d" % GameState.credits
+	var progress: float = actions.board_progress() if actions != null else -1.0
+	_board_bar.visible = progress >= 0.0
+	_board_bar.value = maxf(progress, 0.0)
 	_fill(_player_shield, player.health.shield, player.health.max_shield)
 	_fill(_player_armor, player.health.armor, player.health.max_armor)
 	_status.text = "DISABLED" if player.health.is_disabled and not player.health.is_destroyed else ""

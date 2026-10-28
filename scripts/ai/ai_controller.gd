@@ -163,6 +163,13 @@ func _start_flee() -> void:
 		destination = _edge_point_away_from_centre()
 
 
+## C9 Assist: a recovered ship heads for the edge and leaves.
+func depart() -> void:
+	target = null
+	ship.set_target(null)
+	_start_leave()
+
+
 func _start_leave() -> void:
 	state = State.LEAVE
 	planet = null
