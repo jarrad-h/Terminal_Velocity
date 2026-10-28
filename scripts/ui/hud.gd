@@ -10,6 +10,7 @@ var player: Ship = null:
 			radar.player = value
 
 var radar: Radar
+var messages: MessageLine
 
 var _player_shield: ProgressBar
 var _player_armor: ProgressBar
@@ -28,6 +29,8 @@ func _ready() -> void:
 		return
 	radar = Radar.new()
 	add_child(radar)
+	messages = MessageLine.new()
+	add_child(messages)
 	radar.configure(DataRegistry.settings["radar"])
 	DataRegistry.data_reloaded.connect(func() -> void: radar.configure(DataRegistry.settings["radar"]))
 	var box := VBoxContainer.new()
@@ -58,8 +61,7 @@ func _process(_delta: float) -> void:
 	_credits.text = "Credits %d" % GameState.credits
 	_fill(_player_shield, player.health.shield, player.health.max_shield)
 	_fill(_player_armor, player.health.armor, player.health.max_armor)
-	_status.text = "DESTROYED (respawn comes in M5; swap ship in the debug panel)" if player.health.is_destroyed \
-		else ("DISABLED" if player.health.is_disabled else "")
+	_status.text = "DISABLED" if player.health.is_disabled and not player.health.is_destroyed else ""
 	var target: Ship = player.get_target()
 	_target_box.visible = target != null
 	if target == null:

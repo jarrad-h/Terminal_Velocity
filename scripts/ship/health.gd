@@ -66,6 +66,18 @@ func apply_damage(damage_shield: float, damage_armor: float, source: Node = null
 	_update_state()
 
 
+## S3: points of shield and armour missing.
+func missing_points() -> float:
+	return (max_shield - shield) + (max_armor - armor)
+
+
+## S3: full shield and armour; clears the disabled state.
+func repair_full() -> void:
+	shield = max_shield
+	armor = max_armor
+	is_disabled = false
+
+
 ## D5: drops armour to the disable threshold.
 func force_disable() -> void:
 	if is_destroyed or disable_fraction <= 0.0:

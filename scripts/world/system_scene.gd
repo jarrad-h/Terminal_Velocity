@@ -15,6 +15,7 @@ var system: SystemDef = null
 @onready var hud: Hud = $Hud
 @onready var camera: FollowCamera = $Camera
 @onready var traffic: TrafficSpawner = $TrafficSpawner
+var actions: PlayerActions
 
 
 func _ready() -> void:
@@ -26,6 +27,10 @@ func _ready() -> void:
 		screen.show_errors(DataRegistry.load_errors)
 		return
 	var settings: Dictionary = DataRegistry.settings
+	actions = PlayerActions.new()
+	actions.name = "PlayerActions"
+	actions.scene = self
+	add_child(actions)
 	camera.configure(settings["camera"])
 	load_system(settings["system"])
 

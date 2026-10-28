@@ -334,6 +334,31 @@ func _run() -> void:
 	_debug.set_traffic_enabled(false)
 	await _frames(2)
 
+	# M5: landing (S2, G4, S3) and the message line (H4).
+	var actions: PlayerActions = scene_root.actions
+	var haven: SystemObjectDef = null
+	for obj: SystemObjectDef in scene_root.system.objects:
+		if obj.id == "haven":
+			haven = obj
+	await _teleport(player, haven.position + Vector2(haven.radius * 3.0, 0.0))
+	_check(actions.try_land() == "far", "too far to land gives a hint (S2)")
+	_check(scene_root.hud.messages.latest().begins_with("Too far"), "hint on the message line (H4): %s" % scene_root.hud.messages.latest())
+	player.place(haven.position, 0.0, Vector2(200.0, 0.0))
+	_check(actions.try_land() == "fast", "too fast to land (S2)")
+	GameState.set_record("local_authority", haven.min_record - 1.0)
+	player.place(haven.position, 0.0)
+	_check(actions.try_land() == "refused", "refused below min_record (G4)")
+	GameState.set_record("local_authority", 0.0)
+	player.health.apply_damage(50.0, 30.0)
+	_check(actions.try_land() == "", "lands when close, slow and welcome (S2)")
+	_check(get_tree().paused and actions.dialog != null, "landed screen open, world paused (S3)")
+	_check(actions.dialog.has_choice("repair"), "repair offered when damaged (S3)")
+	actions.dialog.choose("repair")
+	_check(player.health.missing_points() == 0.0, "repair restores shield and armour (S3)")
+	actions.dialog.choose("take_off")
+	await _frames(2)
+	_check(not get_tree().paused and actions.dialog == null, "take off closes the screen and unpauses (S3)")
+
 	# System switch.
 	_check(_debug.switch_system("test_graveyard"), "switch to test_graveyard")
 	_check(_debug.current_system_id() == "test_graveyard", "current system updated")

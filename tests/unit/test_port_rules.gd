@@ -60,3 +60,9 @@ func test_rescue_port_prefers_accepting_nearest() -> void:
 	assert_true(PortRules.rescue_port(nobody, Vector2.ZERO, {}, 0.0) == 0, "falls back to any landable port")
 	var none: Array[SystemObjectDef] = [_obj("rock", Vector2(10, 0), false)]
 	assert_true(PortRules.rescue_port(none, Vector2.ZERO, {}, 0.0) == -1, "no ports at all")
+
+
+func test_repair_cost() -> void:
+	assert_true(PortRules.repair_cost(150.0, 0.0) == 0, "free by default (S3)")
+	assert_true(PortRules.repair_cost(150.0, 2.0) == 300, "per point")
+	assert_true(PortRules.repair_cost(-5.0, 2.0) == 0, "nothing missing")

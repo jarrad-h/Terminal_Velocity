@@ -4,6 +4,8 @@ extends Node
 
 signal record_changed(government: String, record: float)
 signal credits_changed(credits: int)
+## H4: an event for the message line.
+signal message_posted(text: String)
 
 var credits: int = 0
 var _records: Dictionary = {}
@@ -39,3 +41,19 @@ func report_player_act(target: Ship, act: String) -> void:
 	target.player_acts[act] = true
 	var gov: GovernmentDef = DataRegistry.get_government(target.government)
 	set_record(target.government, Relations.after_penalty(get_record(target.government), gov, act))
+
+
+## H4: shows `text` on the message line.
+func post_message(text: String) -> void:
+	message_posted.emit(text)
+
+
+func add_credits(amount: int) -> void:
+	set_credits(credits + amount)
+
+
+## Fresh start (restart after "lost with all hands").
+func reset() -> void:
+	_records.clear()
+	credits = int(DataRegistry.settings["player"]["credits"])
+	credits_changed.emit(credits)

@@ -67,3 +67,8 @@ static func rescue_port(objects: Array[SystemObjectDef], from: Vector2, records:
 			if best_ok == -1 or d2 < from.distance_squared_to(objects[best_ok].position):
 				best_ok = i
 	return best_ok if best_ok != -1 else best_any
+
+
+## S3: repair cost for the missing shield and armour points.
+static func repair_cost(missing_points: float, cost_per_point: float) -> int:
+	return ceili(maxf(missing_points, 0.0) * maxf(cost_per_point, 0.0))
