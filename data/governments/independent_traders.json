@@ -9,5 +9,6 @@
   "max_odds": 0.5,
   "tolerance_pct": 25,
   "forgiveness_pct_per_s": 5,
+  "assist_reward": 15,
   "flee_shield_pct": 60
 }

@@ -234,8 +234,9 @@ func _steer(delta: float) -> void:
 			_steer_attack(s, stats, delta)
 		State.TRAVEL, State.FLEE when planet != null:
 			_input = Steering.toward_velocity(s, stats, Steering.arrive_velocity(s, stats, planet.position), thrust_angle, delta)
-			var land_radius: float = planet.radius * _ai("land_radius_fraction")
-			if s.position.distance_to(planet.position) <= land_radius and s.velocity.length() <= _ai("landing_speed"):
+			var landing: Dictionary = DataRegistry.settings["landing"]
+			if PortRules.landing_check(s.position.distance_to(planet.position), planet.radius, float(landing["radius_fraction"]),
+					s.velocity.length(), float(landing["max_speed"])) == "":
 				_land()
 		State.PATROL:
 			_input = Steering.toward_velocity(s, stats, Steering.arrive_velocity(s, stats, destination), thrust_angle, delta)

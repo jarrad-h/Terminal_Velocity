@@ -11,6 +11,7 @@
   "armor": 300,
   "strength": 40,
   "crew": 12,
+  "board_credits": [500, 1500],
   "hit_radius": 24,
   "hardpoints": {
     "gun": [[-8, -22], [8, -22]],

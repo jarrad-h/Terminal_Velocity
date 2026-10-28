@@ -17,6 +17,8 @@ var flee_shield_pct: float
 ## its ships tolerate before turning hostile, and how fast it drains (%/s).
 var tolerance_pct: float
 var forgiveness_pct_per_s: float
+## C9: record gained for assisting one of its disabled ships.
+var assist_reward: float
 
 
 static func parse(r: DefReader) -> GovernmentDef:
@@ -33,6 +35,7 @@ static func parse(r: DefReader) -> GovernmentDef:
 	d.flee_shield_pct = r.number("flee_shield_pct", 25.0, false, 0.0)
 	d.tolerance_pct = r.number("tolerance_pct", 20.0, false, 0.0)
 	d.forgiveness_pct_per_s = r.number("forgiveness_pct_per_s", 4.0, false, 0.0)
+	d.assist_reward = r.number("assist_reward", 0.0, false, 0.0)
 	return d
 
 

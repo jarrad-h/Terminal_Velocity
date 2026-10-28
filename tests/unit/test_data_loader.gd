@@ -161,6 +161,7 @@ func test_field_errors_name_file_and_field() -> void:
 	_expect_error(set, ["hothead.json", "tolerance_factor", "at least 0"])
 	_expect_error(set, ["double_pool.json", "traffic[1].pool", "already listed"])
 	_expect_error(set, ["game.json", "ai.jump_out_factor", "at least 1"])
+	_expect_error(set, ["game.json", "player.uninsured_ship", "no ship definition"])
 	_expect_error(set, ["no_hardpoint.json", "default_weapons[0]", "no beam exit points"])
 	_expect_error(set, ["bad_ring.json", "local_space[1].region.inner_radius", "smaller than radius"])
 

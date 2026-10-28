@@ -20,6 +20,8 @@ var disable_armor_pct: float
 var strength: float
 var crew: int
 var hit_radius: float
+## C9: credits aboard [min, max] before the AI pool's wealth factor.
+var board_credits: Vector2
 ## Kind ("gun", "turret"…) -> Array of Vector2 exit points, relative to the ship centre, ship facing up.
 var hardpoints: Dictionary = {}
 ## [{"weapon": String, "count": int}]
@@ -42,6 +44,7 @@ static func parse(r: DefReader) -> ShipDef:
 	d.strength = r.number("strength", 1.0, false, 0.0)
 	d.crew = r.integer("crew", 1, false, 0)
 	d.hit_radius = r.number("hit_radius", 16.0, false, 1.0)
+	d.board_credits = r.range2("board_credits", Vector2.ZERO, 0.0)
 	var points: DefReader = r.object("hardpoints")
 	for kind: String in HARDPOINT_KINDS:
 		var list: Array[Vector2] = []

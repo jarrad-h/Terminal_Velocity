@@ -18,5 +18,6 @@
   "dwell_time": [6, 12],
   "stops": [1, 3],
   "spawn_from_planets": true,
+  "wealth_factor": 1.0,
   "fire_angle": 10
 }

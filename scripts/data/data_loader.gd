@@ -15,10 +15,13 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"player_ship": "courier",
 	"system": "test_nebula",
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
-	"player": {"credits": 0, "record": 0.0},
+	"player": {"credits": 0, "record": 0.0, "escape_pod": true, "insured": true, "uninsured_ship": "shuttle",
+		"rescue_fee_pct": 10.0, "rescue_days": [2.0, 5.0], "pod_speed": 600.0, "pod_time": 3.0},
+	"landing": {"max_speed": 60.0, "radius_fraction": 0.6, "repair_cost_per_point": 0.0},
+	"boarding": {"range": 60.0, "max_speed": 40.0, "time": 2.0, "assist_armor_pct": 50.0},
 	"combat": {"friendly_fire_pct": 100.0},
 	"local_space": {"chunk_size": 1024.0},
-	"ai": {"landing_speed": 60.0, "land_radius_fraction": 0.6, "thrust_angle": 35.0,
+	"ai": {"thrust_angle": 35.0,
 		"standoff_fraction": 0.4, "think_interval": 0.25, "disengage_factor": 1.5,
 		"waypoint_reached_fraction": 0.1, "object_patrol_chance": 0.6, "object_patrol_offset_factor": 0.3,
 		"roam_band": [0.1, 0.6], "jump_out_factor": 1.05, "planet_spawn_chance": 0.5,
@@ -113,8 +116,20 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var reader := DefReader.new(data_set.settings, SETTINGS_FILE, errors)
 	reader.ref("player_ship", "ships")
 	reader.ref("system", "systems")
-	reader.object("player").number("credits", 0.0)
-	reader.object("player").number("record", 0.0)
+	var player: DefReader = reader.object("player")
+	player.number("credits", 0.0)
+	player.number("record", 0.0)
+	player.boolean("escape_pod", true)
+	player.boolean("insured", true)
+	player.ref("uninsured_ship", "ships")
+	player.number("rescue_fee_pct", 0.0, false, 0.0)
+	player.range2("rescue_days", Vector2.ZERO, 0.0)
+	player.number("pod_speed", 0.0, false, 0.0)
+	player.number("pod_time", 0.0, false, 0.0)
+	for section: String in ["landing", "boarding"]:
+		var sub: DefReader = reader.object(section)
+		for key: String in SETTINGS_DEFAULTS[section]:
+			sub.number(key, 0.0, false, 0.0)
 	reader.object("combat").number("friendly_fire_pct", 100.0, false, 0.0)
 	var ai: DefReader = reader.object("ai")
 	for key: String in SETTINGS_DEFAULTS["ai"]:
