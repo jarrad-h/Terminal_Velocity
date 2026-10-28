@@ -38,10 +38,13 @@ static func board_credits(hull_range: Vector2, wealth_factor: float, roll: float
 	return roundi(lerpf(hull_range.x, hull_range.y, roll) * wealth_factor)
 
 
-## C9: options still open. Looting rules out assisting.
-static func board_options(looted: bool) -> Array[String]:
+## C9: options still open. Looting rules out assisting; a ship can be
+## assisted only once (no disable-and-assist record farming).
+static func board_options(looted: bool, assisted: bool = false) -> Array[String]:
 	if looted:
 		return [SCUTTLE, LEAVE]
+	if assisted:
+		return [TAKE, SCUTTLE, LEAVE]
 	return [TAKE, ASSIST, SCUTTLE, LEAVE]
 
 

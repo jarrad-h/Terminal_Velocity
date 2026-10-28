@@ -388,3 +388,13 @@ func run_command(line: String) -> String:
 		"pos":
 			return player_location_text()
 	return "Unknown command '%s' (try help)" % w[0]
+
+
+## Restart after "lost with all hands": debug session state goes back to normal.
+func reset_session() -> void:
+	console_open = false
+	ai_paused = false
+	radar_show_all = false
+	player_invulnerable = false
+	_pending_click_spawn = Callable()
+	Engine.time_scale = 1.0

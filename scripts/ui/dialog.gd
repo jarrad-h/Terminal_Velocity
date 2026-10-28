@@ -106,6 +106,8 @@ func close() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if DebugCommands.console_open:
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var index: int = (event as InputEventKey).keycode - KEY_1
 		if index >= 0 and index < _choices.size():

@@ -122,7 +122,8 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	player.boolean("escape_pod", true)
 	player.boolean("insured", true)
 	player.ref("uninsured_ship", "ships")
-	player.number("rescue_fee_pct", 0.0, false, 0.0)
+	if player.number("rescue_fee_pct", 0.0, false, 0.0) > 100.0:
+		player.error("rescue_fee_pct", "must be at most 100")
 	player.range2("rescue_days", Vector2.ZERO, 0.0)
 	player.number("pod_speed", 0.0, false, 0.0)
 	player.number("pod_time", 0.0, false, 0.0)
@@ -130,6 +131,11 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		var sub: DefReader = reader.object(section)
 		for key: String in SETTINGS_DEFAULTS[section]:
 			sub.number(key, 0.0, false, 0.0)
+	var boarding: DefReader = reader.object("boarding")
+	if boarding.has("time") and float(boarding.data["time"]) <= 0.0:
+		boarding.error("time", "must be more than 0")
+	if boarding.has("assist_armor_pct") and float(boarding.data["assist_armor_pct"]) > 100.0:
+		boarding.error("assist_armor_pct", "must be at most 100")
 	reader.object("combat").number("friendly_fire_pct", 100.0, false, 0.0)
 	var ai: DefReader = reader.object("ai")
 	for key: String in SETTINGS_DEFAULTS["ai"]:

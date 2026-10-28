@@ -98,3 +98,7 @@ Rejected: respawn at the station after a delay (Jarrad: no consequence, no ficti
 Ad hoc control request. Turns at the ship's normal turn rate toward the lead point for its primary guns; thrust and fire stay manual.
 
 ## 2026-10-28 — Radar arrow for an out-of-range target (H2); minimal message line pulled into M5 (H4)
+Why: the arrow keeps a distant target findable without zooming the radar out (Jarrad's ad hoc request). The message line is the only feedback for landing hints, refusals, boarding results and the escape pod, so a minimal one comes forward from milestone 6, which will polish it.
+
+## 2026-10-28 — Assist is once per ship (C9)
+A ship the player has assisted can't be assisted again, even if disabled again. Found at review: disable → assist → disable again would otherwise farm record. Jarrad can overturn it.

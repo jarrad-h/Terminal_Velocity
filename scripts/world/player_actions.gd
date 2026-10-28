@@ -6,8 +6,10 @@ extends Node
 var scene: Node  # SystemScene
 ## The open landed / boarding / rescue window, if any.
 var dialog: Dialog = null
-## C9: the ship being boarded and seconds spent so far.
+## C9: the ship being boarded (tracked by instance ID: a freed ship compares
+## equal to null in Godot 4) and seconds spent so far.
 var boarding: Ship = null
+var _boarding_id: int = 0
 var _board_elapsed: float = 0.0
 var _rng := RandomNumberGenerator.new()
 
@@ -21,6 +23,8 @@ func _player() -> Ship:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if DebugCommands.console_open:
+		return
 	if event.is_action_pressed(&"land", false, true):
 		try_land()
 	elif event.is_action_pressed(&"board", false, true):
@@ -60,6 +64,7 @@ func try_land() -> String:
 
 ## Puts the player down at `port` and opens the landed screen.
 func land_at(port: SystemObjectDef, intro: String = "") -> void:
+	_end_boarding()
 	var player: Ship = _player()
 	player.place(port.position, player.rotation)
 	player.set_target(null)
@@ -87,7 +92,7 @@ func _nearest_landable(from: Vector2) -> SystemObjectDef:
 ## if alongside and matched; returns "" or the reason ("none", "far", "fast").
 func try_board() -> String:
 	var player: Ship = _player()
-	if player == null or not player.can_act() or dialog != null or boarding != null:
+	if player == null or not player.can_act() or dialog != null or _boarding_id != 0:
 		return "none"
 	var candidate: Ship = _board_candidate(player)
 	if candidate == null:
@@ -102,24 +107,26 @@ func try_board() -> String:
 	if check != "":
 		return check
 	boarding = candidate
+	_boarding_id = candidate.get_instance_id()
 	_board_elapsed = 0.0
-	player.health.damaged.connect(_on_player_hit_while_boarding)
+	if not player.health.damaged.is_connected(_on_player_hit_while_boarding):
+		player.health.damaged.connect(_on_player_hit_while_boarding)
 	GameState.post_message("Boarding the %s..." % candidate.def.name)
 	return ""
 
 
 ## 0–1 while boarding, -1 otherwise (HUD progress bar).
 func board_progress() -> float:
-	if boarding == null:
+	if _boarding_id == 0:
 		return -1.0
 	return clampf(_board_elapsed / float(DataRegistry.settings["boarding"]["time"]), 0.0, 1.0)
 
 
 func _physics_process(delta: float) -> void:
-	if boarding == null:
+	if _boarding_id == 0:
 		return
 	var player: Ship = _player()
-	if not is_instance_valid(boarding) or not boarding.health.is_disabled or boarding.health.is_destroyed:
+	if not is_instance_id_valid(_boarding_id) or not boarding.health.is_disabled or boarding.health.is_destroyed:
 		_cancel_boarding("Boarding aborted")
 		return
 	if player == null or not player.can_act() or _board_check(player, boarding) != "":
@@ -146,6 +153,7 @@ func _end_boarding() -> void:
 	if player != null and player.health.damaged.is_connected(_on_player_hit_while_boarding):
 		player.health.damaged.disconnect(_on_player_hit_while_boarding)
 	boarding = null
+	_boarding_id = 0
 
 
 func _board_check(player: Ship, ship: Ship) -> String:
@@ -179,7 +187,7 @@ func _open_boarding_window(ship: Ship) -> void:
 	body += "Credits aboard: %d." % ship.credits_aboard if not ship.looted else "You have already stripped her of credits."
 	dialog = Dialog.open(scene, title, body)
 	dialog.closed.connect(func() -> void: dialog = null)
-	for option: String in PortRules.board_options(ship.looted):
+	for option: String in PortRules.board_options(ship.looted, ship.player_acts.has("assist")):
 		match option:
 			PortRules.TAKE:
 				dialog.add_choice(option, "Take %d credits" % ship.credits_aboard, func() -> void: _take(ship))
@@ -200,6 +208,7 @@ func _take(ship: Ship) -> void:
 
 
 func _assist(ship: Ship) -> void:
+	ship.player_acts["assist"] = true  # once per ship: no disable/assist record farming
 	ship.recover(float(DataRegistry.settings["boarding"]["assist_armor_pct"]))
 	if ship.government != "":
 		GameState.set_record(ship.government, Relations.after_assist(GameState.get_record(ship.government), ship.gov_def()))
@@ -271,6 +280,7 @@ func _lost_with_all_hands() -> void:
 	dialog.add_choice("restart", "Restart", func() -> void:
 		dialog.close()
 		GameState.reset()
+		DebugCommands.reset_session()
 		get_tree().paused = false
 		get_tree().reload_current_scene())
 	dialog.closed.connect(func() -> void: dialog = null)

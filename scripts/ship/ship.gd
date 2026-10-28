@@ -246,6 +246,7 @@ func _on_disabled() -> void:
 	visual.modulate = DISABLED_TINT
 	if _attacked_by_player():
 		GameState.report_player_act(self, "disable")
+		GameState.post_message("%s disabled" % def.name)  # H4
 
 
 func _on_destroyed() -> void:

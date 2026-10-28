@@ -404,6 +404,22 @@ func _run() -> void:
 	await _frames(2)
 	_check(not stranded.health.is_disabled and (stranded.controller as AIController).state == AIController.State.LEAVE, "assist: ship recovers and leaves (C9)")
 	_check(GameState.get_record("independent_traders") > record_before_assist, "assist raises record (C9)")
+	# Assist is once per ship: disable it again and the option is gone.
+	stranded.health.force_disable()
+	stranded.place(Vector2(-3000.0, -3000.0), 0.0)
+	player.place(Vector2(-3000.0 + stranded.hit_radius + player.hit_radius + 10.0, -3000.0), 0.0)
+	actions.try_board()
+	await _frames(roundi(float(DataRegistry.settings["boarding"]["time"]) * 60.0) + 5)
+	_check(actions.dialog != null and not actions.dialog.has_choice("assist"), "no second assist on the same ship (C9)")
+	actions.dialog.choose("leave")
+	await _frames(2)
+	# A wreck freed mid-boarding cancels cleanly (freed objects compare equal to null).
+	actions.try_board()
+	await _frames(10)
+	stranded.remove_from_group(&"ships")
+	stranded.queue_free()
+	await _frames(3)
+	_check(actions.board_progress() < 0.0 and not player.health.damaged.is_connected(actions._on_player_hit_while_boarding), "freed wreck cancels boarding cleanly (C9)")
 	# Scuttle the looted wreck.
 	player.place(prize.global_position + Vector2(prize.hit_radius + player.hit_radius + 10.0, 0.0), 0.0)
 	actions.try_board()

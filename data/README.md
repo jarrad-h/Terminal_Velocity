@@ -21,7 +21,7 @@ Fields marked **required** have no default.
 | `player.escape_pod` | C10: owns an escape pod (until outfits exist). Without one, destruction ends the game | `true` |
 | `player.insured` | C10: owns insurance; the ship is replaced like for like after a rescue | `true` |
 | `player.uninsured_ship` | C10: hull given after a rescue when uninsured (ship ID) | `"shuttle"` |
-| `player.rescue_fee_pct` | C10: share of credits charged by the rescuer | `10` |
+| `player.rescue_fee_pct` | C10: share of credits charged by the rescuer, 0–100 | `10` |
 | `player.rescue_days` | C10: days that pass before rescue `[min, max]` (shown in the report) | `[2, 5]` |
 | `player.pod_speed`, `player.pod_time` | C10: escape pod speed (px/s, added to the ship's) and flight time (s) | `600`, `3` |
 | `landing.max_speed` | S2: land only below this speed (player and AI), px/s | `60` |
@@ -29,8 +29,8 @@ Fields marked **required** have no default.
 | `landing.repair_cost_per_point` | S3: credits per missing shield/armour point; 0 = free repairs | `0` |
 | `boarding.range` | C9: board when the hulls' edges are this close, px | `60` |
 | `boarding.max_speed` | C9: …and relative speed is below this, px/s | `40` |
-| `boarding.time` | C9: seconds the boarding progress bar runs | `2` |
-| `boarding.assist_armor_pct` | C9 Assist: patched-up ships get back to this % of max armour | `50` |
+| `boarding.time` | C9: seconds the boarding progress bar runs (more than 0) | `2` |
+| `boarding.assist_armor_pct` | C9 Assist: patched-up ships get back to this % of max armour, up to 100 (keep it above ships' `disable_armor_pct`) | `50` |
 | `combat.friendly_fire_pct` | % damage AI shots do to their own and allied governments' ships (C11); 0 = off. Player shots always do full damage | `100` |
 | `camera.zoom` | Camera zoom; above 1 zooms in | `1.0` |
 | `camera.smoothing_speed` | How fast the camera catches up; `0` locks it to the ship | `0` |

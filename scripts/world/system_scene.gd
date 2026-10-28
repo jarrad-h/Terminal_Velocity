@@ -81,6 +81,8 @@ func reset_visit() -> void:
 		if not node.is_in_group(&"player"):
 			node.remove_from_group(&"ships")
 			node.queue_free()
+	for shot: Node in $World/Shots.get_children():
+		shot.queue_free()
 	local_space.reset_visit()
 	traffic.configure(system, true)
 

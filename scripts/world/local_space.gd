@@ -43,6 +43,9 @@ func reset_visit() -> void:
 	destroyed.clear()
 	elapsed = 0.0
 	clear()
+	for node: Node in get_children():
+		if node is Fragment or node is Flash:
+			node.queue_free()
 
 
 func clear() -> void:

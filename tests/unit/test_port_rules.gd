@@ -39,6 +39,7 @@ func test_board_credits_scale_with_wealth() -> void:
 func test_board_options_lock_out() -> void:
 	assert_true(PortRules.board_options(false) == ["take", "assist", "scuttle", "leave"], "first boarding: everything")
 	assert_true(PortRules.board_options(true) == ["scuttle", "leave"], "after taking credits: no assist")
+	assert_true(PortRules.board_options(false, true) == ["take", "scuttle", "leave"], "assisted once: no second assist")
 
 
 func test_rescue_fee() -> void:
