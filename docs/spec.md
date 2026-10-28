@@ -42,6 +42,7 @@ Each requirement has an ID so later milestones and tests can refer to it.
 - F2: Velocity is capped at the ship's top speed; there is no drag, so the ship drifts when not thrusting.
 - F3: Acceleration, top speed and turn rate come from the ship definition.
 - F4: The camera follows the player; speed reads from passing local-space objects (L1), while the distant backdrop barely moves (B1).
+- F5: Holding T keeps the ship turning to face the selected target's lead point (where its primary guns must aim to hit), at the ship's normal turn rate; thrust and fire stay manual.
 
 **Backdrop and local space**
 
@@ -62,8 +63,8 @@ Each requirement has an ID so later milestones and tests can refer to it.
 - C6: Shields start recharging only after a set time without taking damage (any hit resets it), then refill at a set rate up to their cap; armour does not recharge in the prototype. Recharge delay, rate and cap are per-ship stats that later upgrades will modify.
 - C7: A ship is disabled at 33% armour (drifts, cannot fire) and destroyed at 0%.
 - C8: R selects the nearest hostile ship and Tab the nearest ship of any kind; Shift+R cycles through hostile ships and Shift+Tab through all ships, nearest first. The HUD shows the target's shield and armour.
-- C9: A disabled ship can be boarded by stopping alongside it, granting credits.
-- C10: When the player is destroyed, they respawn at the station after a short delay.
+- C9: A disabled ship can be boarded by stopping alongside it (within a set range and relative speed) and holding position while a short boarding timer runs (cancelled by drifting away or taking damage). The game then pauses on a boarding window with options: **Take credits** (credits from the hull's range × the AI pool's wealth factor, with randomness; G2 board penalty), **Assist** (patch it up so it leaves the system; raises the player's record with its government), **Scuttle** (destroy it; G2 kill penalty) or **Leave** (no action). Earlier choices limit later ones (after taking credits only Scuttle or Leave remain); after Leave the player may reboard any time. Disabled ships stay in the system until the player leaves it.
+- C10: When the player's ship is destroyed and they own an escape pod, the pod launches at high speed for a few seconds, then a window reports that days have passed and who rescued them, charges a rescue fee (a share of credits) and wakes them landed at the nearest port that will accept them (G4), else any landable port. If insured, the ship is replaced like for like; if not, they get a basic hull. Rescue counts as leaving and returning: wrecks and destroyed scenery are cleared and traffic refreshed; legal record and grudges remain. Without an escape pod, the game ends ("lost with all hands", restart). Until outfits exist, escape pod and insurance are data flags that start owned.
 - C11: AI shots damage ships of their own and allied governments at a percentage set in data (100 = full damage, 0 = friendly fire off). The player's shots always do full damage.
 - C12: A weapon's damage can fall off with distance (shot travel or beam length): full damage up to a set fraction of its range, falling linearly to a set minimum at full range. Shots and beams fade with distance so the falloff is visible.
 
@@ -88,15 +89,15 @@ Each requirement has an ID so later milestones and tests can refer to it.
 **System and landing**
 
 - S1: The system is loaded from a data file: positions of the star, planets and station, and the traffic pools.
-- S2: The player lands by approaching a planet slowly and pressing land.
+- S2: The player lands by approaching a planet slowly and pressing land (L): within a set fraction of its radius and below a set speed (shared with AI landing). Pressing L elsewhere only shows a hint. The world pauses while landed.
 - S3: The landed screen shows the planet's name and description, and offers repair and take off.
 
 **HUD**
 
 - H1: Shield and armour bars; credits.
-- H2: A small radar in a screen corner shows ships, system objects (star, planets, stations) and the selected target around the player. Ships are coloured by government until hostility exists (milestone 4), then by hostility; a ship with grievance against the player that isn't yet hostile shows as a warning colour. Scenery appears only when its definition sets radar visibility, which the prototype data sets on large asteroids and derelict hulls; dust, small debris and rocks never show. Radar range comes from data.
+- H2: A small radar in a screen corner shows ships, system objects (star, planets, stations) and the selected target around the player. Ships are coloured by government until hostility exists (milestone 4), then by hostility; a ship with grievance against the player that isn't yet hostile shows as a warning colour. Scenery appears only when its definition sets radar visibility, which the prototype data sets on large asteroids and derelict hulls; dust, small debris and rocks never show. Radar range comes from data. When the selected target is beyond radar range, an arrow on the radar rim points towards it.
 - H3: Target panel: name, government, shield and armour.
-- H4: Message line for events (target disabled, landing refused).
+- H4: Message line for events (target disabled, landing refused). A minimal version comes forward into milestone 5; milestone 6 polishes it.
 
 **Debug tools**
 
@@ -117,10 +118,10 @@ Seven definition types load from JSON files at startup; IDs are readable strings
 
 | Type | Defines | Key fields |
 | --- | --- | --- |
-| `ship` | A hull class | name, sprite, mass, accel, top\_speed, turn\_rate, shield, shield\_regen, armor, hardpoints (gun/turret/guided/beam exit points), default\_weapons, strength, crew, shield recharge delay |
+| `ship` | A hull class | name, sprite, mass, accel, top\_speed, turn\_rate, shield, shield\_regen, armor, hardpoints (gun/turret/guided/beam exit points), default\_weapons, strength, crew, shield recharge delay, board credits range (C9) |
 | `weapon` | A gun, turret, missile or beam | kind, damage\_shield, damage\_armor, range or lifetime, speed, reload, turn\_rate (guided), arc (turret), damage falloff (C12), sprite or colour, sound |
-| `government` | A faction | name, colour, allies, enemies, crime\_threshold, penalties (shoot, disable, board, kill), max\_odds, flee\_shield\_pct, tolerance and forgiveness (A8) |
-| `ai_pool` | A traffic type (Nova's dude) | government, behaviour (trader, warship, pirate), weighted list of ship IDs, weighted list of personality IDs, sensor range, stay and dwell times |
+| `government` | A faction | name, colour, allies, enemies, crime\_threshold, penalties (shoot, disable, board, kill), max\_odds, flee\_shield\_pct, tolerance and forgiveness (A8), assist reward (C9) |
+| `ai_pool` | A traffic type (Nova's dude) | government, behaviour (trader, warship, pirate), weighted list of ship IDs, weighted list of personality IDs, sensor range, stay and dwell times, wealth factor (C9) |
 | `personality` | An individual AI temperament (A7) | name, odds factor, flee threshold offset, response when attacked, whether it starts fights, tolerance factor (A8) |
 | `system` | The one star system | name, objects (star, planets, station with position, sprite, description, landable, min\_record), traffic (pool ID + target count), edge radius, backdrop (B2 settings), local\_space (scenery IDs with density and region), seed |
 | `scenery` | A local-space object type | name, sprites (random pick), size range, spin range, drift range, depth, solid, armor, fragments (scenery ID + count), behaviour, radar (shown on radar or not) |
@@ -215,7 +216,7 @@ Six steps, each ending in something playable; the data loader comes second so no
 2. ✅ (merged 2026-10-26) **Data loader and local space:** JSON definitions for all six types, typed resource classes, reference validation, mod override and hot reload; then the system file drives the backdrop and local-space scenery, replacing the milestone 1 starfield. Done when changing the backdrop or scenery in JSON changes the scene (B1–B2, L1–L3) and the player ship loads from `courier.json`.
 3. ✅ (merged 2026-10-26) **Fight:** four weapon kinds, shields and armour, disable and destroy, targeting, a static dummy target. Placeholder drawing of system objects and the radar (H2) come forward into this milestone. Done when C1–C8 work against a dummy, shots damage and destroy solid scenery (L4), and the radar shows the dummy, system objects and large scenery.
 4. ✅ (merged 2026-10-28) **AI and governments:** trader, warship and pirate behaviours, traffic spawning, government relations and the legal record. Done when a pirate raid on traders draws in the patrol (A1–A8, G1–G3, C11, C12, and the C6/C8 playtest changes).
-5. **Board and land:** boarding for credits, landing with the repair stub, respawn. Done when C9–C10, G4 and S1–S3 work.
+5. **Board and land:** boarding (with the boarding window), landing with the repair stub, escape pod and rescue, plus the debug console, hold-to-aim (F5), the radar target arrow and a minimal message line (H4). Done when C9–C10, G4, S1–S3, F5 and D10 work.
 6. **HUD and tuning pass:** target panel, messages, radar polish, then a balance pass on the data files only. Done when the success criteria in the first section are met.
 
 Debug tools grow with the milestones rather than waiting for the end: the toggle, time scale and overlays in milestone 1; ship swap and data hot-reload in 2; invulnerability, target kill and spawning in 3; AI pause, legal record and government overrides in 4; the console in 5.

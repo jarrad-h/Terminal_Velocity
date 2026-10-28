@@ -84,3 +84,17 @@ Rejected: keeping the beam short (Jarrad wants it long).
 ## 2026-10-28 — Attacking an already-hostile ship charges the attack penalty on the first hit (G2)
 A ship that is already hostile through the legal record counts as past its tolerance, so the attack penalty applies on the player's first hit (once per ship).
 Why: leniency exists to forgive accidental fire on friends, not attacks on ships already at odds with the player. Recorded at the final M4 audit to match the code; Jarrad can overturn it.
+
+## 2026-10-28 — Boarding: timed, then a paused boarding window with choices (C9)
+Stop alongside a disabled ship; a 2 s boarding timer (cancelled by drifting off or taking damage), then the game pauses on a window: Take credits, Assist (it leaves; +record), Scuttle (kill penalty) or Leave. Choices lock out others (looted ships can't be assisted); Leave allows reboarding later. Credits = hull board_credits range × AI pool wealth_factor × randomness, so traders carry money and police patrols don't. Disabled ships stay until the player leaves the system.
+Why: gives boarding tension and a lawful use (rescue traders pirates disabled), and room to read. Rejected: one-shot instant boarding (Jarrad); credits from strength (a patrol isn't rich).
+Later: capture, cargo/outfit plunder, personality wealth.
+
+## 2026-10-28 — Death: escape pod and insurance instead of station respawn (C10)
+If the player owns an escape pod, it launches, then a paused window reports days passing, the rescuer and a rescue fee; the player wakes landed at the nearest port that accepts them. Insured: same hull replaced; uninsured: a basic hull. No pod: game over and restart. Rescue counts as leaving and returning (wrecks and destroyed scenery cleared, traffic refreshed); record and grudges stay. Pod and insurance are data flags (owned) until outfits exist.
+Rejected: respawn at the station after a delay (Jarrad: no consequence, no fiction).
+
+## 2026-10-28 — Hold T to face the target's lead point (F5)
+Ad hoc control request. Turns at the ship's normal turn rate toward the lead point for its primary guns; thrust and fire stay manual.
+
+## 2026-10-28 — Radar arrow for an out-of-range target (H2); minimal message line pulled into M5 (H4)
