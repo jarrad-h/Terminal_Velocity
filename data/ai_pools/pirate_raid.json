@@ -4,5 +4,14 @@
   "behaviour": "pirate",
   "ships": [
     {"ship": "pirate_raider", "weight": 1}
-  ]
+  ],
+  "personalities": [
+    {"personality": "aggressive", "weight": 3},
+    {"personality": "brave", "weight": 2},
+    {"personality": "steady", "weight": 2},
+    {"personality": "cautious", "weight": 1}
+  ],
+  "sensor_range": 1600,
+  "stay_time": [60, 120],
+  "fire_angle": 8
 }

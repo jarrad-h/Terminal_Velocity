@@ -60,6 +60,10 @@ func get_scenery(id: String) -> SceneryDef:
 	return _set.get_def("scenery", id)
 
 
+func get_personality(id: String) -> PersonalityDef:
+	return _set.get_def("personalities", id)
+
+
 ## Sorted IDs of one type folder ("ships", "systems"…).
 func ids(type: String) -> Array[String]:
 	return _set.ids(type)

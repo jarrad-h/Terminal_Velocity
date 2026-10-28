@@ -16,16 +16,34 @@ Fields marked **required** have no default.
 | --- | --- | --- |
 | `player_ship` | Ship ID the player starts in | `"courier"` |
 | `system` | System ID loaded at start | `"test_nebula"` |
+| `player.credits` | Credits the player starts with | `0` |
+| `player.record` | Starting legal record with every government | `0` |
+| `combat.friendly_fire_pct` | % damage AI shots do to their own and allied governments' ships (C11); 0 = off. Player shots always do full damage | `100` |
 | `camera.zoom` | Camera zoom; above 1 zooms in | `1.0` |
 | `camera.smoothing_speed` | How fast the camera catches up; `0` locks it to the ship | `0` |
 | `local_space.chunk_size` | Side of one local-space chunk in px | `1024` |
 | `radar.size` | Radar diameter in px (bottom-right corner) | `200` |
 | `radar.range` | World distance from the player to the radar rim, px | `3000` |
 | `radar.margin` | Gap from the screen edges, px | `16` |
-| `radar.colours` | `background`, `rim`, `player`, `neutral` (ships with no government), `target` (ring round the selected target), `scenery` | see `game.json` |
+| `radar.colours` | `background`, `rim`, `player`, `hostile` (ships hostile to you), `warned` (ships with a grievance against you, not yet hostile), `friendly` (non-hostile ships with a government), `neutral` (ships with no government), `target` (ring round the selected target), `scenery` | see `game.json` |
+| `ai.landing_speed` | AI ships land when slower than this, px/s (A1) | `60` |
+| `ai.land_radius_fraction` | …and within this fraction of the planet's radius of its centre | `0.6` |
+| `ai.thrust_angle` | AI thrusts only when within this many degrees of the direction it wants | `35` |
+| `ai.standoff_fraction` | In a fight, AI stops closing at this fraction of its weapon range | `0.4` |
+| `ai.think_interval` | Seconds between AI decisions (steering runs every frame) | `0.25` |
+| `ai.disengage_factor` | AI gives up a chase beyond sensor range × this | `1.5` |
+| `ai.waypoint_reached_fraction` | A patrol waypoint counts as reached within sensor range × this | `0.1` |
+| `ai.object_patrol_chance` | Chance a warship's next waypoint is near a system object (else anywhere in `roam_band`) | `0.6` |
+| `ai.object_patrol_offset_factor` | Warship waypoints sit object radius + sensor range × this from the object | `0.3` |
+| `ai.roam_band` | Roaming waypoints lie between these fractions of the edge radius `[min, max]` | `[0.1, 0.6]` |
+| `ai.jump_out_factor` | Leaving ships head for edge radius × this before jumping out (at least 1) | `1.05` |
+| `ai.planet_spawn_chance` | For pools with `spawn_from_planets`: chance a replacement takes off from a planet rather than jumping in at the edge | `0.5` |
+| `ai.arrival_speed_fraction` | Ships jumping in at the edge start at this fraction of their top speed | `0.5` |
+| `ai.spawn_keep_away_factor` | Traffic placed at system load starts beyond sensor range × this from the player | `1.2` |
+| `ai.inside_spawn_band` | …and between these fractions of the edge radius `[min, max]` | `[0.15, 0.7]` |
 | `debug.time_scales` | Time-scale buttons in the debug panel | `[0.25, 0.5, 1, 2, 4]` |
 | `debug.velocity_vector_seconds` | Velocity overlay length, as seconds of travel | `0.5` |
-| `debug.spawn_distance` | How far from the player debug-spawned ships appear (px) | `350` |
+| `debug.spawn_distance` | How far ahead of the player debug-spawned ships appear (px); tick "Spawn at cursor" in the panel to place them with a click instead | `350` |
 | `debug.spawn_at_start` | Ships spawned at start in debug builds: `[{"ship": <ID>, "position": [x, y], "government": <ID>}]` (government optional). Idle until AI arrives | `[]` (data has the target dummy) |
 
 ## `ships/` — hull classes
@@ -39,6 +57,7 @@ Fields marked **required** have no default.
 | `sprite` | Path under `assets/sprites/`, art facing up; placeholder arrow if missing | `""` |
 | `mass` | Mass (unused until boarding/capture) | `50` |
 | `shield`, `shield_regen` | Shield points and recharge per second (no recharge while disabled) | `0`, `0` |
+| `shield_recharge_delay` | Seconds without taking damage before shields start recharging; any hit resets it (C6) | `3` |
 | `armor` | Armour points | `100` |
 | `disable_armor_pct` | Disabled (drifts, can't fire) at or below this % of max armour; destroyed at 0 | `33` |
 | `strength` | Combat strength for AI odds | `1` |
@@ -63,9 +82,13 @@ Kinds: `gun` fires along the heading; `turret` leads the selected target within 
 | `turn_rate` | Missile turn rate (guided) | `0` |
 | `arc` | Turret tracking arc in degrees, centred on the heading; the turret holds fire when the lead point is outside it | `360` |
 | `inherit_velocity` | Guns and turrets: shots add the ship's velocity | `true` |
+| `falloff_start_pct` | Full damage up to this % of the weapon's reach (C12), 0–100; 100 = no falloff. Shots measure their own travel (speed × time), so the ship's speed doesn't change it | `100` |
+| `falloff_min_pct` | Damage % at full reach, 0–100, falling linearly from `falloff_start_pct`. Shots and beams fade to match | `100` |
 | `colour`, `sprite`, `sound` | Look and sound | `"#ffffff"`, `""`, `""` |
 
 ## `governments/`
+
+Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. All of a government's ships treat the player as hostile while the player's record with it is below `crime_threshold` (pirates start there). Damage the player does to a non-hostile ship builds that ship's grievance (% of its total shield + armour, draining at `forgiveness_pct_per_s`); past `tolerance_pct` × its personality's `tolerance_factor`, that ship alone turns hostile and the attack ("shoot") penalty is charged. Disable, board and kill penalties apply immediately, once each per ship. A ship that is already hostile (record below threshold) charges the attack penalty on the first hit. Ships with no government use the default tolerance (20%) and forgiveness (4%/s).
 
 | Field | Meaning | Default |
 | --- | --- | --- |
@@ -76,6 +99,8 @@ Kinds: `gun` fires along the heading; `turret` leads the selected target within 
 | `penalties` | `{"shoot", "disable", "board", "kill"}`: record lost per act | all `0` |
 | `max_odds` | Engages only if enemy strength ÷ own strength ≤ this | `1` |
 | `flee_shield_pct` | Retreats below this shield % | `25` |
+| `tolerance_pct` | A8: how much of a ship's total shield + armour the player can damage before that ship turns hostile (grievance) | `20` |
+| `forgiveness_pct_per_s` | A8: how fast grievance drains, % per second | `4` |
 
 ## `ai_pools/` — traffic types
 
@@ -83,7 +108,29 @@ Kinds: `gun` fires along the heading; `turret` leads the selected target within 
 | --- | --- | --- |
 | `government` | Government ID | **required** |
 | `behaviour` | `trader`, `warship` or `pirate` | **required** |
-| `ships` | `[{"ship": <ship ID>, "weight": w}]`, at least one; `weight` defaults to 1 | **required** |
+| `ships` | `[{"ship": <ship ID>, "weight": w}]`, at least one, weights adding up to more than 0; `weight` defaults to 1 | **required** |
+| `personalities` | `[{"personality": <personality ID>, "weight": w}]`; one is picked per ship (A7). Empty = neutral | `[]` |
+| `sensor_range` | How far its ships notice others, px | `1500` |
+| `stay_time` | Warships and pirates leave after this many seconds with nothing to fight `[min, max]` | `[60, 120]` |
+| `dwell_time` | Traders stay docked this long at each planet, s | `[6, 12]` |
+| `stops` | Traders visit this many planets before leaving `[min, max]` | `[1, 3]` |
+| `spawn_from_planets` | New ships may take off from landable planets (chance `ai.planet_spawn_chance`) instead of arriving at the edge | `true` for traders |
+| `fire_angle` | Fire only when aimed within this many degrees | `8` |
+
+Roles (A1–A3): **trader** flies planet to planet, docks for `dwell_time`, leaves after `stops`; **warship** patrols and attacks enemies of its government and a hostile player; **pirate** roams and attacks traders and the player on sight. Any ship retreats below its government's `flee_shield_pct` (shifted by its personality) and leaves the system (A4). Before starting a fight it compares the strength of each side within `sensor_range` against `max_odds` × its personality's `odds_factor` (A5).
+
+## `personalities/` — individual AI temperament (A7)
+
+Group level (government + AI pool) decides who is friend or foe and the role; a personality only shades how the ship behaves within that.
+
+| Field | Meaning | Default |
+| --- | --- | --- |
+| `name` | Display name | **required** |
+| `odds_factor` | Multiplies the government's `max_odds` (1.5 = takes longer odds) | `1` |
+| `flee_shield_offset` | Percentage points added to the government's `flee_shield_pct` (−15 = stays in longer); result clamped 0–100 | `0` |
+| `when_attacked` | `role` (traders flee, others fight), `fight` or `flee` | `"role"` |
+| `starts_fights` | `role` (warships and pirates on sight, traders never), `never` or `on_sight` | `"role"` |
+| `tolerance_factor` | Multiplies the government's `tolerance_pct` (A8; below 1 = quicker to anger) | `1` |
 
 ## `scenery/` — local-space object types
 
@@ -118,9 +165,11 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `name` | Display name | **required** |
 | `seed` | Seeds local-space generation; same seed, same scenery | `0` |
 | `objects` | Stars, planets, stations (see below); drawn from milestone 5 | `[]` |
-| `traffic` | `[{"pool": <AI pool ID>, "count": n}]` target population (milestone 4) | `[]` |
+| `traffic` | `[{"pool": <AI pool ID>, "count": n}]` target population; each pool at most once | `[]` |
 | `backdrop` | Distant stars and nebula (see below) | all defaults |
 | `local_space` | `[{"scenery": <scenery ID>, "density": d, "region": {…}}]` | `[]` |
+| `edge_radius` | Traffic arrives and leaves this far from the system centre, px (A6) | `6000` |
+| `respawn_delay` | Seconds before replacing a ship that left or died `[min, max]` | `[5, 15]` |
 
 **`objects[]`:** `id` (**required**, unique in the system), `type` (`star`, `planet`, `station`; **required**), `name` (**required**), `position` (**required**), `radius` (`100`), `colour` (`"#7f99cc"`), `sprite` (`""`), `description` (`""`), `landable` (`false`), `government` (government ID, `""`), `min_record` (`-1000`).
 

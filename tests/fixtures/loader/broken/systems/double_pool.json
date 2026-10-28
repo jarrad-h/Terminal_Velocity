@@ -1,0 +1,1 @@
+{"name": "Double", "traffic": [{"pool": "ghost_fleet", "count": 1}, {"pool": "ghost_fleet", "count": 2}]}

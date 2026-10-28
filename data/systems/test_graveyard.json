@@ -1,6 +1,8 @@
 {
   "id": "test_graveyard",
   "name": "Test Graveyard",
+  "edge_radius": 6000,
+  "respawn_delay": [5, 15],
   "seed": 2002,
   "objects": [
     {"id": "dim", "type": "star", "name": "Dim", "position": [0, 0], "radius": 300, "colour": "#ffb080"},

@@ -14,6 +14,7 @@ var radar: Radar
 var _player_shield: ProgressBar
 var _player_armor: ProgressBar
 var _status: Label
+var _credits: Label
 var _target_box: VBoxContainer
 var _target_name: Label
 var _target_shield: ProgressBar
@@ -37,6 +38,8 @@ func _ready() -> void:
 	box.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	add_child(box)
 	box.add_child(_label("Your ship"))
+	_credits = _label("")
+	box.add_child(_credits)
 	_player_shield = _bar(box, "Shield", Color(0.35, 0.6, 1.0))
 	_player_armor = _bar(box, "Armour", Color(0.9, 0.6, 0.3))
 	_status = _label("")
@@ -52,6 +55,7 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if player == null or not is_instance_valid(player):
 		return
+	_credits.text = "Credits %d" % GameState.credits
 	_fill(_player_shield, player.health.shield, player.health.max_shield)
 	_fill(_player_armor, player.health.armor, player.health.max_armor)
 	_status.text = "DESTROYED (respawn comes in M5; swap ship in the debug panel)" if player.health.is_destroyed \

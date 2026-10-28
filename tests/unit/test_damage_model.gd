@@ -43,3 +43,24 @@ func test_disable_threshold() -> void:
 	assert_true(not DamageModel.is_disabled(34.0, 100.0, 0.33), "above threshold fine")
 	assert_true(not DamageModel.is_disabled(0.0, 100.0, 0.33), "0 is destroyed, not disabled")
 	assert_true(not DamageModel.is_disabled(5.0, 100.0, 0.0), "fraction 0 never disables (scenery)")
+
+
+func test_regen_waits_for_delay() -> void:
+	assert_true(not DamageModel.can_regen(2.9, 3.0), "inside the delay (C6)")
+	assert_true(DamageModel.can_regen(3.0, 3.0), "delay over")
+	assert_true(DamageModel.can_regen(0.0, 0.0), "no delay")
+
+
+func test_falloff() -> void:
+	assert_near(DamageModel.falloff(200.0, 1000.0, 30.0, 10.0), 1.0, "full damage before falloff starts (C12)")
+	assert_near(DamageModel.falloff(300.0, 1000.0, 30.0, 10.0), 1.0, "at the start")
+	assert_near(DamageModel.falloff(650.0, 1000.0, 30.0, 10.0), 0.55, "halfway down the slope")
+	assert_near(DamageModel.falloff(1000.0, 1000.0, 30.0, 10.0), 0.1, "minimum at full range")
+	assert_near(DamageModel.falloff(1500.0, 1000.0, 30.0, 10.0), 0.1, "beyond range stays at minimum")
+	assert_near(DamageModel.falloff(900.0, 1000.0, 100.0, 10.0), 1.0, "start 100% = no falloff")
+
+
+func test_falloff_edge_cases() -> void:
+	assert_near(DamageModel.falloff(500.0, 0.0, 30.0, 10.0), 1.0, "no range: no falloff")
+	assert_near(DamageModel.falloff(0.0, 1000.0, 0.0, 10.0), 1.0, "start 0: full at the muzzle")
+	assert_near(DamageModel.falloff(500.0, 1000.0, 0.0, 10.0), 0.55, "start 0: linear from the muzzle")

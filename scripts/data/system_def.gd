@@ -9,6 +9,10 @@ var objects: Array[SystemObjectDef] = []
 var traffic: Array[Dictionary] = []
 var backdrop: BackdropDef
 var local_space: Array[LocalSpaceEntry] = []
+## A6: traffic arrives and leaves at this distance from the system centre, px.
+var edge_radius: float
+## A6: seconds before replacing a ship that left or died.
+var respawn_delay: Vector2
 
 
 static func parse(r: DefReader) -> SystemDef:
@@ -22,6 +26,8 @@ static func parse(r: DefReader) -> SystemDef:
 	d.backdrop = BackdropDef.parse(r.object("backdrop"))
 	for e: DefReader in r.objects("local_space"):
 		d.local_space.append(LocalSpaceEntry.parse(e))
+	d.edge_radius = r.number("edge_radius", 6000.0, false, 100.0)
+	d.respawn_delay = r.range2("respawn_delay", Vector2(5.0, 15.0), 0.0)
 	return d
 
 
@@ -31,3 +37,9 @@ func validate(_defs: Dictionary, errors: Array[String]) -> void:
 		if seen.has(o.id):
 			errors.append("%s: field 'objects': object id '%s' is used twice" % [file, o.id])
 		seen[o.id] = true
+	var pools: Dictionary = {}
+	for i: int in traffic.size():
+		var pool_id: String = traffic[i]["pool"]
+		if pools.has(pool_id):
+			errors.append("%s: field 'traffic[%d].pool': '%s' is already listed; use one entry with a higher count" % [file, i, pool_id])
+		pools[pool_id] = true

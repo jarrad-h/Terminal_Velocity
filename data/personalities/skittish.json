@@ -1,0 +1,1 @@
+{"id": "skittish", "name": "Skittish", "odds_factor": 0.3, "flee_shield_offset": 40, "when_attacked": "flee", "starts_fights": "never", "tolerance_factor": 1}

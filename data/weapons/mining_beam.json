@@ -4,7 +4,9 @@
   "kind": "beam",
   "damage_shield": 8,
   "damage_armor": 20,
-  "range": 300,
+  "range": 1000,
+  "falloff_start_pct": 30,
+  "falloff_min_pct": 10,
   "reload": 0,
   "colour": "#60ff90"
 }

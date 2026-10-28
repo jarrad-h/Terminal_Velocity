@@ -26,3 +26,21 @@ static func regen(shield: float, max_shield: float, rate: float, delta: float) -
 ## C7: disabled at or below `disable_fraction` of max armour, but not destroyed.
 static func is_disabled(armor: float, max_armor: float, disable_fraction: float) -> bool:
 	return armor > 0.0 and armor <= max_armor * disable_fraction
+
+
+## C6: shields recharge only once `delay` seconds have passed without damage.
+static func can_regen(time_since_damage: float, delay: float) -> bool:
+	return time_since_damage >= delay
+
+
+## C12: damage multiplier at `distance` for a weapon with this range and
+## falloff. Full damage up to start_pct % of range, then linear down to
+## min_pct % at full range (and beyond). start_pct 100 = no falloff.
+static func falloff(distance: float, max_range: float, start_pct: float, min_pct: float) -> float:
+	if max_range <= 0.0 or start_pct >= 100.0:
+		return 1.0
+	var start: float = max_range * start_pct / 100.0
+	if distance <= start:
+		return 1.0
+	var t: float = clampf((distance - start) / (max_range - start), 0.0, 1.0)
+	return lerpf(1.0, min_pct / 100.0, t)

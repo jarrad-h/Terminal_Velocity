@@ -4,5 +4,14 @@
   "behaviour": "warship",
   "ships": [
     {"ship": "patrol_corvette", "weight": 1}
-  ]
+  ],
+  "personalities": [
+    {"personality": "steady", "weight": 3},
+    {"personality": "brave", "weight": 2},
+    {"personality": "aggressive", "weight": 1},
+    {"personality": "cautious", "weight": 1}
+  ],
+  "sensor_range": 1800,
+  "stay_time": [90, 180],
+  "fire_angle": 8
 }

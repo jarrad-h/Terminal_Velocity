@@ -6,7 +6,7 @@ extends RefCounted
 ## collected as errors naming the file and field, never thrown.
 
 ## Definition type folders, in load order.
-const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery"]
+const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery", "personalities"]
 
 const SETTINGS_FILE: String = "game.json"
 
@@ -15,10 +15,18 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"player_ship": "courier",
 	"system": "test_nebula",
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
+	"player": {"credits": 0, "record": 0.0},
+	"combat": {"friendly_fire_pct": 100.0},
 	"local_space": {"chunk_size": 1024.0},
+	"ai": {"landing_speed": 60.0, "land_radius_fraction": 0.6, "thrust_angle": 35.0,
+		"standoff_fraction": 0.4, "think_interval": 0.25, "disengage_factor": 1.5,
+		"waypoint_reached_fraction": 0.1, "object_patrol_chance": 0.6, "object_patrol_offset_factor": 0.3,
+		"roam_band": [0.1, 0.6], "jump_out_factor": 1.05, "planet_spawn_chance": 0.5,
+		"arrival_speed_fraction": 0.5, "spawn_keep_away_factor": 1.2, "inside_spawn_band": [0.15, 0.7]},
 	"radar": {"size": 200.0, "range": 3000.0, "margin": 16.0, "colours": {
 		"background": "#0a1426c0", "rim": "#5a7aa0", "player": "#ffffff",
-		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68"}},
+		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
+		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
 	"debug": {"time_scales": [0.25, 0.5, 1.0, 2.0, 4.0], "velocity_vector_seconds": 0.5,
 		"spawn_distance": 350.0, "spawn_at_start": []},
 }
@@ -94,6 +102,8 @@ static func _parse(type: String, reader: DefReader) -> Def:
 			return SystemDef.parse(reader)
 		"scenery":
 			return SceneryDef.parse(reader)
+		"personalities":
+			return PersonalityDef.parse(reader)
 	assert(false, "unknown definition type " + type)
 	return null
 
@@ -103,6 +113,16 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var reader := DefReader.new(data_set.settings, SETTINGS_FILE, errors)
 	reader.ref("player_ship", "ships")
 	reader.ref("system", "systems")
+	reader.object("player").number("credits", 0.0)
+	reader.object("player").number("record", 0.0)
+	reader.object("combat").number("friendly_fire_pct", 100.0, false, 0.0)
+	var ai: DefReader = reader.object("ai")
+	for key: String in SETTINGS_DEFAULTS["ai"]:
+		if SETTINGS_DEFAULTS["ai"][key] is Array:
+			ai.range2(key, Vector2.ZERO, 0.0)
+		else:
+			# Leaving ships must aim beyond the edge, or they'd never jump out.
+			ai.number(key, 0.0, false, 1.0 if key == "jump_out_factor" else 0.0)
 	var radar: DefReader = reader.object("radar")
 	for key: String in ["size", "range", "margin"]:
 		radar.number(key, 0.0, false, 0.0)
@@ -152,4 +172,5 @@ static func _merged(base: Dictionary, over: Dictionary) -> Dictionary:
 
 static func _singular(type: String) -> String:
 	return {"ships": "ship", "weapons": "weapon", "governments": "government",
-		"ai_pools": "AI pool", "systems": "system", "scenery": "scenery"}[type]
+		"ai_pools": "AI pool", "systems": "system", "scenery": "scenery",
+		"personalities": "personality"}[type]

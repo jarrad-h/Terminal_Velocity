@@ -1,0 +1,1 @@
+{"id": "aggressive", "name": "Aggressive", "odds_factor": 1.25, "flee_shield_offset": -10, "when_attacked": "fight", "starts_fights": "on_sight", "tolerance_factor": 0.5}

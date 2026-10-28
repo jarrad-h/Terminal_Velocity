@@ -20,3 +20,22 @@ static func ray(world_node: Node2D, from: Vector2, to: Vector2, exclude: Array[R
 	if owner == null or not "health" in owner or owner.health == null:
 		return {}
 	return {"target": owner, "position": hit["position"]}
+
+
+## C11: damage multiplier for a hit by a shooter whose side was recorded at
+## launch (`shooter_is_player`, `shooter_government`), so a missile still
+## knows its side after the ship that fired it is gone.
+static func damage_scale(shooter_is_player: bool, shooter_government: String, target: Node) -> float:
+	if not target is Ship:
+		return 1.0
+	var to: Ship = target
+	var from_gov: GovernmentDef = DataRegistry.get_government(shooter_government) if shooter_government != "" else null
+	var pct: float = float(DataRegistry.settings["combat"]["friendly_fire_pct"])
+	return Relations.damage_scale(shooter_is_player, from_gov, to.gov_def(), pct)
+
+
+## Convenience for a live shooter (beams, tests).
+static func damage_scale_from(shooter: Ship, target: Node) -> float:
+	if shooter == target:
+		return 1.0
+	return damage_scale(shooter.is_player(), shooter.government, target)

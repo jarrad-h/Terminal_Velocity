@@ -14,6 +14,7 @@ var system: SystemDef = null
 @onready var ships: Node2D = $World/Ships
 @onready var hud: Hud = $Hud
 @onready var camera: FollowCamera = $Camera
+@onready var traffic: TrafficSpawner = $TrafficSpawner
 
 
 func _ready() -> void:
@@ -54,10 +55,12 @@ func load_system(system_id: String) -> bool:
 	if next == null:
 		push_error("No system with id '%s'" % system_id)
 		return false
+	var new_system: bool = system == null or system.id != next.id
 	system = next
 	backdrop.configure(system.backdrop)
 	system_objects.configure(system)
 	local_space.configure(system, float(DataRegistry.settings["local_space"]["chunk_size"]))
+	traffic.configure(system, new_system)
 	return true
 
 
