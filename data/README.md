@@ -18,6 +18,19 @@ Fields marked **required** have no default.
 | `system` | System ID loaded at start | `"test_nebula"` |
 | `player.credits` | Credits the player starts with | `0` |
 | `player.record` | Starting legal record with every government | `0` |
+| `player.escape_pod` | C10: owns an escape pod (until outfits exist). Without one, destruction ends the game | `true` |
+| `player.insured` | C10: owns insurance; the ship is replaced like for like after a rescue | `true` |
+| `player.uninsured_ship` | C10: hull given after a rescue when uninsured (ship ID) | `"shuttle"` |
+| `player.rescue_fee_pct` | C10: share of credits charged by the rescuer | `10` |
+| `player.rescue_days` | C10: days that pass before rescue `[min, max]` (shown in the report) | `[2, 5]` |
+| `player.pod_speed`, `player.pod_time` | C10: escape pod speed (px/s, added to the ship's) and flight time (s) | `600`, `3` |
+| `landing.max_speed` | S2: land only below this speed (player and AI), px/s | `60` |
+| `landing.radius_fraction` | S2: …and within this fraction of the planet's radius of its centre | `0.6` |
+| `landing.repair_cost_per_point` | S3: credits per missing shield/armour point; 0 = free repairs | `0` |
+| `boarding.range` | C9: board when the hulls' edges are this close, px | `60` |
+| `boarding.max_speed` | C9: …and relative speed is below this, px/s | `40` |
+| `boarding.time` | C9: seconds the boarding progress bar runs | `2` |
+| `boarding.assist_armor_pct` | C9 Assist: patched-up ships get back to this % of max armour | `50` |
 | `combat.friendly_fire_pct` | % damage AI shots do to their own and allied governments' ships (C11); 0 = off. Player shots always do full damage | `100` |
 | `camera.zoom` | Camera zoom; above 1 zooms in | `1.0` |
 | `camera.smoothing_speed` | How fast the camera catches up; `0` locks it to the ship | `0` |
@@ -26,8 +39,6 @@ Fields marked **required** have no default.
 | `radar.range` | World distance from the player to the radar rim, px | `3000` |
 | `radar.margin` | Gap from the screen edges, px | `16` |
 | `radar.colours` | `background`, `rim`, `player`, `hostile` (ships hostile to you), `warned` (ships with a grievance against you, not yet hostile), `friendly` (non-hostile ships with a government), `neutral` (ships with no government), `target` (ring round the selected target), `scenery` | see `game.json` |
-| `ai.landing_speed` | AI ships land when slower than this, px/s (A1) | `60` |
-| `ai.land_radius_fraction` | …and within this fraction of the planet's radius of its centre | `0.6` |
 | `ai.thrust_angle` | AI thrusts only when within this many degrees of the direction it wants | `35` |
 | `ai.standoff_fraction` | In a fight, AI stops closing at this fraction of its weapon range | `0.4` |
 | `ai.think_interval` | Seconds between AI decisions (steering runs every frame) | `0.25` |
@@ -63,6 +74,7 @@ Fields marked **required** have no default.
 | `strength` | Combat strength for AI odds | `1` |
 | `crew` | Crew count | `1` |
 | `hit_radius` | Hit circle radius in px (also placeholder art size) | `16` |
+| `board_credits` | C9: credits aboard `[min, max]`, before the AI pool's `wealth_factor` | `[0, 0]` |
 | `hardpoints` | `{"gun": [[x, y], …], "turret": …, "guided": …, "beam": …}` exit points relative to the ship centre, ship facing up. Every equipped weapon needs at least one point of its kind; extra weapons share points | none |
 | `default_weapons` | `[{"weapon": <weapon ID>, "count": n}]`; `count` defaults to 1 | `[]` |
 
@@ -101,6 +113,7 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `flee_shield_pct` | Retreats below this shield % | `25` |
 | `tolerance_pct` | A8: how much of a ship's total shield + armour the player can damage before that ship turns hostile (grievance) | `20` |
 | `forgiveness_pct_per_s` | A8: how fast grievance drains, % per second | `4` |
+| `assist_reward` | C9: record gained for assisting one of its disabled ships | `0` |
 
 ## `ai_pools/` — traffic types
 
@@ -116,6 +129,7 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `stops` | Traders visit this many planets before leaving `[min, max]` | `[1, 3]` |
 | `spawn_from_planets` | New ships may take off from landable planets (chance `ai.planet_spawn_chance`) instead of arriving at the edge | `true` for traders |
 | `fire_angle` | Fire only when aimed within this many degrees | `8` |
+| `wealth_factor` | C9: multiplies its ships' `board_credits` (traders rich, patrols poor) | `1` |
 
 Roles (A1–A3): **trader** flies planet to planet, docks for `dwell_time`, leaves after `stops`; **warship** patrols and attacks enemies of its government and a hostile player; **pirate** roams and attacks traders and the player on sight. Any ship retreats below its government's `flee_shield_pct` (shifted by its personality) and leaves the system (A4). Before starting a fight it compares the strength of each side within `sensor_range` against `max_odds` × its personality's `odds_factor` (A5).
 
