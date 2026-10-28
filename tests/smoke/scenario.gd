@@ -444,6 +444,22 @@ func _run() -> void:
 	_debug.swap_player_ship("courier")
 	await _frames(2)
 
+	# M5: hold T to aim (F5) and the radar arrow (H2).
+	player.place(Vector2.ZERO, 0.0)
+	var mark: Array[Ship] = _debug.spawn_ships("shuttle", 1, "", Vector2(800.0, 0.0))
+	await _frames(2)
+	player.set_target(mark[0])
+	Input.action_press(&"aim_target")
+	var aim_input: FlightInput = player.get_flight_input()
+	Input.action_release(&"aim_target")
+	_check(aim_input.turn > 0.0, "holding T turns toward a target on the right (F5)")
+	_check(player.get_flight_input().turn == 0.0, "released: no turning")
+	_check(scene_root.hud.radar.target_off_radar() == Vector2.ZERO, "no arrow while in radar range")
+	mark[0].place(Vector2(0.0, 20000.0), 0.0)
+	_check(scene_root.hud.radar.target_off_radar().is_equal_approx(Vector2(0.0, 1.0)), "arrow points at a distant target (H2)")
+	_debug.clear_ships()
+	await _frames(2)
+
 	# System switch.
 	_check(_debug.switch_system("test_graveyard"), "switch to test_graveyard")
 	_check(_debug.current_system_id() == "test_graveyard", "current system updated")
