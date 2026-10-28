@@ -1,7 +1,7 @@
 class_name PlayerActions
 extends Node
 ## The player's port and wreck actions: landing (S2, G4, S3), boarding (C9)
-## and later the escape pod (C10). Keys: L land, B board.
+## and the escape pod with rescue (C10). Keys: L land, B board.
 
 var scene: Node  # SystemScene
 ## The open landed / boarding / rescue window, if any.
@@ -214,3 +214,63 @@ func _scuttle(ship: Ship) -> void:
 	dialog.close()
 	ship.scuttle_by(player)
 	GameState.post_message("The %s is scuttled" % ship.def.name)
+
+
+# --- C10 escape pod and rescue ----------------------------------------------
+
+## Connected to the player's ship_destroyed signal by the system scene.
+func on_player_destroyed(player: Ship) -> void:
+	_end_boarding()
+	if dialog != null:
+		dialog.close()
+	if not bool(DataRegistry.settings["player"]["escape_pod"]):
+		_lost_with_all_hands()
+		return
+	var pod := EscapePod.launch(scene.world, player.global_position, FlightModel.heading(player.global_rotation), player.get_velocity())
+	scene.camera.target = pod
+	pod.finished.connect(_rescue)
+	GameState.post_message("Escape pod away!")
+
+
+func _rescue(pod: EscapePod) -> void:
+	var settings: Dictionary = DataRegistry.settings["player"]
+	var player: Ship = _player()
+	var from: Vector2 = pod.global_position
+	pod.queue_free()
+	var fee: int = PortRules.rescue_fee(GameState.credits, float(settings["rescue_fee_pct"]))
+	GameState.add_credits(-fee)
+	var days: Array = settings["rescue_days"]
+	var days_passed: int = _rng.randi_range(roundi(days[0]), roundi(days[1]))
+	var objects: Array[SystemObjectDef] = scene.system.objects
+	var index: int = PortRules.rescue_port(objects, from, GameState.records(), float(settings["record"]))
+	var port: SystemObjectDef = objects[index] if index >= 0 else null
+	# Days pass: like leaving and coming back (every other ship, wrecks
+	# included, destroyed scenery, then fresh traffic).
+	scene.reset_visit()
+	# Insured: like for like. Uninsured: a basic hull.
+	var insured: bool = bool(settings["insured"])
+	var hull: ShipDef = player.def if insured else DataRegistry.get_ship(settings["uninsured_ship"])
+	player.setup(hull)
+	player.place(port.position if port != null else Vector2.ZERO, 0.0)
+	scene.camera.target = player
+	var gov: GovernmentDef = DataRegistry.get_government(port.government) if port != null and port.government != "" else null
+	var rescuer: String = "a %s ship" % gov.name if gov != null else "a passing freighter"
+	var where: String = port.name if port != null else "the middle of the system"
+	var text: String = "Your ship was destroyed. Your escape pod drifted for %d days before you were picked up by %s and brought to %s.\n\nRescue fee: %d credits." % [days_passed, rescuer, where, fee]
+	text += "\n\nYour insurer has replaced your %s." % hull.name if insured else "\n\nYou weren't insured. All you could get was a %s." % hull.name
+	dialog = Dialog.open(scene, "Rescued", text)
+	dialog.add_choice("continue", "Continue", func() -> void:
+		dialog.close()
+		if port != null:
+			land_at.call_deferred(port))
+	dialog.closed.connect(func() -> void: dialog = null)
+
+
+func _lost_with_all_hands() -> void:
+	dialog = Dialog.open(scene, "Lost with all hands", "Your ship was destroyed and there was no escape pod aboard.")
+	dialog.add_choice("restart", "Restart", func() -> void:
+		dialog.close()
+		GameState.reset()
+		get_tree().paused = false
+		get_tree().reload_current_scene())
+	dialog.closed.connect(func() -> void: dialog = null)

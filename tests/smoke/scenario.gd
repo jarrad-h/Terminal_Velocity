@@ -414,6 +414,36 @@ func _run() -> void:
 	_debug.clear_ships()
 	await _frames(2)
 
+	# M5: escape pod and rescue (C10).
+	var wreck_before: Array[Ship] = _debug.spawn_ships("pirate_raider", 1)
+	wreck_before[0].health.force_disable()
+	GameState.set_credits(1000)
+	var fee_pct: float = float(DataRegistry.settings["player"]["rescue_fee_pct"])
+	player.place(Vector2(500.0, 500.0), 0.0)
+	player.health.force_destroy()
+	await _frames(2)
+	_check(get_tree().get_nodes_in_group(&"escape_pod").size() == 1, "escape pod launched (C10)")
+	await _frames(roundi(float(DataRegistry.settings["player"]["pod_time"]) * 60.0) + 5)
+	_check(actions.dialog != null and get_tree().paused, "rescue report, paused (C10)")
+	_check(GameState.credits == 1000 - roundi(1000.0 * fee_pct / 100.0), "rescue fee charged (C10): %d" % GameState.credits)
+	_check(not player.health.is_destroyed and player.health.missing_points() == 0.0, "insured: ship replaced and repaired (C10)")
+	_check(not is_instance_valid(wreck_before[0]), "days passed: wrecks cleared (C10)")
+	actions.dialog.choose("continue")
+	await _frames(3)
+	_check(actions.dialog != null and get_tree().paused, "wakes up landed at a port (C10)")
+	actions.dialog.choose("take_off")
+	await _frames(2)
+	_check(not get_tree().paused, "take off after rescue")
+	# No escape pod: lost with all hands.
+	DataRegistry.settings["player"]["escape_pod"] = false
+	player.health.force_destroy()
+	await _frames(2)
+	_check(actions.dialog != null and actions.dialog.has_choice("restart"), "no pod: lost with all hands (C10)")
+	actions.dialog.close()
+	DataRegistry.settings["player"]["escape_pod"] = true
+	_debug.swap_player_ship("courier")
+	await _frames(2)
+
 	# System switch.
 	_check(_debug.switch_system("test_graveyard"), "switch to test_graveyard")
 	_check(_debug.current_system_id() == "test_graveyard", "current system updated")

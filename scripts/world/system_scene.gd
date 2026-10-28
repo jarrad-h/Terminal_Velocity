@@ -39,6 +39,7 @@ func _ready() -> void:
 		player.add_to_group(&"player")
 		player.setup(player.def)  # recolour now it is the player
 		player.set_controller(PlayerController.new())
+		player.ship_destroyed.connect(actions.on_player_destroyed)
 		camera.target = player
 	hud.player = player
 	hud.actions = actions
@@ -68,6 +69,17 @@ func load_system(system_id: String) -> bool:
 	local_space.configure(system, float(DataRegistry.settings["local_space"]["chunk_size"]))
 	traffic.configure(system, new_system)
 	return true
+
+
+## C10: as if the player left and came back — every other ship goes,
+## destroyed scenery returns, and traffic refills.
+func reset_visit() -> void:
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		if not node.is_in_group(&"player"):
+			node.remove_from_group(&"ships")
+			node.queue_free()
+	local_space.reset_visit()
+	traffic.configure(system, true)
 
 
 ## Spawns a ship. Non-player ships get an IdleController until M4 adds AI.

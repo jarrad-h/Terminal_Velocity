@@ -57,3 +57,8 @@ func reset() -> void:
 	_records.clear()
 	credits = int(DataRegistry.settings["player"]["credits"])
 	credits_changed.emit(credits)
+
+
+## Copy of every government's record (C10 rescue port choice).
+func records() -> Dictionary:
+	return _records.duplicate()

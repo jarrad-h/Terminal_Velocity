@@ -255,7 +255,7 @@ func _on_destroyed() -> void:
 	ship_destroyed.emit(self)
 	hitbox_shape.set_deferred(&"disabled", true)
 	if is_player():
-		# Respawn (C10) arrives in milestone 5; until then the wreck just vanishes.
+		# C10: the escape pod and rescue are handled by PlayerActions.
 		visible = false
 		body.set_physics_process(false)
 		return
