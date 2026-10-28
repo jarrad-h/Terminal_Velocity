@@ -121,7 +121,8 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		if SETTINGS_DEFAULTS["ai"][key] is Array:
 			ai.range2(key, Vector2.ZERO, 0.0)
 		else:
-			ai.number(key, 0.0, false, 0.0)
+			# Leaving ships must aim beyond the edge, or they'd never jump out.
+			ai.number(key, 0.0, false, 1.0 if key == "jump_out_factor" else 0.0)
 	var radar: DefReader = reader.object("radar")
 	for key: String in ["size", "range", "margin"]:
 		radar.number(key, 0.0, false, 0.0)

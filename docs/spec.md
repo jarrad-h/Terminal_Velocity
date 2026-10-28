@@ -81,7 +81,7 @@ Each requirement has an ID so later milestones and tests can refer to it.
 **Governments and legal record**
 
 - G1: Each ship belongs to a government; governments declare allies and enemies.
-- G2: Attacking, disabling, boarding or destroying a government's ship lowers the player's record with it by set amounts. The attack penalty applies once per ship, when that ship's grievance passes its tolerance (A8); disable, board and destroy apply once each, immediately.
+- G2: Attacking, disabling, boarding or destroying a government's ship lowers the player's record with it by set amounts. The attack penalty applies once per ship, when that ship's grievance passes its tolerance (A8); a ship already hostile through the record counts as past its tolerance, so the first hit charges it. Disable, board and destroy apply once each, immediately.
 - G3: Below a crime threshold, that government's ships turn hostile to the player; its warships attack, while traders and other non-combat roles only act on it as their personality allows (A7). A government with a very high threshold (pirates) is hostile from the start until the player's record with it rises.
 - G4: A planet refuses landing when the player's record with its government is below its minimum.
 

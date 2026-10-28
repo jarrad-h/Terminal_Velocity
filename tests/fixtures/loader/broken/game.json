@@ -1,1 +1,1 @@
-{"player_ship": "no_such_ship", "system": "sys", "ai": {"thrust_angle": "lots", "roam_band": [0.9, 0.1]}, "combat": {"friendly_fire_pct": -5}, "player": {"credits": "rich"}}
+{"player_ship": "no_such_ship", "system": "sys", "ai": {"thrust_angle": "lots", "roam_band": [0.9, 0.1], "jump_out_factor": 0.9}, "combat": {"friendly_fire_pct": -5}, "player": {"credits": "rich"}}

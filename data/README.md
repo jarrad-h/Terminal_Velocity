@@ -36,14 +36,14 @@ Fields marked **required** have no default.
 | `ai.object_patrol_chance` | Chance a warship's next waypoint is near a system object (else anywhere in `roam_band`) | `0.6` |
 | `ai.object_patrol_offset_factor` | Warship waypoints sit object radius + sensor range × this from the object | `0.3` |
 | `ai.roam_band` | Roaming waypoints lie between these fractions of the edge radius `[min, max]` | `[0.1, 0.6]` |
-| `ai.jump_out_factor` | Leaving ships head for edge radius × this before jumping out | `1.05` |
+| `ai.jump_out_factor` | Leaving ships head for edge radius × this before jumping out (at least 1) | `1.05` |
 | `ai.planet_spawn_chance` | For pools with `spawn_from_planets`: chance a replacement takes off from a planet rather than jumping in at the edge | `0.5` |
 | `ai.arrival_speed_fraction` | Ships jumping in at the edge start at this fraction of their top speed | `0.5` |
 | `ai.spawn_keep_away_factor` | Traffic placed at system load starts beyond sensor range × this from the player | `1.2` |
 | `ai.inside_spawn_band` | …and between these fractions of the edge radius `[min, max]` | `[0.15, 0.7]` |
 | `debug.time_scales` | Time-scale buttons in the debug panel | `[0.25, 0.5, 1, 2, 4]` |
 | `debug.velocity_vector_seconds` | Velocity overlay length, as seconds of travel | `0.5` |
-| `debug.spawn_distance` | How far from the player debug-spawned ships appear (px) | `350` |
+| `debug.spawn_distance` | How far ahead of the player debug-spawned ships appear (px); tick "Spawn at cursor" in the panel to place them with a click instead | `350` |
 | `debug.spawn_at_start` | Ships spawned at start in debug builds: `[{"ship": <ID>, "position": [x, y], "government": <ID>}]` (government optional). Idle until AI arrives | `[]` (data has the target dummy) |
 
 ## `ships/` — hull classes
@@ -165,7 +165,7 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `name` | Display name | **required** |
 | `seed` | Seeds local-space generation; same seed, same scenery | `0` |
 | `objects` | Stars, planets, stations (see below); drawn from milestone 5 | `[]` |
-| `traffic` | `[{"pool": <AI pool ID>, "count": n}]` target population (milestone 4) | `[]` |
+| `traffic` | `[{"pool": <AI pool ID>, "count": n}]` target population; each pool at most once | `[]` |
 | `backdrop` | Distant stars and nebula (see below) | all defaults |
 | `local_space` | `[{"scenery": <scenery ID>, "density": d, "region": {…}}]` | `[]` |
 | `edge_radius` | Traffic arrives and leaves this far from the system centre, px (A6) | `6000` |

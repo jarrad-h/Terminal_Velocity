@@ -25,6 +25,7 @@ var _pool_select: OptionButton
 var _toggle_checks: Dictionary = {}
 var _credits_spin: SpinBox
 var _record_rows: VBoxContainer
+var _at_cursor: CheckBox
 
 
 func _ready() -> void:
@@ -118,16 +119,30 @@ func _build() -> void:
 	_government_select.custom_minimum_size.x = 150.0
 	spawn_row.add_child(_government_select)
 	spawn_row.add_child(_make_button("Spawn", func() -> void:
-		var gov: String = "" if _government_select.selected <= 0 else _government_select.get_item_text(_government_select.selected)
-		DebugCommands.spawn_ships(_ship_select.get_item_text(_ship_select.selected), int(_spawn_count.value), gov)))
+		var id: String = _ship_select.get_item_text(_ship_select.selected)
+		var count: int = int(_spawn_count.value)
+		var gov: String = _selected_government()
+		if _at_cursor.button_pressed:
+			DebugCommands.spawn_at_next_click(func(at: Vector2) -> void: DebugCommands.spawn_ships(id, count, gov, at))
+		else:
+			DebugCommands.spawn_ships(id, count, gov)))
 	spawn_row.add_child(_make_button("Clear ships", DebugCommands.clear_ships))
 	var pool_row := HBoxContainer.new()
 	box.add_child(pool_row)
 	_pool_select = _make_select()
 	pool_row.add_child(_pool_select)
 	pool_row.add_child(_make_button("Spawn pool", func() -> void:
-		var gov: String = "" if _government_select.selected <= 0 else _government_select.get_item_text(_government_select.selected)
-		DebugCommands.spawn_pool(_pool_select.get_item_text(_pool_select.selected), int(_spawn_count.value), gov)))
+		var id: String = _pool_select.get_item_text(_pool_select.selected)
+		var count: int = int(_spawn_count.value)
+		var gov: String = _selected_government()
+		if _at_cursor.button_pressed:
+			DebugCommands.spawn_at_next_click(func(at: Vector2) -> void: DebugCommands.spawn_pool(id, count, gov, at))
+		else:
+			DebugCommands.spawn_pool(id, count, gov)))
+	_at_cursor = CheckBox.new()
+	_at_cursor.text = "Spawn at cursor (click in space after pressing Spawn)"
+	_at_cursor.focus_mode = Control.FOCUS_NONE
+	box.add_child(_at_cursor)
 	var system_row := HBoxContainer.new()
 	box.add_child(system_row)
 	_system_select = _make_select()
@@ -179,6 +194,10 @@ func _build() -> void:
 		check.toggled.connect(func(on: bool) -> void: DebugCommands.set_overlay(overlay, on))
 		box.add_child(check)
 		_overlay_checks[overlay] = check
+
+
+func _selected_government() -> String:
+	return "" if _government_select.selected <= 0 else _government_select.get_item_text(_government_select.selected)
 
 
 func _make_toggle(text: String, setter: Callable, getter: Callable) -> CheckBox:

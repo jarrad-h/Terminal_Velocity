@@ -299,11 +299,28 @@ func _run() -> void:
 	var raid: Array[Ship] = _debug.spawn_pool("pirate_raid", 2, "local_authority")
 	_check(raid.size() == 2 and raid.all(func(sh: Ship) -> bool: return sh.government == "local_authority" and sh.controller is AIController),
 		"spawn pool with government override (D3)")
+	var placed: Array[Ship] = _debug.spawn_pool("trader_traffic", 1, "", Vector2(1234.0, -987.0))
+	_check(placed.size() == 1 and placed[0].global_position.distance_to(Vector2(1234.0, -987.0)) < 1.0, "spawn at a position (D3 cursor)")
 	_debug.set_credits(1234)
 	_check(GameState.credits == 1234, "set credits (D6)")
 	_debug.set_record("pirates", 1500.0)
 	_check(GameState.get_record("pirates") == 1500.0, "set record (D6)")
 	_debug.set_record("pirates", 0.0)
+	_debug.clear_ships()
+	await _frames(2)
+
+	# D8 regression (M4 soak): a data reload keeps damage and the disabled state,
+	# so disabled traffic isn't revived and counted again.
+	var wreck: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), Vector2(-3500.0, -3500.0), "", "steady")
+	var hurt: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), Vector2(3500.0, -3500.0), "", "steady")
+	await _frames(2)
+	wreck.health.force_disable()
+	hurt.health.apply_damage(hurt.health.max_shield, 0.0)
+	var hurt_shield: float = hurt.health.shield
+	_debug.reload_data()
+	await _frames(2)
+	_check(wreck.health.is_disabled, "reload keeps a disabled ship disabled (D8)")
+	_check(is_equal_approx(hurt.health.shield, hurt_shield), "reload doesn't heal (D8)")
 	_debug.clear_ships()
 	await _frames(2)
 

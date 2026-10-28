@@ -37,3 +37,9 @@ func validate(_defs: Dictionary, errors: Array[String]) -> void:
 		if seen.has(o.id):
 			errors.append("%s: field 'objects': object id '%s' is used twice" % [file, o.id])
 		seen[o.id] = true
+	var pools: Dictionary = {}
+	for i: int in traffic.size():
+		var pool_id: String = traffic[i]["pool"]
+		if pools.has(pool_id):
+			errors.append("%s: field 'traffic[%d].pool': '%s' is already listed; use one entry with a higher count" % [file, i, pool_id])
+		pools[pool_id] = true

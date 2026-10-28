@@ -25,6 +25,8 @@ var system: SystemDef = null
 ## Debug: when false, no traffic spawns.
 var enabled: bool = true
 var _entries: Array[Entry] = []
+## D3 debug pool spawns: not part of the population, but freed with the system.
+var _extras: Array = []
 var _rng := RandomNumberGenerator.new()
 
 
@@ -34,18 +36,24 @@ func _ready() -> void:
 
 ## `fill`: spawn the full population inside the system now (system load).
 func configure(p_system: SystemDef, fill: bool) -> void:
+	# Hot reload / same system: keep each entry's ships and respawn cooldown.
 	var keep: Dictionary = {}
 	if not fill:
 		for entry: Entry in _entries:
 			entry.prune()
-			keep[entry.pool.id] = entry.ships
+			keep[entry.pool.id] = entry
 	clear_traffic(fill)
 	system = p_system
 	for t: Dictionary in system.traffic:
 		var entry := Entry.new()
 		entry.pool = DataRegistry.get_ai_pool(t["pool"])
 		entry.count = t["count"]
-		entry.ships.assign(keep.get(entry.pool.id, []))
+		var old_entry: Entry = keep.get(entry.pool.id)
+		if old_entry != null:
+			entry.ships.assign(old_entry.ships)
+			entry.cooldown = old_entry.cooldown
+		else:
+			entry.cooldown = _respawn_roll()
 		_entries.append(entry)
 		if fill and enabled:
 			for i: int in entry.count:
@@ -60,6 +68,12 @@ func clear_traffic(free_ships: bool = true) -> void:
 			for ship: Variant in entry.ships:
 				ship.remove_from_group(&"ships")
 				ship.queue_free()
+		# Debug pool spawns (D3) belong to the system too.
+		for ship: Variant in _extras:
+			if is_instance_valid(ship) and not ship.is_queued_for_deletion():
+				ship.remove_from_group(&"ships")
+				ship.queue_free()
+		_extras.clear()
 	_entries.clear()
 
 
@@ -85,14 +99,18 @@ func _physics_process(delta: float) -> void:
 			var from_planet: bool = entry.pool.spawn_from_planets and not _landable().is_empty() \
 				and _rng.randf() < _ai("planet_spawn_chance")
 			_spawn(entry, "takeoff" if from_planet else "arrive")
-			entry.cooldown = _rng.randf_range(system.respawn_delay.x, system.respawn_delay.y)
+			entry.cooldown = _respawn_roll()
 
 
 ## D3: spawns one ship from `pool` at `at`, optionally under another
 ## government or with a fixed personality (tests).
 func spawn_from_pool(pool: AiPoolDef, at: Vector2, government_override: String = "", personality_id: String = "") -> Ship:
 	var personality: PersonalityDef = DataRegistry.get_personality(personality_id) if personality_id != "" else null
-	return _make(pool, at, _rng.randf() * TAU, Vector2.ZERO, 0.0, "inside", null, government_override, personality)
+	var ship: Ship = _make(pool, at, _rng.randf() * TAU, Vector2.ZERO, 0.0, "inside", null, government_override, personality)
+	if ship != null:
+		_extras = _extras.filter(func(other: Variant) -> bool: return is_instance_valid(other))
+		_extras.append(ship)
+	return ship
 
 
 func _spawn(entry: Entry, mode: String) -> void:
@@ -176,3 +194,8 @@ func _inside_point(pool: AiPoolDef) -> Vector2:
 
 func _ai(key: String) -> float:
 	return float(DataRegistry.settings["ai"][key])
+
+
+## A6: seconds before the next replacement (system respawn_delay).
+func _respawn_roll() -> float:
+	return _rng.randf_range(system.respawn_delay.x, system.respawn_delay.y)

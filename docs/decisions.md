@@ -45,12 +45,12 @@ The group (government + AI pool) decides standing and broad behaviour: friends a
 Why: traders, warships and pirates should not all act alike within a faction (a brave trader fights back, a skittish one bolts), while faction relations stay predictable and data-driven. Personalities are their own type so one "brave" can be reused across pools.
 Rejected: personality fields inline in each AI pool (duplicated values); per-ship-hull temperament (hull and pilot are different things).
 
-## 2026-10-26 — Provoked ships retaliate regardless of legal record (A8)
+## 2026-10-26 — Provoked ships retaliate regardless of legal record (A8) — superseded later that day by grievance leniency
 A ship the player damages, and its government's warships, are hostile to the player until the player leaves the system. Allies don't react.
 Why: without it, the patrol ignores the player shooting traders for many hits, because the record falls slowly (3 per ship). Nova-like.
 Rejected: strict threshold-only hostility (feels unresponsive).
 
-## 2026-10-26 — Legal penalties apply once per ship per kind of act (G2)
+## 2026-10-26 — Legal penalties apply once per ship per kind of act (G2) — attack penalty timing superseded by grievance leniency
 The attack ("shoot") penalty applies on the first hit on a ship, not per hit; disable, board and destroy once each. Lasers fire 4 times a second, so per-hit penalties would swamp the record.
 
 ## 2026-10-26 — Traders dock and relaunch as the same ship (A1)
@@ -59,7 +59,7 @@ A landed trader stays docked (hidden, untargetable) for a dwell time, then takes
 ## 2026-10-26 — AI friendly fire is a data percentage (C11)
 AI shots hit own and allied ships at `combat.friendly_fire_pct` (game.json; 0 = off). Player shots always do full damage. Only the player's legal record is tracked.
 
-## 2026-10-26 — R targets the nearest hostile (C8)
+## 2026-10-26 — R targets the nearest hostile (C8) — superseded by the R / Tab / Shift keys entry
 R selects the nearest hostile ship (falling back to the nearest ship if none are hostile); Tab still cycles all ships nearest first.
 
 ## 2026-10-26 — G3 applies to every ship of a government, not only warships
@@ -80,3 +80,7 @@ R nearest hostile, Tab nearest of any kind, Shift+R cycles hostiles, Shift+Tab c
 ## 2026-10-26 — Weapon damage falloff with distance (C12)
 Any weapon can lose damage with distance (full damage to a set fraction of range, linear down to a set minimum at full range); shots and beams fade to show it. The mining beam's range rises to cross the screen, balanced by falloff.
 Rejected: keeping the beam short (Jarrad wants it long).
+
+## 2026-10-28 — Attacking an already-hostile ship charges the attack penalty on the first hit (G2)
+A ship that is already hostile through the legal record counts as past its tolerance, so the attack penalty applies on the player's first hit (once per ship).
+Why: leniency exists to forgive accidental fire on friends, not attacks on ships already at odds with the player. Recorded at the final M4 audit to match the code; Jarrad can overturn it.

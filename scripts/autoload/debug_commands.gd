@@ -20,6 +20,8 @@ var player_invulnerable: bool = false
 var ai_paused: bool = false
 ## D4: radar shows ships beyond its range on the rim.
 var radar_show_all: bool = false
+## D3: when set, the next left click in the world spawns there.
+var _pending_click_spawn: Callable = Callable()
 var _overlays: Dictionary = {}
 
 
@@ -33,6 +35,18 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"debug_toggle"):
 		toggle_panel()
 		get_viewport().set_input_as_handled()
+	elif _pending_click_spawn.is_valid() and event is InputEventMouseButton \
+			and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		var at: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * (event as InputEventMouseButton).position
+		_pending_click_spawn.call(at)
+		_pending_click_spawn = Callable()
+		get_viewport().set_input_as_handled()
+
+
+## D3: the next left click in the world (outside the panel) runs `spawn(at)`.
+func spawn_at_next_click(spawn: Callable) -> void:
+	if OS.is_debug_build():
+		_pending_click_spawn = spawn
 
 
 ## D1
@@ -156,14 +170,15 @@ func destroy_target() -> bool:
 
 ## D3: spawns `count` ships ahead of the player (game.json debug.spawn_distance),
 ## optionally under a government. They idle until AI arrives in milestone 4.
-func spawn_ships(ship_id: String, count: int = 1, government: String = "") -> Array[Ship]:
+## `at`: centre of the group; defaults to ahead of the player.
+func spawn_ships(ship_id: String, count: int = 1, government: String = "", at: Variant = null) -> Array[Ship]:
 	var spawned: Array[Ship] = []
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
 	var player: Ship = _player()
 	if not OS.is_debug_build() or scene == null or player == null:
 		return spawned
 	var distance: float = float(DataRegistry.settings["debug"]["spawn_distance"])
-	var ahead: Vector2 = player.global_position + FlightModel.heading(player.global_rotation) * distance
+	var ahead: Vector2 = at if at is Vector2 else player.global_position + FlightModel.heading(player.global_rotation) * distance
 	for i: int in count:
 		var offset := Vector2.from_angle(TAU * i / maxf(count, 1)) * (distance * 0.3 if count > 1 else 0.0)
 		var ship: Ship = scene.spawn_ship(ship_id, ahead + offset, government)
@@ -242,7 +257,7 @@ func set_radar_show_all(enabled: bool) -> void:
 
 ## D3: spawns `count` AI ships from a pool ahead of the player, with their
 ## pool's behaviour and a personality each; optional government override.
-func spawn_pool(pool_id: String, count: int = 1, government: String = "") -> Array[Ship]:
+func spawn_pool(pool_id: String, count: int = 1, government: String = "", at: Variant = null) -> Array[Ship]:
 	var spawned: Array[Ship] = []
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
 	var player: Ship = _player()
@@ -250,7 +265,7 @@ func spawn_pool(pool_id: String, count: int = 1, government: String = "") -> Arr
 	if not OS.is_debug_build() or scene == null or player == null or pool == null:
 		return spawned
 	var distance: float = float(DataRegistry.settings["debug"]["spawn_distance"])
-	var ahead: Vector2 = player.global_position + FlightModel.heading(player.global_rotation) * distance
+	var ahead: Vector2 = at if at is Vector2 else player.global_position + FlightModel.heading(player.global_rotation) * distance
 	for i: int in count:
 		var offset := Vector2.from_angle(TAU * i / maxf(count, 1)) * (distance * 0.3 if count > 1 else 0.0)
 		var ship: Ship = scene.traffic.spawn_from_pool(pool, ahead + offset, government)

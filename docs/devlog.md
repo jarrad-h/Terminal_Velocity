@@ -4,7 +4,7 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
-## Milestone 4: AI and governments (26 Oct 2026) — awaiting playtest
+## Milestone 4: AI and governments (26–28 Oct 2026)
 
 ### 2026-10-27 — Playtest bug: crash firing missiles after the target died (Jarrad)
 
@@ -38,7 +38,7 @@ Branch `m4-ai-governments`. Built in the cloud session (no godot MCP there; runs
 
 ### Built
 
-- **G1–G3, A8 relations.** `Relations` (pure, tested) decides hostility. Governments are hostile if either lists the other as an enemy. A government's ships treat the player as hostile below its `crime_threshold`; pirates' 1000 threshold makes them hostile from the start. **A8:** a ship the player damages, and its government's warships, stay hostile until the player leaves the system. Ships also remember non-allied attackers.
+- **G1–G3, A8 relations.** `Relations` (pure, tested) decides hostility. Governments are hostile if either lists the other as an enemy. A government's ships treat the player as hostile below its `crime_threshold`; pirates' 1000 threshold makes them hostile from the start. **A8** (as built first; replaced after playtest by per-ship grievance leniency, see the 2026-10-26 playtest notes): a ship the player damaged, and its government's warships, stayed hostile until the player left the system.
 - **G2 legal record.** A `GameState` autoload holds credits and the record per government (starting values in `game.json` → `player`). Penalties apply once per ship per act (first hit, disable, kill); boarding comes in M5.
 - **A1–A4, A7 AI.** One `AIController` produces the same `FlightInput` as the player, so AI obeys the same flight model and weapons.
   - **Traders:** fly planet to planet, dock (hidden, untargetable) for `dwell_time`, relaunch, and leave via the edge after `stops` planets.
@@ -50,7 +50,7 @@ Branch `m4-ai-governments`. Built in the cloud session (no godot MCP there; runs
   - **Steering** (`Steering`, pure, tested against the real flight model): arrive with turn-around braking, lead aiming, fire only when aligned (turrets fire whenever in range).
 - **A6 traffic.** `TrafficSpawner` keeps each system traffic entry at its count. The system starts populated, outside the player's sensor range. Replacements jump in at `edge_radius` or take off from a landable planet after `respawn_delay`.
 - **C11 friendly fire.** AI shots on their own or allied governments' ships do `combat.friendly_fire_pct` % (100 now; 0 turns it off). Player shots always do full damage.
-- **C8:** R targets the nearest hostile ship.
+- **C8:** R targets the nearest hostile ship (playtest later added Tab = nearest any, Shift+R / Shift+Tab = cycle).
 - **H1:** the HUD shows credits.
 - **H2:** radar ships are red (hostile), green (friendly) or grey (no government).
 - **Debug.**
@@ -79,7 +79,25 @@ Branch `m4-ai-governments`. Built in the cloud session (no godot MCP there; runs
 - **AI dogfighting is simple:** face the lead point, thrust until within `standoff_fraction` of weapon range, so fights look like jousting passes.
 - **AI doesn't finish off disabled ships** and doesn't board (M5).
 - **AI friendly fire changes no records;** only the player's record is tracked.
-- **Spec question (G3, open):** the spec says "that government's **warships** turn hostile" below the crime threshold. The code makes **every** ship of that government hostile, which pirates rely on for A3. So low-record traders show red and brave or aggressive traders may fight. Waiting on Jarrad.
+- **G3 (settled 2026-10-26):** every ship of a government is hostile below its threshold; role and personality decide who fights.
+
+### Final audit before merge (2026-10-28)
+
+**Soak test.** 10 simulated minutes across both systems at 4× speed, with the player fighting throughout, a hot reload, a traffic toggle and a system switch. Result: 0 errors, 0 stuck AI ships, at most 15 ships at once.
+- It found that a hot reload healed and revived every ship, so disabled traffic counted again and the population went over target (10/7). **Fixed:** reload keeps current damage and the disabled state (`Health.retune`); ship swap still restores full health. Regression test added.
+
+**Reviewer pass.** Fixed:
+- replacements ignored `respawn_delay` at first and after reload or toggle;
+- `ai.jump_out_factor` below 1 trapped leaving ships (now validated ≥ 1);
+- a pool listed twice in one system's traffic (now rejected);
+- debug pool spawns survived a system switch;
+- D3 "at the cursor" was missing (now a panel option: tick it, press Spawn, click in space);
+- spec G2 didn't cover hitting an already-hostile ship (it now counts as past tolerance, so the first hit charges).
+
+**Known issues, deferred:**
+- An AI ship hit by a non-allied AI ship holds the grudge permanently, with no leniency. Today only ships with no government can be hit this way, but a future neutral government would feud forever from one stray shot.
+- Beams assume the shooter is a Ship, which will matter when station turrets reuse WeaponMounts.
+- Disabled AI ships accumulate until boarding (M5) or destruction.
 
 ### Review (godot-reviewer, before handover)
 
