@@ -29,7 +29,7 @@ One system, one player ship, combat and AI first; everything that needs more tha
 | Boarding | Board a disabled ship for credits | Plunder of cargo and outfits, capture odds |
 | Landing | Stub screen: repair, take off | Shipyard, outfitter, trade, bar, missions |
 | Data | Ships, weapons, governments, AI pools, system definition | Missions, flags, crons, persons, plugins |
-| Presentation | Placeholder art, basic HUD, radar | Final art, audio polish, menus, save/load |
+| Presentation | Generated ship art for the SOW hulls and the pirate raider (scope change 2026-10-29), placeholder art for everything else, basic HUD, radar | Final art beyond ships, audio polish, menus, save/load |
 | Debug | Debug panel and console: ship swap, spawning, invulnerability, time scale, data hot-reload, overlays | Player-facing cheats, mission and flag debugging |
 
 ## Functional requirements
@@ -206,7 +206,7 @@ Just enough content to make the three behaviours and the four weapon kinds disti
 | System objects | 5 | A star, 2 landable planets, 1 station, 1 gas giant (not landable) |
 | Scenery | 5 | Dust, small debris, rock, large asteroid, derelict hull (proves a data-only swap) |
 
-Placeholder art: single top-down sprites rotated in engine (no 36-frame sheets), flat-coloured planets, a noise-generated nebula backdrop, and generated beam and projectile visuals. Free asset packs (Kenney space shooter assets are CC0) cover ships and effects until real art exists.
+Placeholder art: single top-down sprites rotated in engine (no 36-frame sheets), flat-coloured planets, a noise-generated nebula backdrop, and generated beam and projectile visuals. Free asset packs (Kenney space shooter assets are CC0) cover ships and effects until real art exists. Ship art (2026-10-29): Standard Orbital Works hulls and the pirate raider are generated sprites (`art_src/sow/export.py`, see `docs/art/`), never hand-edited; the target dummy and anything without art keep placeholders.
 
 ## Milestones
 
