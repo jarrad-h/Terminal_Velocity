@@ -136,3 +136,22 @@ if __name__ == '__main__':
         turret_part(kind).save(os.path.join(OUT, 'parts', f'{code}.png'))
         turret_part(kind, True).save(os.path.join(OUT, 'parts', f'{code}_ring.png'))
         print(f'parts/{code}.png + ring')
+
+    # ---- pirates: final raider (R-1C) -> assets/sprites/ships/pirates/ ----
+    import pirates3
+    PIR = os.path.join(ROOT, 'assets', 'sprites', 'ships', 'pirates')
+    if not only or 'pirate_raider' in only:
+        os.makedirs(PIR, exist_ok=True)
+        p = pirates3.build(pirates3.c_integrated, 82); im = reduce(p); bb = im.getbbox(); im = im.crop(bb)
+        im.save(os.path.join(PIR, 'pirate_raider.png'))
+        cx, cy = bb[0] + im.width / 2, bb[1] + im.height / 2
+        off = lambda x, y: [round(x * K - cx, 1), round(y * K - cy, 1)]
+        data = {'pirate_raider': {
+            'design': 'R-1C Integrated',
+            'size_px': [im.width, im.height],
+            'gun': [off(x, y) for x, y, k in p.mounts_fixed if k == 'gun'],
+            'beam': [off(x, y) for x, y, k in p.mounts_fixed if k == 'beam'],
+            'engines': [off(x, 67 + 7 + 1.2) for x in (35.2, 40, 44.8)],
+        }}
+        with open(os.path.join(PIR, 'mounts.json'), 'w') as f: json.dump(data, f, indent=1)
+        print('pirates/pirate_raider.png', im.size, data['pirate_raider'])
