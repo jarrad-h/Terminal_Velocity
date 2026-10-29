@@ -4,6 +4,63 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Milestone 5: Board and land (28–29 Oct 2026)
+
+Playtest confirmed by Jarrad on 29 Oct 2026; detail tweaks to follow later.
+
+Branch `m5-board-and-land`. Designed with Jarrad first (spec and decisions 2026-10-28), built in the cloud session (no godot MCP there: checked headless, by soak and scenario tests, and by rendering under a virtual display).
+
+### Built
+
+- **S2 / G4 landing (L).** Within `landing.radius_fraction` of a planet's centre and below `landing.max_speed` (shared with AI landing). Refused if the player's record with its government is below its `min_record`. Otherwise L only shows a hint ("Too far", "Slow down", "refuses you landing").
+- **S3 landed screen.** Planet name, description and government. Repair (`landing.repair_cost_per_point`, free by default) and Take off. It sits on a reusable modal `Dialog` that pauses the world; number keys pick options.
+- **C9 boarding (B).** Stop alongside a disabled ship (hull gap ≤ `boarding.range`, relative speed ≤ `boarding.max_speed`). A `boarding.time` progress bar runs, and aborts if you drift off, the wreck goes, or you take damage. Then the paused boarding window:
+  - **Take credits:** hull `board_credits` × pool `wealth_factor` × roll, rolled once per ship; G2 board penalty.
+  - **Assist:** back to `assist_armor_pct`, forgives you, leaves the system, +`assist_reward` record. Once per ship.
+  - **Scuttle:** kill penalty.
+  - **Leave:** reboard later.
+  - Looted ships offer only Scuttle or Leave. Wrecks stay until you leave the system.
+- **C10 escape pod.** On destruction the pod flies for `pod_time` at `pod_speed`, then a paused rescue report: days passed, the rescuer (the port's government), the rescue fee (`rescue_fee_pct` of credits) and insurance (insured: same hull; uninsured: `uninsured_ship`).
+  - You wake up landed at the nearest port that accepts you, else any port.
+  - Rescue counts as leaving and returning: every other ship, shots and fragments go, destroyed scenery returns, traffic refills. Record and grudges stay.
+  - No pod: "Lost with all hands" and Restart.
+- **F5:** hold T to face the target's lead point.
+- **H2:** a radar rim arrow points at a target beyond radar range.
+- **H4 (minimal):** a message line for hints, refusals, boarding, the escape pod and "X disabled".
+- **D10 console (F1).**
+  - Commands: spawn, pool, swap, system, reload, time, pause, resume, step, invuln, ai, traffic, radar, kill, disable, clear, credits, record, overlay, ids, pos, help.
+  - They run through `DebugCommands.run_command`, the same layer as the panel. Up recalls; Esc/F1 closes; flight keys are ignored while it's open.
+- **Tests.** Unit: `PortRules` (landing, boarding, credits, options, fee, rescue port, repair cost), `ConsoleParser`, `after_assist`, and loader validation for the new fields. The scenario test covers:
+  - landing hints, refusal, repair and take off;
+  - boarding (too far, abort under fire, take, reboard lock-out, assist once, scuttle, freed wreck);
+  - rescue and wake-up landed, and game over without a pod;
+  - F5, the H2 arrow and console commands.
+
+### Deviations and why
+
+- **Escape pod and insurance replace "respawn at the station"** (Jarrad). They are `game.json` flags that start owned until outfits exist.
+- **Assist is once per ship** (found at review, to stop record farming). Jarrad can overturn it.
+- **H4 and the H2 arrow came forward from M6** as minimal versions.
+- **The HUD keeps updating behind paused windows.**
+
+### Known issues
+
+- If a system has no landable port at all, the rescued player is placed at the system centre with no landed screen.
+- Dialogs each save and restore the pause state. Only one is open at a time, but a debug pause/resume while landed can unpause the world under the landed screen (debug only).
+- Message-line timing (4 s, fade 1 s, 3 lines) is a UI constant, not data. Polish in M6.
+- AI ships don't board or rescue anyone; NPC reactions to the escape pod come later.
+
+### Key tuning values
+
+- **Landing:** max speed 60, radius 0.6, repairs free.
+- **Boarding:** range 60 px, max relative speed 40, time 2 s, assist to 50% armour.
+- **Board credits:** shuttle 100–400, courier 300–1200, freighter 2000–6000, corvette 500–1500, raider 400–2000.
+- **Wealth:** traders 1.0, pirates 0.6, patrol 0.1.
+- **Assist reward:** law 10, traders 15, pirates 5.
+- **Rescue:** fee 10%, 2–5 days, pod 600 px/s for 3 s, uninsured hull: shuttle.
+
+---
+
 ## Milestone 4: AI and governments (26–28 Oct 2026)
 
 ### 2026-10-27 — Playtest bug: crash firing missiles after the target died (Jarrad)

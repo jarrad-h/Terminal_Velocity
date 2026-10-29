@@ -22,6 +22,10 @@ var role: String = ""
 var docked: bool = false
 ## G2: acts the player has already been charged for against this ship.
 var player_acts: Dictionary = {}
+## C9: credits aboard, rolled the first time the player boards (-1 = not yet).
+var credits_aboard: int = -1
+## C9: the player took the credits; Assist is no longer offered.
+var looted: bool = false
 ## A8: the player's damage so far, as % of total shield + armour; drains over time.
 var grievance: float = 0.0
 ## A8: personality's tolerance factor (set by the AI controller).
@@ -242,6 +246,7 @@ func _on_disabled() -> void:
 	visual.modulate = DISABLED_TINT
 	if _attacked_by_player():
 		GameState.report_player_act(self, "disable")
+		GameState.post_message("%s disabled" % def.name)  # H4
 
 
 func _on_destroyed() -> void:
@@ -251,7 +256,7 @@ func _on_destroyed() -> void:
 	ship_destroyed.emit(self)
 	hitbox_shape.set_deferred(&"disabled", true)
 	if is_player():
-		# Respawn (C10) arrives in milestone 5; until then the wreck just vanishes.
+		# C10: the escape pod and rescue are handled by PlayerActions.
 		visible = false
 		body.set_physics_process(false)
 		return
@@ -311,3 +316,24 @@ func place(at: Vector2, rotation_value: float, velocity: Vector2 = Vector2.ZERO)
 	position = at
 	rotation = rotation_value
 	reset_physics_interpolation()
+
+
+## C9: credits multiplier from the ship's AI pool (1 for ships without one).
+func wealth_factor() -> float:
+	return (controller as AIController).pool.wealth_factor if controller is AIController else 1.0
+
+
+## C9 Assist: back on its feet; forgives the player.
+func recover(armor_pct: float) -> void:
+	health.recover(armor_pct)
+	visual.modulate = Color.WHITE
+	grievance = 0.0
+	for other: Variant in _aggressors.keys():
+		if is_instance_valid(other) and (other as Ship).is_player():
+			_aggressors.erase(other)
+
+
+## C9: Scuttle — destroyed by the player (kill penalty applies).
+func scuttle_by(player_ship: Ship) -> void:
+	_last_attacker = player_ship
+	health.force_destroy()

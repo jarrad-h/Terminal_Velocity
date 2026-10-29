@@ -37,6 +37,17 @@ func configure(p_system: SystemDef, p_chunk_size: float) -> void:
 	clear()
 
 
+## C10: rescue counts as leaving and returning — forget destroyed scenery
+## and the drift clock, then regenerate.
+func reset_visit() -> void:
+	destroyed.clear()
+	elapsed = 0.0
+	clear()
+	for node: Node in get_children():
+		if node is Fragment or node is Flash:
+			node.queue_free()
+
+
 func clear() -> void:
 	for node: Node2D in _chunks.values():
 		node.queue_free()

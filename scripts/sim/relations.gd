@@ -45,3 +45,8 @@ static func damage_scale(shooter_is_player: bool, shooter_gov: GovernmentDef, ta
 	if shooter_is_player or not allied(shooter_gov, target_gov):
 		return 1.0
 	return maxf(friendly_fire_pct, 0.0) / 100.0
+
+
+## C9: the record after the player assists one of the government's disabled ships.
+static func after_assist(record: float, gov: GovernmentDef) -> float:
+	return record + (gov.assist_reward if gov != null else 0.0)

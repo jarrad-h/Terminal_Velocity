@@ -22,6 +22,8 @@ var stops: Vector2i
 var spawn_from_planets: bool
 ## Fire only when the aim is within this many degrees.
 var fire_angle: float
+## C9: multiplies the hull's board_credits (traders rich, patrols poor).
+var wealth_factor: float
 
 
 static func parse(r: DefReader) -> AiPoolDef:
@@ -46,6 +48,7 @@ static func parse(r: DefReader) -> AiPoolDef:
 	d.stops = Vector2i(roundi(stops.x), roundi(stops.y))
 	d.spawn_from_planets = r.boolean("spawn_from_planets", d.behaviour == "trader")
 	d.fire_angle = r.number("fire_angle", 8.0, false, 0.0)
+	d.wealth_factor = r.number("wealth_factor", 1.0, false, 0.0)
 	return d
 
 

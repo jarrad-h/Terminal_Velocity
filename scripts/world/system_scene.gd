@@ -15,6 +15,7 @@ var system: SystemDef = null
 @onready var hud: Hud = $Hud
 @onready var camera: FollowCamera = $Camera
 @onready var traffic: TrafficSpawner = $TrafficSpawner
+var actions: PlayerActions
 
 
 func _ready() -> void:
@@ -26,6 +27,10 @@ func _ready() -> void:
 		screen.show_errors(DataRegistry.load_errors)
 		return
 	var settings: Dictionary = DataRegistry.settings
+	actions = PlayerActions.new()
+	actions.name = "PlayerActions"
+	actions.scene = self
+	add_child(actions)
 	camera.configure(settings["camera"])
 	load_system(settings["system"])
 
@@ -34,14 +39,19 @@ func _ready() -> void:
 		player.add_to_group(&"player")
 		player.setup(player.def)  # recolour now it is the player
 		player.set_controller(PlayerController.new())
+		player.ship_destroyed.connect(actions.on_player_destroyed)
 		camera.target = player
 	hud.player = player
+	hud.actions = actions
 
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
 	if OS.is_debug_build():
 		var overlay := DebugOverlay.new()
 		world.add_child(overlay)
 		add_child(load(DEBUG_PANEL_SCENE).instantiate())
+		var console := DebugConsole.new()
+		console.name = "DebugConsole"
+		add_child(console)
 		for spawn: Dictionary in settings["debug"]["spawn_at_start"]:
 			var at: Array = spawn.get("position", [0, 0])
 			var ship: Ship = spawn_ship(spawn["ship"], Vector2(at[0], at[1]), spawn.get("government", ""))
@@ -62,6 +72,19 @@ func load_system(system_id: String) -> bool:
 	local_space.configure(system, float(DataRegistry.settings["local_space"]["chunk_size"]))
 	traffic.configure(system, new_system)
 	return true
+
+
+## C10: as if the player left and came back — every other ship goes,
+## destroyed scenery returns, and traffic refills.
+func reset_visit() -> void:
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		if not node.is_in_group(&"player"):
+			node.remove_from_group(&"ships")
+			node.queue_free()
+	for shot: Node in $World/Shots.get_children():
+		shot.queue_free()
+	local_space.reset_visit()
+	traffic.configure(system, true)
 
 
 ## Spawns a ship. Non-player ships get an IdleController until M4 adds AI.

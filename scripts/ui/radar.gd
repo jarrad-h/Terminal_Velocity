@@ -61,6 +61,13 @@ func _draw() -> void:
 		_dot(centre, p, 2.5, _ship_colour(ship))
 		if ship == target and p.length() <= _radius:
 			draw_arc(centre + p, 6.0, 0.0, TAU, 16, _colours["target"], 1.5)
+	# H2: an arrow on the rim pointing at a target beyond radar range.
+	var arrow: Vector2 = target_off_radar()
+	if arrow != Vector2.ZERO:
+		var tip: Vector2 = centre + arrow * (_radius - 1.0)
+		var back: Vector2 = centre + arrow * (_radius - 11.0)
+		var side: Vector2 = arrow.orthogonal() * 6.0
+		draw_colored_polygon(PackedVector2Array([tip, back + side, back - side]), _colours["target"])
 	draw_circle(centre, 2.5, _colours["player"])
 
 
@@ -80,3 +87,14 @@ func _ship_colour(ship: Ship) -> Color:
 	if ship.grievance > 0.0:
 		return _colours["warned"]  # A8: annoyed, not yet hostile
 	return _colours["friendly"] if ship.government != "" else _colours["neutral"]
+
+
+## H2: direction to the selected target when it is beyond radar range, else zero.
+func target_off_radar() -> Vector2:
+	if player == null or not is_instance_valid(player):
+		return Vector2.ZERO
+	var target: Ship = player.get_target()
+	if target == null:
+		return Vector2.ZERO
+	var offset: Vector2 = target.global_position - player.global_position
+	return offset.normalized() if offset.length() > _range else Vector2.ZERO

@@ -13,5 +13,6 @@
   ],
   "sensor_range": 1600,
   "stay_time": [60, 120],
+  "wealth_factor": 0.6,
   "fire_angle": 8
 }

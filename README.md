@@ -23,7 +23,12 @@ Current stage: single-system prototype. See [docs/spec.md](docs/spec.md) for sco
 | Tab | Target nearest ship of any kind |
 | Shift+R | Cycle hostile ships, nearest first |
 | Shift+Tab | Cycle all ships, nearest first |
+| L | Land on the nearest planet or station (fly in slowly first) |
+| B | Board a disabled ship alongside (stop next to it) |
+| Hold T | Keep facing the target's lead point |
+| 1–4 | Pick an option in the landed, boarding and rescue windows |
 | ` (backtick) | Debug panel (debug builds only) |
+| F1 | Debug console (debug builds only) |
 
 ## Data and mods
 
