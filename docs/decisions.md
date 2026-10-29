@@ -118,3 +118,10 @@ Placement and scale rule: see the next entry.
 - **Point defence** is a small turret with a PD role tag on the hardpoint (picks the `pd1` sprite) and its own behaviour on the weapon (auto-fires at missiles, no input). Specified now as C13, built when a PD hull enters the game; flak stands in until then.
 - **Launcher cells** (VLS-4 6, VLS-3 11) are guidance only; missile ammo stays in data until missile variants arrive.
 Why: Jarrad's direction (2026-10-29), keeping sizes, mounts and arcs data-driven for the later outfitter.
+
+## 2026-10-29 — M7 scope: target schematic, standing, beam aim (H3, H4, G5, F5)
+- **Target panel** is a schematic: a nose-up silhouette tinted green → yellow → red by armour, a shield outline that fades, grey when disabled; plus class, type (role), government, standing, distance and a hint. The label stays "Armour" (Jarrad).
+- **Standing (G5):** friendly needs the player's record with the government at or above its `friendly_record` (default 25); hostile as before; neutral in between and for ships with no government; angry (grievance, A8) shows in the warning colour. This replaces the radar's old "any non-hostile government ship is friendly". Traders the record makes hostile stay red even though they only flee (Jarrad: red means hostile).
+- **Hold-to-aim and beams:** accepted as is. F5 and the AI keep leading for projectiles; a fixed beam is aimed by hand, or fitted on a pivot mount. The raider's mining beam moves to a pivot mount (data; the art's mount types are guidance). Known risk: when weapons with different shot speeds share a ship (lasers vs mass drivers later), one lead point can't serve them all.
+- **Balance targets:** raider disables the shuttle in about 20–30 s; a patrol corvette beats a raider one on one.
+Why: Jarrad's direction, 2026-10-29.
