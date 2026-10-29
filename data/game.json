@@ -65,6 +65,7 @@
       "warned": "#ffb030"
     }
   },
+  "engine_glow": {"idle": 0.25, "response": 6},
   "messages": {
     "show_seconds": 4,
     "fade_seconds": 1,

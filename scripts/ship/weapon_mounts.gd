@@ -65,8 +65,8 @@ func setup(ship_def: ShipDef, art_scale: float) -> void:
 func _add_turret_sprite(mount: Mount, settings: Dictionary, art_scale: float) -> void:
 	var key: String = "point_defence" if mount.hardpoint.role == "point_defence" else mount.hardpoint.size
 	var path: String = Ship.SPRITE_DIR.path_join(String(settings["mounts"]["turret_sprites"][key]))
-	if not path.ends_with(".png") or not ResourceLoader.exists(path):
-		return
+	if String(settings["mounts"]["turret_sprites"][key]) == "":
+		return  # no turret art for this size (the loader checks named paths exist)
 	var sprite := Sprite2D.new()
 	sprite.name = "TurretSprite"
 	sprite.texture = load(path)

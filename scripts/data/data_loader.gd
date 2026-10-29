@@ -33,6 +33,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"background": "#0a1426c0", "rim": "#5a7aa0", "player": "#ffffff",
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
 		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
+	"engine_glow": {"idle": 0.25, "response": 6.0},
 	"messages": {"show_seconds": 4.0, "fade_seconds": 1.0, "max_lines": 3, "colours": {
 		"info": "#d8e0f0", "combat": "#ffb060", "standing": "#ff7a7a", "credits": "#ffe070"}},
 	"hud": {"colours": {"shield": "#59a0ff", "armor": "#e69a4d", "schematic_full": "#40e070",
@@ -135,7 +136,13 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	mounts.number("fire_tolerance", 0.0, false, 0.0)
 	var sprites: DefReader = mounts.object("turret_sprites")
 	for key: String in SETTINGS_DEFAULTS["mounts"]["turret_sprites"]:
-		sprites.string(key)
+		var problem: String = ShipDef.sprite_problem(sprites.string(key))
+		if problem != "":
+			sprites.error(key, problem)
+	var glow: DefReader = reader.object("engine_glow")
+	if glow.number("idle", 0.0, false, 0.0) > 1.0:
+		glow.error("idle", "must be at most 1")
+	glow.number("response", 0.0, false, 0.0)
 	var player: DefReader = reader.object("player")
 	player.number("credits", 0.0)
 	player.number("record", 0.0)

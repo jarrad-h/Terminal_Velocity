@@ -90,9 +90,19 @@ func bounding_radius() -> float:
 	return hit_size.y / 2.0 + hit_offset.length()
 
 
+## V1: a named sprite must exist (else the game would silently draw a placeholder).
+static func sprite_problem(sprite_path: String) -> String:
+	if sprite_path == "" or ResourceLoader.exists(Ship.SPRITE_DIR.path_join(sprite_path)):
+		return ""
+	return "no image at %s" % Ship.SPRITE_DIR.path_join(sprite_path)
+
+
 ## V3, C1: every item names a real hardpoint, at most one item per hardpoint,
 ## and the weapon fits it (size and mount, MountFit).
 func validate(defs: Dictionary, errors: Array[String]) -> void:
+	var problem_sprite: String = sprite_problem(sprite)
+	if problem_sprite != "":
+		errors.append("%s: field 'sprite': %s" % [file, problem_sprite])
 	var used: Dictionary = {}
 	for i: int in loadout.size():
 		var entry: LoadoutEntry = loadout[i]
