@@ -6,7 +6,7 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ## Milestone 6: Art integration (29 Oct 2026)
 
-Awaiting Jarrad's playtest. Branch `m6-art` (with `art/sow-kit` merged in). Designed with Jarrad first (spec and decisions 2026-10-29), built in the cloud session (checked headless, by the scenario test, and by rendering under a virtual display).
+Playtest confirmed by Jarrad on 29 Oct 2026. Branch `m6-art` (with `art/sow-kit` merged in). Designed with Jarrad first (spec and decisions 2026-10-29), built in the cloud session (checked headless, by the scenario test, and by rendering under a virtual display).
 
 ### Built
 
@@ -44,7 +44,9 @@ Awaiting Jarrad's playtest. Branch `m6-art` (with `art/sow-kit` merged in). Desi
 - **The world also doubled in size, and the radar range doubled with it.** Planets ×4 alone would have crowded the system.
 - **`docs/` has a `.gdignore`,** so Godot doesn't import the art spec sheets.
 
-### Known issues (from review; for M7 unless the playtest says otherwise)
+### Known issues (from review and playtest; for M7)
+
+- **Playtest: hold-to-aim (F5) and the raider's beam.** While the player is moving, T leads the target for the lasers, whose shots inherit the ship's velocity, so they drift onto it. The beam is instant and inherits nothing, so it lands beside the target by that lead offset. Stopped, both hit. One heading can't serve both while drifting. The AI's attack aim has the same split. Options for M7: aim for the beam when one is fitted, aim for the weapon group being fired, or put beams on pivot mounts so they track the target themselves.
 
 - AI `sensor_range` is unchanged in a world twice the size, so raids may find traders less often. The unarmed courier keeps `strength` 10, which skews AI odds.
 - AI fire uses the widest mount arc. A future hull mixing fixed guns with a 360° turret would fire its fixed guns off-axis (no current ship does).
