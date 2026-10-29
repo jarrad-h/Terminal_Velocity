@@ -29,7 +29,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"waypoint_reached_fraction": 0.1, "object_patrol_chance": 0.6, "object_patrol_offset_factor": 0.3,
 		"roam_band": [0.1, 0.6], "jump_out_factor": 1.05, "planet_spawn_chance": 0.5,
 		"arrival_speed_fraction": 0.5, "spawn_keep_away_factor": 1.2, "inside_spawn_band": [0.15, 0.7]},
-	"radar": {"size": 200.0, "range": 3000.0, "margin": 16.0, "colours": {
+	"radar": {"size": 200.0, "range": 3000.0, "margin": 16.0, "disabled_pale": 0.55, "colours": {
 		"background": "#0a1426c0", "rim": "#5a7aa0", "player": "#ffffff",
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
 		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
@@ -174,6 +174,8 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var radar: DefReader = reader.object("radar")
 	for key: String in ["size", "range", "margin"]:
 		radar.number(key, 0.0, false, 0.0)
+	if radar.number("disabled_pale", 0.0, false, 0.0) > 1.0:
+		radar.error("disabled_pale", "must be at most 1")
 	var colours: DefReader = radar.object("colours")
 	for key: String in SETTINGS_DEFAULTS["radar"]["colours"]:
 		colours.colour(key)

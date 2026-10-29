@@ -10,11 +10,13 @@ var player: Ship = null
 var _range: float = 3000.0
 var _radius: float = 90.0
 var _colours: Dictionary = {}
+var _disabled_pale: float = 0.55
 
 
 func configure(settings: Dictionary) -> void:
 	_radius = float(settings["size"]) / 2.0
 	_range = float(settings["range"])
+	_disabled_pale = float(settings["disabled_pale"])
 	var margin: float = float(settings["margin"])
 	_colours = {}
 	for key: String in settings["colours"]:
@@ -79,9 +81,10 @@ func _dot(centre: Vector2, p: Vector2, size: float, colour: Color) -> void:
 		draw_rect(Rect2(centre + p - Vector2(size, size), Vector2(size, size) * 2.0), colour)
 
 
-## H2: by standing (G5).
+## H2: by standing (G5); a disabled ship shows a pale version of that colour.
 func _ship_colour(ship: Ship) -> Color:
-	return _colours[standing_colour_key(ship.standing_to(player))]
+	var colour: Color = _colours[standing_colour_key(ship.standing_to(player))]
+	return colour.lerp(Color.WHITE, _disabled_pale) if ship.health.is_disabled else colour
 
 
 ## Radar colour key for a G5 standing ("angry" uses the warning colour).

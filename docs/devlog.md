@@ -8,6 +8,12 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 Awaiting Jarrad's playtest. Branch `m7-hud-tuning`. Designed with Jarrad first (spec and decisions 2026-10-29); built in the cloud session (checked headless, by the scenario test, a 10-minute soak, and rendering under a virtual display).
 
+### 2026-10-29 — Playtest notes (Jarrad)
+
+- **Time to kill too long; "at least halved",** because these are small, delicate hulls. Ship shield, regen and armour ÷2; grievance tolerance and forgiveness ×2 to keep A8 behaving the same (traders 12% and 0.6%/s, authority 10% and 0.5%/s, pirates 6% and 0.24%/s, defaults 10% and 0.5%/s). Report at 50% hits: raider disables shuttle 13 s, corvette beats raider 20 s vs 46 s, shuttle disables raider 52 s, raider disables freighter 45 s.
+- **Target shield shown as a blue bubble** round the silhouette, not an outline.
+- **Disabled ships are pale on the radar** (`radar.disabled_pale` 0.55).
+
 ### Built
 
 - **H3 target panel.**
@@ -66,7 +72,7 @@ Awaiting Jarrad's playtest. Branch `m7-hud-tuning`. Designed with Jarrad first (
 
 ### Key tuning values
 
-- **Shuttle:** shield 360, armour 240. **Raider:** 540 / 450. **Corvette:** 1200 / 900. **Freighter:** 900 / 1200. **Courier:** 600 / 360.
+- **Shuttle:** shield 180, armour 120. **Raider:** 270 / 225. **Corvette:** 600 / 450. **Freighter:** 450 / 600. **Courier:** 300 / 180 (after the playtest halving).
 - **Weapons:** small laser 5 / 3 per shot every 0.25 s; medium 8 / 5; large 12 / 8; mining beam 4 / 10 per s; homing missile 15 / 22; flak 3 / 4.
 - **AI sensor range:** patrol 2700, pirates 2400, traders 1800.
 - **Messages:** 4 s shown, 1 s fade, 3 lines.

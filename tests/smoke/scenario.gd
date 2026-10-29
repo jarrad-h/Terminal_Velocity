@@ -271,11 +271,12 @@ func _run() -> void:
 	await _frames(90)
 	var pirate_ai: AIController = pirate.controller
 	_check(pirate_ai.state == AIController.State.ATTACK and pirate_ai.target == trader, "pirate attacks the trader on sight (A3): %s" % pirate.get_state_label())
-	await _frames(240)
 	var trader_ai: AIController = trader.controller
-	_check(not is_instance_valid(trader) or trader_ai.state == AIController.State.FLEE or trader.health.shield < trader.health.max_shield,
+	await _frames(240)
+	# Ships are delicate (M7): the trader may already be disabled or gone.
+	_check(not is_instance_valid(trader) or trader.health.is_disabled or trader_ai.state == AIController.State.FLEE or trader.health.shield < trader.health.max_shield,
 		"trader under attack (A1): %s" % (trader.get_state_label() if is_instance_valid(trader) else "gone"))
-	if is_instance_valid(trader):
+	if is_instance_valid(trader) and not trader.health.is_disabled:
 		_check(trader_ai.state == AIController.State.FLEE, "steady trader flees when attacked (A1): %s" % trader.get_state_label())
 	var patrol: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), pirate.global_position + Vector2(0.0, 900.0), "", "steady")
 	await _frames(90)

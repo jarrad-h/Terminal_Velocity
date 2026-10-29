@@ -43,6 +43,7 @@ Fields marked **required** have no default.
 | `radar.size` | Radar diameter in px (bottom-right corner) | `200` |
 | `radar.range` | World distance from the player to the radar rim, px | `3000` |
 | `radar.margin` | Gap from the screen edges, px | `16` |
+| `radar.disabled_pale` | H2: a disabled ship shows its standing colour blended this far towards white (0–1) | `0.55` |
 | `radar.colours` | `background`, `rim`, `player`, `hostile` (ships hostile to you), `warned` (ships with a grievance against you, not yet hostile), `friendly` (non-hostile ships with a government), `neutral` (ships with no government), `target` (ring round the selected target), `scenery` | see `game.json` |
 | `ai.thrust_angle` | AI thrusts only when within this many degrees of the direction it wants | `35` |
 | `ai.standoff_fraction` | In a fight, AI stops closing at this fraction of its weapon range | `0.4` |
@@ -115,7 +116,7 @@ Mounts (V3) decide how a weapon aims, from the hardpoint it sits on: `fixed` fir
 
 ## `governments/`
 
-Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. All of a government's ships treat the player as hostile while the player's record with it is below `crime_threshold` (pirates start there). Damage the player does to a non-hostile ship builds that ship's grievance (% of its total shield + armour, draining at `forgiveness_pct_per_s`); past `tolerance_pct` × its personality's `tolerance_factor`, that ship alone turns hostile and the attack ("shoot") penalty is charged. Disable, board and kill penalties apply immediately, once each per ship. A ship that is already hostile (record below threshold) charges the attack penalty on the first hit. Ships with no government use the default tolerance (5%) and forgiveness (0.25%/s). Keep forgiveness well below the share of a ship's health the player's guns deal per second, or sustained fire never turns it hostile.
+Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. All of a government's ships treat the player as hostile while the player's record with it is below `crime_threshold` (pirates start there). Damage the player does to a non-hostile ship builds that ship's grievance (% of its total shield + armour, draining at `forgiveness_pct_per_s`); past `tolerance_pct` × its personality's `tolerance_factor`, that ship alone turns hostile and the attack ("shoot") penalty is charged. Disable, board and kill penalties apply immediately, once each per ship. A ship that is already hostile (record below threshold) charges the attack penalty on the first hit. Ships with no government use the default tolerance (10%) and forgiveness (0.5%/s). Keep forgiveness well below the share of a ship's health the player's guns deal per second, or sustained fire never turns it hostile.
 
 | Field | Meaning | Default |
 | --- | --- | --- |
@@ -127,8 +128,8 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `penalties` | `{"shoot", "disable", "board", "kill"}`: record lost per act | all `0` |
 | `max_odds` | Engages only if enemy strength ÷ own strength ≤ this | `1` |
 | `flee_shield_pct` | Retreats below this shield % | `25` |
-| `tolerance_pct` | A8: how much of a ship's total shield + armour the player can damage before that ship turns hostile (grievance) | `5` |
-| `forgiveness_pct_per_s` | A8: how fast grievance drains, % per second | `0.25` |
+| `tolerance_pct` | A8: how much of a ship's total shield + armour the player can damage before that ship turns hostile (grievance) | `10` |
+| `forgiveness_pct_per_s` | A8: how fast grievance drains, % per second | `0.5` |
 | `assist_reward` | C9: record gained for assisting one of its disabled ships | `0` |
 
 ## `ai_pools/` — traffic types

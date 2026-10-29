@@ -125,3 +125,9 @@ Why: Jarrad's direction (2026-10-29), keeping sizes, mounts and arcs data-driven
 - **Hold-to-aim and beams:** accepted as is. F5 and the AI keep leading for projectiles; a fixed beam is aimed by hand, or fitted on a pivot mount. The raider's mining beam moves to a pivot mount (data; the art's mount types are guidance). Known risk: when weapons with different shot speeds share a ship (lasers vs mass drivers later), one lead point can't serve them all.
 - **Balance targets:** raider disables the shuttle in about 20–30 s; a patrol corvette beats a raider one on one.
 Why: Jarrad's direction, 2026-10-29.
+
+## 2026-10-29 — M7 playtest: fights twice as fast; shield bubble; pale disabled pips (H2, H3)
+- Time to kill was too long: the prototype's hulls are small and should be delicate. Ship shield, regen and armour halved (weapon and scenery numbers unchanged), so every fight takes half as long: raider disables the shuttle in about 13 s at 50% hits (was 26). Grievance tolerance and forgiveness doubled so stray hits are still forgiven and sustained fire still turns ships hostile in the same time.
+- The target schematic shows the shield as a translucent bubble round the hull, not an outline.
+- Disabled ships show on the radar as a pale version of their standing colour (`radar.disabled_pale`).
+Why: Jarrad's playtest, 2026-10-29. Supersedes the 20–30 s target in the M7 scope entry.

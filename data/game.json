@@ -53,6 +53,7 @@
     "size": 200,
     "range": 6000,
     "margin": 16,
+    "disabled_pale": 0.55,
     "colours": {
       "background": "#0a1426c0",
       "rim": "#5a7aa0",

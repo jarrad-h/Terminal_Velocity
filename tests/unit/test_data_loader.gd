@@ -85,8 +85,8 @@ func test_playtest_field_defaults() -> void:
 	var weapon: WeaponDef = data.get_def("weapons", "zap")
 	assert_near(weapon.falloff_at(10000.0), 1.0, "C12 no falloff by default")
 	var law: GovernmentDef = data.get_def("governments", "law")
-	assert_near(law.tolerance_pct, 5.0, "A8 tolerance default")
-	assert_near(law.forgiveness_pct_per_s, 0.25, "A8 forgiveness default")
+	assert_near(law.tolerance_pct, 10.0, "A8 tolerance default")
+	assert_near(law.forgiveness_pct_per_s, 0.5, "A8 forgiveness default")
 
 
 func test_ai_pool_defaults_follow_role() -> void:

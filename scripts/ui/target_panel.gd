@@ -1,13 +1,17 @@
 class_name TargetPanel
 extends HBoxContainer
 ## H3: the selected target as a schematic (nose-up silhouette shaded by armour,
-## shield outline fading with the shield, grey when disabled) beside its shield
+## inside a shield bubble that fades with the shield, grey when disabled) beside its shield
 ## and armour readouts, class, type, government, standing (G5), distance and a
 ## hint. Colours come from game.json "hud" and "radar".
 
 const SCHEMATIC_SIZE := Vector2(96.0, 120.0)
-## Outline thickness of the shield glow, px.
-const OUTLINE_PX: float = 2.0
+## The shield bubble's size relative to the silhouette, and its look at full
+## shield (it fades with the shield).
+const BUBBLE_SCALE: float = 1.2
+const BUBBLE_FILL_ALPHA: float = 0.22
+const BUBBLE_RIM_ALPHA: float = 0.85
+const BUBBLE_POINTS: int = 48
 
 var player: Ship = null
 var target: Ship = null
@@ -53,19 +57,27 @@ class Schematic:
 			fill = HudMath.health_colour(ship.health.armor / maxf(ship.health.max_armor, 0.001),
 				Color.html(colours["schematic_full"]), Color.html(colours["schematic_half"]), Color.html(colours["schematic_empty"]))
 		var shield_fraction: float = ship.health.shield / ship.health.max_shield if ship.health.max_shield > 0.0 else 0.0
-		var glow := Color(Color.html(colours["shield"]), 0.9 * shield_fraction)
+		var shield_colour: Color = Color.html(colours["shield"])
 		var texture: Texture2D = _texture(ship)
 		var art: Vector2 = texture.get_size() if texture != null else ship.def.hit_size
-		var box: Vector2 = size - Vector2.ONE * (TargetPanel.OUTLINE_PX * 2.0 + 2.0)
+		var box: Vector2 = size / TargetPanel.BUBBLE_SCALE - Vector2.ONE * 2.0
 		var draw_size: Vector2 = art * HudMath.fit_scale(art, box, 2.0)
 		var rect := Rect2((size - draw_size) / 2.0, draw_size)
-		var offsets: Array[Vector2] = []
-		for i: int in 8:
-			offsets.append(Vector2.RIGHT.rotated(TAU * i / 8.0) * TargetPanel.OUTLINE_PX)
-		if glow.a > 0.0:
-			for o: Vector2 in offsets:
-				_shape(texture, Rect2(rect.position + o, rect.size), glow)
+		# The shield: a bubble round the hull, fading as the shield drops.
+		var bubble: PackedVector2Array = _ellipse(rect.get_center(), draw_size / 2.0 * TargetPanel.BUBBLE_SCALE)
+		if shield_fraction > 0.0:
+			draw_colored_polygon(bubble, Color(shield_colour, TargetPanel.BUBBLE_FILL_ALPHA * shield_fraction))
 		_shape(texture, rect, fill)
+		if shield_fraction > 0.0:
+			bubble.append(bubble[0])
+			draw_polyline(bubble, Color(shield_colour, TargetPanel.BUBBLE_RIM_ALPHA * shield_fraction), 1.5, true)
+
+	func _ellipse(centre: Vector2, radii: Vector2) -> PackedVector2Array:
+		var points := PackedVector2Array()
+		for i: int in TargetPanel.BUBBLE_POINTS:
+			var a: float = TAU * i / TargetPanel.BUBBLE_POINTS
+			points.append(centre + Vector2(cos(a) * radii.x, sin(a) * radii.y))
+		return points
 
 	## The hull: its sprite, or the placeholder arrow when it has none.
 	func _shape(texture: Texture2D, rect: Rect2, colour: Color) -> void:
