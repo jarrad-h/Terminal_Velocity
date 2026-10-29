@@ -40,7 +40,7 @@ Armed hull sprites have **empty turret rings**; turrets are separate sprites (`p
 
 `preview/` holds the same hulls with turrets fitted, for reference only.
 
-Every hull (civilian and armed) has its weapon hardpoints and engine exits in `assets/sprites/ships/sow/hardpoints.json`, summarised per ship in `docs/art/hardpoints.md` (position, kind, mount type, suggested arc). Civilian turret segments also use empty rings now; no hull sprite has a baked-in turret.
+Every hull (civilian and armed) has its weapon hardpoints and engine exits in `assets/sprites/ships/sow/hardpoints.json`, summarised per ship in `docs/art/hardpoints.md` with mount type (fixed / turret / launcher) and size (small / medium / large), plus a labelled spec sheet image per hull in `docs/art/specs/`. Civilian turret segments also use empty rings now; no hull sprite has a baked-in turret.
 
 ## Kit standards
 
@@ -75,8 +75,8 @@ Suggested sprite for each data ship, and where its current loadout (`data/ships/
 
 | Data ship | Suggested sprite | Data loadout | Art hardpoints | Match |
 |---|---|---|---|---|
-| `shuttle` | S-A | 1 gun (nose) | 1 light turret ring, no fixed gun | ✗ |
+| `shuttle` | S-A | 1 gun (nose) | 1× small turret, no fixed gun | ✗ |
 | `courier` | C-B Booster | 2 guns + 1 turret | none (civilian) | ✗ |
-| `freighter` | F-A Long stack | 1 turret | 1 light turret ring | ✓ |
-| `patrol_corvette` | P-B Patrol | 2 guns + 1 turret + 1 guided | 2 light turret rings + 1 VLS-4 launcher, no fixed guns | ✗ (P-A has 2 fixed guns + 1 turret, no launcher) |
-| `pirate_raider` | pirates/pirate_raider | 2 guns + 1 beam | 2 fixed guns + 1 beam | ✓ |
+| `freighter` | F-A Long stack | 1 turret | 1× small turret | ✓ |
+| `patrol_corvette` | P-B Patrol | 2 guns + 1 turret + 1 guided | 2× small turret + 1× small missile launcher, no fixed guns | ✗ (P-A has 2× small fixed gun + 1× small turret, no launcher) |
+| `pirate_raider` | pirates/pirate_raider | 2 guns + 1 beam | 2× small fixed gun + 1× small fixed beam | ✓ |
