@@ -4,7 +4,9 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
-## Milestone 5: Board and land (28 Oct 2026) — awaiting playtest
+## Milestone 5: Board and land (28–29 Oct 2026)
+
+Playtest confirmed by Jarrad on 29 Oct 2026; detail tweaks to follow later.
 
 Branch `m5-board-and-land`. Designed with Jarrad first (spec and decisions 2026-10-28), built in the cloud session (no godot MCP there: checked headless, by soak and scenario tests, and by rendering under a virtual display).
 
