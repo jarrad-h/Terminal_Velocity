@@ -104,7 +104,7 @@ def fwd_guns(p, y0):
         bl = p.rect(x - 1.9, y0 + 6.5, x + 1.9, y0 + 12, r=0.7); p.fill(bl, (70, 78, 94)); p.edges(bl, 0.35)
         b = p.rect(x - 0.65, y0 - 1, x + 0.65, y0 + 7); p.fill(b, STEEL); p.fill(b * p.rect(x, y0 - 1, x + 0.65, y0 + 7), (84, 90, 104))
         p.fill(p.rect(x - 0.9, y0 - 1.4, x + 0.9, y0 - 0.4), (56, 62, 76))
-    p.mounts_fixed = [(31.4, y0 - 1.4), (48.6, y0 - 1.4)]
+    p.mounts_fixed += [(31.4, y0 - 1.4, 'gun'), (48.6, y0 - 1.4, 'gun')]
 
 def docking_bow(p, y0):
     """DCK: docking collar and clamp arms ahead of the bow."""

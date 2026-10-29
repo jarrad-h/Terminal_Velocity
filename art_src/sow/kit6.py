@@ -44,7 +44,11 @@ def vls_lids(p, y0):           # VLS-2: armoured rectangular lids, no red, yello
             p.fill(p.rect(x + 3.2, y + 4.1, x + 3.8, y + 4.6), YEL)
     p.wear(m, 6)
 
+def _launcher(p, cx, cy, code, cells):
+    if hasattr(p, 'launchers'): p.launchers.append((cx, cy, code, cells))
+
 def vls_round(p, y0):          # VLS-3: round hatches, hex-packed
+    _launcher(p, CX, y0 + 8, 'VLS-3', 11)
     m = seg_base(p, y0, flank=('light', 'grille'))
     rows = ((4, 0.0), (3, 2.5), (4, 0.0))
     for ri, (n, off) in enumerate(rows):
@@ -60,6 +64,7 @@ def vls_round(p, y0):          # VLS-3: round hatches, hex-packed
     p.wear(m, 6)
 
 def vls_strip(p, y0):          # VLS-4: one narrow centreline launcher block, hazard-edged
+    _launcher(p, CX, y0 + 8, 'VLS-4', 6)
     m = seg_base(p, y0, flank=('grille', 'light'))
     st = p.rect(35.6, y0 + 1.6, 44.4, y0 + 14.4); p.fill(st, (40, 44, 54))
     hz = st * ~(p.rect(36.3, y0 + 2.3, 43.7, y0 + 13.7) > 0.5)

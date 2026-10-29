@@ -1,9 +1,14 @@
-"""Regenerate every Standard Orbital Works sprite.
+"""Regenerate every generated ship sprite (Standard Orbital Works + pirates) and their hardpoint data.
 
-Usage (from the repo root):  python art_src/sow/export.py
+Usage (from the repo root):  python art_src/sow/export.py            # everything
+                             python art_src/sow/export.py sow_p_b_patrol pirate_raider   # just these
 Needs: Python 3.10+, numpy, Pillow.
-Writes:  assets/sprites/ships/sow/ships/*.png   whole hulls, art facing up
-         assets/sprites/ships/sow/parts/*.png   individual kit parts
+Writes:  assets/sprites/ships/sow/ships/*.png      hulls (empty turret rings), art facing up
+         assets/sprites/ships/sow/preview/*.png    same hulls with turrets fitted (reference only)
+         assets/sprites/ships/sow/parts/*.png      kit parts and turret sprites
+         assets/sprites/ships/sow/hardpoints.json  every hardpoint per hull (see docs/art/hardpoints.md)
+         assets/sprites/ships/pirates/...          same for the pirate raider
+         docs/art/hardpoints.md                    readable summary of all hardpoints
 """
 import os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -105,53 +110,134 @@ def turret_part(kind, ring_only=False):
     else: turret_sprite(p, half, half, kind)
     return reduce(p)          # not cropped: the image centre is the pivot
 
-import math
+
+import math, json
+
+# Turret segments draw an empty ring (the turret is a separate sprite) and record the mount.
+import kit, kit2
+def _ring_turret(p, cx, cy):
+    if hasattr(p, 'mounts'): ring(p, cx, cy, 't1')
+    else: kit.__dict__['_orig_turret'](p, cx, cy)
+kit.__dict__['_orig_turret'] = kit.turret
+kit.turret = _ring_turret; kit2.turret = _ring_turret
+
+# Record every nozzle exit (engine glow anchors).
+import kit3, kit4
+_orig_nozzle = kit.nozzle
+def _rec_nozzle(p, cx, y0, w=5, h=4):
+    if hasattr(p, 'engines'): p.engines.append((cx, y0 + h))
+    _orig_nozzle(p, cx, y0, w, h)
+for _m in (kit, kit2, kit3, kit4, k5, kit6, kit7):
+    if hasattr(_m, 'nozzle'): _m.nozzle = _rec_nozzle
+
+TURRET_INFO = {'t1': ('light', 'parts/tur1.png'), 't2': ('heavy', 'parts/tur2.png'), 'pd': ('point-defence', 'parts/pd1.png')}
+
+def new_paint(h):
+    p = Paint(80, h); p.mounts = []; p.mounts_fixed = []; p.launchers = []; p.engines = []
+    return p
+
+def hardpoints(p, bb, w, h):
+    """All hardpoints as pixel offsets from the sprite centre (+x starboard/right, +y aft; art faces up)."""
+    cx, cy = bb[0] + w / 2, bb[1] + h / 2
+    off = lambda x, y: [round(x * K - cx, 1), round(y * K - cy, 1)]
+    hps, n = [], {'gun': 0, 'turret': 0, 'guided': 0, 'beam': 0}
+    def add(kind, prefix, **kw):
+        n[kind] += 1; hps.append(dict(id=f'{prefix}{n[kind]}', kind=kind, **kw))
+    for x, y, k in sorted(p.mounts_fixed, key=lambda m: (m[1], m[0])):
+        if k == 'gun': add('gun', 'G', mount='fixed', pos=off(x, y), facing=0, arc=0, note='muzzle point; fires along the heading')
+        else: add('beam', 'B', mount='fixed', pos=off(x, y), facing=0, arc=0, note='emitter tip; fires along the heading')
+    for x, y, k in sorted(p.mounts, key=lambda m: (m[1], m[0])):
+        size, spr = TURRET_INFO[k]
+        add('turret', 'T', mount='turret ring', size=size, sprite=spr, pos=off(x, y), facing=0, arc=360,
+            note='ring centre = turret pivot; turret sprite barrels point up at rotation 0')
+    for x, y, code, cells in sorted(p.launchers, key=lambda m: m[1]):
+        add('guided', 'M', mount='vertical launcher', launcher=code, cells=cells, pos=off(x, y), facing=0, arc=360,
+            note='launcher centre; vertical launch, missiles can turn onto any bearing')
+    eng = [off(x, y) for x, y in sorted(set((round(a, 2), round(b, 2)) for a, b in p.engines))]
+    return hps, eng
+
+def summary(name, rec):
+    hps = rec['hardpoints']
+    if not hps: return 'No weapon hardpoints (unarmed hull).'
+    parts = []
+    for hp in hps:
+        x, y = hp['pos']
+        if hp['kind'] == 'gun': parts.append(f"1 fixed gun ({hp['id']}) at ({x}, {y}), firing straight ahead (arc {hp['arc']}°)")
+        elif hp['kind'] == 'beam': parts.append(f"1 fixed beam ({hp['id']}) at ({x}, {y}), firing straight ahead (arc {hp['arc']}°)")
+        elif hp['kind'] == 'turret': parts.append(f"1 {hp['size']} turret ring ({hp['id']}) at ({x}, {y}) with a {hp['arc']}° firing arc")
+        else: parts.append(f"1 missile launcher ({hp['id']}, {hp['launcher']}, {hp['cells']} cells) at ({x}, {y}), {hp['arc']}° launch arc")
+    return f"{len(hps)} hardpoint{'s' if len(hps) != 1 else ''}: " + '; '.join(parts) + '.'
+
+def write_hardpoints(folder, records):
+    path = os.path.join(folder, 'hardpoints.json')
+    data = json.load(open(path)) if os.path.exists(path) else {}
+    for name, rec in records.items():
+        rec['summary'] = summary(name, rec); data[name] = rec
+    data = dict(sorted(data.items()))
+    with open(path, 'w') as f: json.dump(data, f, indent=1)
+    old = os.path.join(folder, 'mounts.json')
+    if os.path.exists(old): os.remove(old)
+    return data
+
+def write_doc(all_data):
+    lines = ['# Ship hardpoints', '',
+             'Generated by `art_src/sow/export.py` from the art itself; do not edit by hand.', '',
+             '**Coordinates** are pixels from the sprite centre at 1:1 sprite scale: +x is starboard (right), +y is aft (down), the art faces up. This matches the `hardpoints` convention in `data/README.md` (forward is negative y), so once a sprite scale is chosen, multiply by that scale and copy the points into the ship JSON.', '',
+             '**Kinds** match the game: `gun` (fixed, fires along the heading), `turret` (rotating sprite on a ring), `guided` (missile launcher), `beam`. `arc` is a suggested arc in degrees centred on the heading; in the game the actual turret arc comes from the weapon definition. `facing` 0 = forward.', '',
+             '**Turrets**: the hull sprite shows an empty ring; the turret is a separate sprite (`parts/tur1.png` light, `tur2.png` heavy, `pd1.png` point defence) whose image centre is the pivot, barrels up at rotation 0. Previews with turrets fitted are in `sow/preview/`.', '',
+             '**Engines** are nozzle exit points for an in-engine glow effect.', '']
+    for maker, data in all_data:
+        lines += [f'## {maker}', '']
+        for name, rec in data.items():
+            lines += [f"### {name}", '', f"Sprite `{rec['sprite']}`, {rec['size_px'][0]} × {rec['size_px'][1]} px. {rec['summary']}", '']
+            if rec['hardpoints']:
+                lines += ['| ID | Kind | Mount | Position (x, y) | Facing | Arc | Notes |', '|---|---|---|---|---|---|---|']
+                for hp in rec['hardpoints']:
+                    extra = hp.get('size') or hp.get('launcher') or ''
+                    if hp.get('cells'): extra += f", {hp['cells']} cells"
+                    lines.append(f"| {hp['id']} | `{hp['kind']}` | {hp['mount']}{' (' + extra + ')' if extra else ''} | ({hp['pos'][0]}, {hp['pos'][1]}) | {hp['facing']}° | {hp['arc']}° | {hp['note']} |")
+                lines.append('')
+            if rec.get('engines'):
+                lines += ['Engine exits: ' + ', '.join(f'({x}, {y})' for x, y in rec['engines']), '']
+    with open(os.path.join(ROOT, 'docs', 'art', 'hardpoints.md'), 'w') as f: f.write('\n'.join(lines))
+
 if __name__ == '__main__':
     only = set(sys.argv[1:])
-    for sub, table in (('ships', SHIPS), ('parts', PARTS)):
-        os.makedirs(os.path.join(OUT, sub), exist_ok=True)
-        for name, (fn, h) in table.items():
-            if only and name not in only: continue
-            im = render(fn, h); im.save(os.path.join(OUT, sub, f'{name}.png'))
-            print(f'{sub}/{name}.png', im.size)
-    os.makedirs(os.path.join(OUT, 'preview'), exist_ok=True)
-    _mp = os.path.join(OUT, 'mounts.json')
-    mounts = json.load(open(_mp)) if os.path.exists(_mp) else {}
-    for name, (fn, h) in ARMED.items():
+    os.makedirs(os.path.join(OUT, 'parts'), exist_ok=True)
+    for name, (fn, h) in PARTS.items():
         if only and name not in only: continue
-        for turrets, sub in ((False, 'ships'), (True, 'preview')):
-            p = build(fn, h, turrets=turrets); im = reduce(p); bb = im.getbbox(); im = im.crop(bb)
-            im.save(os.path.join(OUT, sub, f'{name}.png'))
-        cx, cy = bb[0] + im.width / 2, bb[1] + im.height / 2
-        mounts[name] = {
-            'size_px': [im.width, im.height],
-            'turrets': [{'kind': k, 'pos': [round(x * K - cx, 1), round(y * K - cy, 1)]} for x, y, k in p.mounts],
-            'fixed_guns': [[round(x * K - cx, 1), round(y * K - cy, 1)] for x, y in p.mounts_fixed],
-        }
-        print(f'ships/{name}.png', im.size, len(p.mounts), 'mounts')
-    if mounts:
-        with open(os.path.join(OUT, 'mounts.json'), 'w') as f: json.dump(mounts, f, indent=1)
+        im = render(fn, h); im.save(os.path.join(OUT, 'parts', f'{name}.png')); print(f'parts/{name}.png', im.size)
     for kind, code in (('t1', 'tur1'), ('t2', 'tur2'), ('pd', 'pd1')):
         if only and code not in only: continue
         turret_part(kind).save(os.path.join(OUT, 'parts', f'{code}.png'))
         turret_part(kind, True).save(os.path.join(OUT, 'parts', f'{code}_ring.png'))
         print(f'parts/{code}.png + ring')
 
-    # ---- pirates: final raider (R-1C) -> assets/sprites/ships/pirates/ ----
+    ALL = dict(SHIPS); ALL.update(ARMED)
+    records = {}
+    for sub in ('ships', 'preview'): os.makedirs(os.path.join(OUT, sub), exist_ok=True)
+    for name, (fn, h) in ALL.items():
+        if only and name not in only: continue
+        p = new_paint(h); fn(p); im = reduce(p); bb = im.getbbox(); im = im.crop(bb)
+        im.save(os.path.join(OUT, 'ships', f'{name}.png'))
+        hps, eng = hardpoints(p, bb, im.width, im.height)
+        if p.mounts:                                   # preview with turrets fitted
+            kit7.fit(p); pv = reduce(p).crop(bb); pv.save(os.path.join(OUT, 'preview', f'{name}.png'))
+        records[name] = {'sprite': f'ships/sow/ships/{name}.png', 'size_px': [im.width, im.height], 'hardpoints': hps, 'engines': eng}
+        print(f'ships/{name}.png', im.size, len(hps), 'hardpoints')
+    sow_data = write_hardpoints(OUT, records)
+
     import pirates3
     PIR = os.path.join(ROOT, 'assets', 'sprites', 'ships', 'pirates')
+    os.makedirs(PIR, exist_ok=True)
+    precs = {}
     if not only or 'pirate_raider' in only:
-        os.makedirs(PIR, exist_ok=True)
-        p = pirates3.build(pirates3.c_integrated, 82); im = reduce(p); bb = im.getbbox(); im = im.crop(bb)
+        p = Paint(80, 82, seed=21); p.mounts = []; p.mounts_fixed = []; p.launchers = []; p.engines = []
+        pirates3.c_integrated(p); im = reduce(p); bb = im.getbbox(); im = im.crop(bb)
         im.save(os.path.join(PIR, 'pirate_raider.png'))
-        cx, cy = bb[0] + im.width / 2, bb[1] + im.height / 2
-        off = lambda x, y: [round(x * K - cx, 1), round(y * K - cy, 1)]
-        data = {'pirate_raider': {
-            'design': 'R-1C Integrated',
-            'size_px': [im.width, im.height],
-            'gun': [off(x, y) for x, y, k in p.mounts_fixed if k == 'gun'],
-            'beam': [off(x, y) for x, y, k in p.mounts_fixed if k == 'beam'],
-            'engines': [off(x, 67 + 7 + 1.2) for x in (35.2, 40, 44.8)],
-        }}
-        with open(os.path.join(PIR, 'mounts.json'), 'w') as f: json.dump(data, f, indent=1)
-        print('pirates/pirate_raider.png', im.size, data['pirate_raider'])
+        hps, eng = hardpoints(p, bb, im.width, im.height)
+        precs['pirate_raider'] = {'sprite': 'ships/pirates/pirate_raider.png', 'design': 'R-1C Integrated',
+                                  'size_px': [im.width, im.height], 'hardpoints': hps, 'engines': eng}
+        print('pirates/pirate_raider.png', im.size, len(hps), 'hardpoints')
+    pir_data = write_hardpoints(PIR, precs)
+    write_doc([('Standard Orbital Works', sow_data), ('Pirates', pir_data)])

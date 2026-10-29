@@ -1,0 +1,784 @@
+{
+ "sow_c_a_clamp": {
+  "sprite": "ships/sow/ships/sow_c_a_clamp.png",
+  "size_px": [
+   48,
+   103
+  ],
+  "hardpoints": [],
+  "engines": [
+   [
+    -13.6,
+    51.2
+   ],
+   [
+    -4.5,
+    51.2
+   ],
+   [
+    4.5,
+    51.2
+   ],
+   [
+    13.6,
+    51.2
+   ]
+  ],
+  "summary": "No weapon hardpoints (unarmed hull)."
+ },
+ "sow_c_b_booster": {
+  "sprite": "ships/sow/ships/sow_c_b_booster.png",
+  "size_px": [
+   74,
+   94
+  ],
+  "hardpoints": [],
+  "engines": [
+   [
+    -32.4,
+    46.2
+   ],
+   [
+    -13.6,
+    41.7
+   ],
+   [
+    -4.5,
+    41.7
+   ],
+   [
+    4.5,
+    41.7
+   ],
+   [
+    13.6,
+    41.7
+   ],
+   [
+    32.4,
+    46.2
+   ]
+  ],
+  "summary": "No weapon hardpoints (unarmed hull)."
+ },
+ "sow_c_c_longhauler": {
+  "sprite": "ships/sow/ships/sow_c_c_longhauler.png",
+  "size_px": [
+   96,
+   154
+  ],
+  "hardpoints": [],
+  "engines": [
+   [
+    -16.8,
+    70.2
+   ],
+   [
+    0.0,
+    76.3
+   ],
+   [
+    16.8,
+    70.2
+   ]
+  ],
+  "summary": "No weapon hardpoints (unarmed hull)."
+ },
+ "sow_f_a_stack": {
+  "sprite": "ships/sow/ships/sow_f_a_stack.png",
+  "size_px": [
+   76,
+   184
+  ],
+  "hardpoints": [
+   {
+    "id": "T1",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "light",
+    "sprite": "parts/tur1.png",
+    "pos": [
+     -14.0,
+     -16.4
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   }
+  ],
+  "engines": [
+   [
+    -30.8,
+    85.2
+   ],
+   [
+    -14.0,
+    91.4
+   ],
+   [
+    2.8,
+    85.2
+   ]
+  ],
+  "summary": "1 hardpoint: 1 light turret ring (T1) at (-14.0, -16.4) with a 360\u00b0 firing arc."
+ },
+ "sow_f_b_spine": {
+  "sprite": "ships/sow/ships/sow_f_b_spine.png",
+  "size_px": [
+   65,
+   217
+  ],
+  "hardpoints": [],
+  "engines": [
+   [
+    -25.1,
+    102.0
+   ],
+   [
+    -10.9,
+    108.1
+   ],
+   [
+    11.9,
+    108.1
+   ],
+   [
+    26.0,
+    102.0
+   ]
+  ],
+  "summary": "No weapon hardpoints (unarmed hull)."
+ },
+ "sow_f_c_widebody": {
+  "sprite": "ships/sow/ships/sow_f_c_widebody.png",
+  "size_px": [
+   72,
+   197
+  ],
+  "hardpoints": [
+   {
+    "id": "T1",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "light",
+    "sprite": "parts/tur1.png",
+    "pos": [
+     0.0,
+     -5.1
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   }
+  ],
+  "engines": [
+   [
+    -25.4,
+    98.3
+   ],
+   [
+    -15.2,
+    98.3
+   ],
+   [
+    -5.1,
+    98.3
+   ],
+   [
+    5.1,
+    98.3
+   ],
+   [
+    15.2,
+    98.3
+   ],
+   [
+    25.4,
+    98.3
+   ]
+  ],
+  "summary": "1 hardpoint: 1 light turret ring (T1) at (0.0, -5.1) with a 360\u00b0 firing arc."
+ },
+ "sow_k_a_boarding": {
+  "sprite": "ships/sow/ships/sow_k_a_boarding.png",
+  "size_px": [
+   48,
+   143
+  ],
+  "hardpoints": [
+   {
+    "id": "T1",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "light",
+    "sprite": "parts/tur1.png",
+    "pos": [
+     0.0,
+     28.1
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   }
+  ],
+  "engines": [
+   [
+    -13.6,
+    71.3
+   ],
+   [
+    -4.5,
+    71.3
+   ],
+   [
+    4.5,
+    71.3
+   ],
+   [
+    13.6,
+    71.3
+   ]
+  ],
+  "summary": "1 hardpoint: 1 light turret ring (T1) at (0.0, 28.1) with a 360\u00b0 firing arc."
+ },
+ "sow_k_b_escort": {
+  "sprite": "ships/sow/ships/sow_k_b_escort.png",
+  "size_px": [
+   80,
+   155
+  ],
+  "hardpoints": [
+   {
+    "id": "T1",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "heavy",
+    "sprite": "parts/tur2.png",
+    "pos": [
+     0.0,
+     -22.0
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T2",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "point-defence",
+    "sprite": "parts/pd1.png",
+    "pos": [
+     -26.2,
+     27.9
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T3",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "point-defence",
+    "sprite": "parts/pd1.png",
+    "pos": [
+     26.2,
+     27.9
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "M1",
+    "kind": "guided",
+    "mount": "vertical launcher",
+    "launcher": "VLS-4",
+    "cells": 6,
+    "pos": [
+     0.0,
+     33.1
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "launcher centre; vertical launch, missiles can turn onto any bearing"
+   }
+  ],
+  "engines": [
+   [
+    -34.9,
+    74.8
+   ],
+   [
+    -13.6,
+    77.2
+   ],
+   [
+    -4.5,
+    77.2
+   ],
+   [
+    4.5,
+    77.2
+   ],
+   [
+    13.6,
+    77.2
+   ],
+   [
+    34.9,
+    74.8
+   ]
+  ],
+  "summary": "4 hardpoints: 1 heavy turret ring (T1) at (0.0, -22.0) with a 360\u00b0 firing arc; 1 point-defence turret ring (T2) at (-26.2, 27.9) with a 360\u00b0 firing arc; 1 point-defence turret ring (T3) at (26.2, 27.9) with a 360\u00b0 firing arc; 1 missile launcher (M1, VLS-4, 6 cells) at (0.0, 33.1), 360\u00b0 launch arc."
+ },
+ "sow_p_a_picket": {
+  "sprite": "ships/sow/ships/sow_p_a_picket.png",
+  "size_px": [
+   48,
+   99
+  ],
+  "hardpoints": [
+   {
+    "id": "G1",
+    "kind": "gun",
+    "mount": "fixed",
+    "pos": [
+     -15.1,
+     -41.5
+    ],
+    "facing": 0,
+    "arc": 0,
+    "note": "muzzle point; fires along the heading"
+   },
+   {
+    "id": "G2",
+    "kind": "gun",
+    "mount": "fixed",
+    "pos": [
+     15.0,
+     -41.5
+    ],
+    "facing": 0,
+    "arc": 0,
+    "note": "muzzle point; fires along the heading"
+   },
+   {
+    "id": "T1",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "light",
+    "sprite": "parts/tur1.png",
+    "pos": [
+     0.0,
+     6.0
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   }
+  ],
+  "engines": [
+   [
+    -13.6,
+    49.2
+   ],
+   [
+    -4.5,
+    49.2
+   ],
+   [
+    4.5,
+    49.2
+   ],
+   [
+    13.6,
+    49.2
+   ]
+  ],
+  "summary": "3 hardpoints: 1 fixed gun (G1) at (-15.1, -41.5), firing straight ahead (arc 0\u00b0); 1 fixed gun (G2) at (15.0, -41.5), firing straight ahead (arc 0\u00b0); 1 light turret ring (T1) at (0.0, 6.0) with a 360\u00b0 firing arc."
+ },
+ "sow_p_b_patrol": {
+  "sprite": "ships/sow/ships/sow_p_b_patrol.png",
+  "size_px": [
+   48,
+   159
+  ],
+  "hardpoints": [
+   {
+    "id": "T1",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "light",
+    "sprite": "parts/tur1.png",
+    "pos": [
+     0.0,
+     -24.0
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T2",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "light",
+    "sprite": "parts/tur1.png",
+    "pos": [
+     0.0,
+     36.2
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "M1",
+    "kind": "guided",
+    "mount": "vertical launcher",
+    "launcher": "VLS-4",
+    "cells": 6,
+    "pos": [
+     0.0,
+     5.2
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "launcher centre; vertical launch, missiles can turn onto any bearing"
+   }
+  ],
+  "engines": [
+   [
+    -13.6,
+    79.4
+   ],
+   [
+    -4.5,
+    79.4
+   ],
+   [
+    4.5,
+    79.4
+   ],
+   [
+    13.6,
+    79.4
+   ]
+  ],
+  "summary": "3 hardpoints: 1 light turret ring (T1) at (0.0, -24.0) with a 360\u00b0 firing arc; 1 light turret ring (T2) at (0.0, 36.2) with a 360\u00b0 firing arc; 1 missile launcher (M1, VLS-4, 6 cells) at (0.0, 5.2), 360\u00b0 launch arc."
+ },
+ "sow_r_a_gun_cruiser": {
+  "sprite": "ships/sow/ships/sow_r_a_gun_cruiser.png",
+  "size_px": [
+   94,
+   189
+  ],
+  "hardpoints": [
+   {
+    "id": "G1",
+    "kind": "gun",
+    "mount": "fixed",
+    "pos": [
+     -15.1,
+     -86.5
+    ],
+    "facing": 0,
+    "arc": 0,
+    "note": "muzzle point; fires along the heading"
+   },
+   {
+    "id": "G2",
+    "kind": "gun",
+    "mount": "fixed",
+    "pos": [
+     15.0,
+     -86.5
+    ],
+    "facing": 0,
+    "arc": 0,
+    "note": "muzzle point; fires along the heading"
+   },
+   {
+    "id": "T1",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "heavy",
+    "sprite": "parts/tur2.png",
+    "pos": [
+     0.0,
+     -39.0
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T2",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "point-defence",
+    "sprite": "parts/pd1.png",
+    "pos": [
+     -26.2,
+     16.1
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T3",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "point-defence",
+    "sprite": "parts/pd1.png",
+    "pos": [
+     26.2,
+     16.1
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T4",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "heavy",
+    "sprite": "parts/tur2.png",
+    "pos": [
+     0.0,
+     17.0
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T5",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "light",
+    "sprite": "parts/tur1.png",
+    "pos": [
+     -11.2,
+     46.2
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T6",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "light",
+    "sprite": "parts/tur1.png",
+    "pos": [
+     11.2,
+     46.2
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   }
+  ],
+  "engines": [
+   [
+    -38.9,
+    89.3
+   ],
+   [
+    -16.8,
+    88.5
+   ],
+   [
+    0.0,
+    94.7
+   ],
+   [
+    16.8,
+    88.5
+   ],
+   [
+    38.9,
+    89.3
+   ]
+  ],
+  "summary": "8 hardpoints: 1 fixed gun (G1) at (-15.1, -86.5), firing straight ahead (arc 0\u00b0); 1 fixed gun (G2) at (15.0, -86.5), firing straight ahead (arc 0\u00b0); 1 heavy turret ring (T1) at (0.0, -39.0) with a 360\u00b0 firing arc; 1 point-defence turret ring (T2) at (-26.2, 16.1) with a 360\u00b0 firing arc; 1 point-defence turret ring (T3) at (26.2, 16.1) with a 360\u00b0 firing arc; 1 heavy turret ring (T4) at (0.0, 17.0) with a 360\u00b0 firing arc; 1 light turret ring (T5) at (-11.2, 46.2) with a 360\u00b0 firing arc; 1 light turret ring (T6) at (11.2, 46.2) with a 360\u00b0 firing arc."
+ },
+ "sow_r_b_missile_cruiser": {
+  "sprite": "ships/sow/ships/sow_r_b_missile_cruiser.png",
+  "size_px": [
+   96,
+   222
+  ],
+  "hardpoints": [
+   {
+    "id": "T1",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "heavy",
+    "sprite": "parts/tur2.png",
+    "pos": [
+     0.0,
+     -25.4
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T2",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "point-defence",
+    "sprite": "parts/pd1.png",
+    "pos": [
+     -26.2,
+     33.2
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T3",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "point-defence",
+    "sprite": "parts/pd1.png",
+    "pos": [
+     26.2,
+     33.2
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T4",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "light",
+    "sprite": "parts/tur1.png",
+    "pos": [
+     -11.2,
+     63.3
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "T5",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "light",
+    "sprite": "parts/tur1.png",
+    "pos": [
+     11.2,
+     63.3
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   },
+   {
+    "id": "M1",
+    "kind": "guided",
+    "mount": "vertical launcher",
+    "launcher": "VLS-3",
+    "cells": 11,
+    "pos": [
+     0.0,
+     -56.4
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "launcher centre; vertical launch, missiles can turn onto any bearing"
+   },
+   {
+    "id": "M2",
+    "kind": "guided",
+    "mount": "vertical launcher",
+    "launcher": "VLS-3",
+    "cells": 11,
+    "pos": [
+     0.0,
+     33.2
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "launcher centre; vertical launch, missiles can turn onto any bearing"
+   }
+  ],
+  "engines": [
+   [
+    -39.4,
+    109.9
+   ],
+   [
+    -16.8,
+    105.7
+   ],
+   [
+    0.0,
+    111.8
+   ],
+   [
+    16.8,
+    105.7
+   ],
+   [
+    39.4,
+    109.9
+   ]
+  ],
+  "summary": "7 hardpoints: 1 heavy turret ring (T1) at (0.0, -25.4) with a 360\u00b0 firing arc; 1 point-defence turret ring (T2) at (-26.2, 33.2) with a 360\u00b0 firing arc; 1 point-defence turret ring (T3) at (26.2, 33.2) with a 360\u00b0 firing arc; 1 light turret ring (T4) at (-11.2, 63.3) with a 360\u00b0 firing arc; 1 light turret ring (T5) at (11.2, 63.3) with a 360\u00b0 firing arc; 1 missile launcher (M1, VLS-3, 11 cells) at (0.0, -56.4), 360\u00b0 launch arc; 1 missile launcher (M2, VLS-3, 11 cells) at (0.0, 33.2), 360\u00b0 launch arc."
+ },
+ "sow_s_a_shuttle": {
+  "sprite": "ships/sow/ships/sow_s_a_shuttle.png",
+  "size_px": [
+   48,
+   119
+  ],
+  "hardpoints": [
+   {
+    "id": "T1",
+    "kind": "turret",
+    "mount": "turret ring",
+    "size": "light",
+    "sprite": "parts/tur1.png",
+    "pos": [
+     0.0,
+     -14.0
+    ],
+    "facing": 0,
+    "arc": 360,
+    "note": "ring centre = turret pivot; turret sprite barrels point up at rotation 0"
+   }
+  ],
+  "engines": [
+   [
+    -13.6,
+    59.3
+   ],
+   [
+    -4.5,
+    59.3
+   ],
+   [
+    4.5,
+    59.3
+   ],
+   [
+    13.6,
+    59.3
+   ]
+  ],
+  "summary": "1 hardpoint: 1 light turret ring (T1) at (0.0, -14.0) with a 360\u00b0 firing arc."
+ }
+}

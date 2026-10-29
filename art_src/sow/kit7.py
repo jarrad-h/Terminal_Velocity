@@ -68,6 +68,7 @@ def nacelle(p, side, y0, L, w, ang=8.0, gap=0.5, big=False):
     noz = p.poly([world(-nw * 0.38, L - 0.6), world(nw * 0.38, L - 0.6), world(nw / 2, L - 0.6 + nh), world(-nw / 2, L - 0.6 + nh)])
     shade = np.clip(0.55 + 0.6 * np.sqrt(np.clip(1 - (lx / (nw / 2)) ** 2, 0, 1)) - 0.3 * lx / (nw / 2), 0.2, 1.3)
     p.fill(noz, np.clip(np.array([62, 68, 82], np.float32) * shade[..., None], 0, 255)); p.edges(noz, 0.4)
+    if hasattr(p, 'engines'): p.engines.append(world(0, L - 0.6 + nh))
     p.glow(p.poly([world(-nw * 0.42, L - 1.5 + nh), world(nw * 0.42, L - 1.5 + nh), world(nw / 2 - 0.2, L - 0.6 + nh), world(-nw / 2 + 0.2, L - 0.6 + nh)]))
 
 # ---------------- hulls ----------------

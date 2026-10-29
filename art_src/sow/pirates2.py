@@ -34,6 +34,7 @@ def rust(p, m, n=20):
 
 def hot_engine(p, cx, y0, r, L):
     """Exposed engine: ribbed casing, glowing combustion ring and core, painted heat bloom on the hull around it."""
+    if hasattr(p, 'engines'): p.engines.append((cx, y0 + L + r * 0.6))
     bloom = p.ell(cx - r * 2.2, y0 - r * 0.6, cx + r * 2.2, y0 + L + r * 1.2)
     p.fill(bloom * (p.a > 0.5), HOT1, 0.22, solid=False)
     c = p.rect(cx - r, y0, cx + r, y0 + L, r=r * 0.35)

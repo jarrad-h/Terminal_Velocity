@@ -40,7 +40,7 @@ Armed hull sprites have **empty turret rings**; turrets are separate sprites (`p
 
 `preview/` holds the same hulls with turrets fitted, for reference only.
 
-`mounts.json` lists, per armed hull, the sprite size and each turret mount (`kind`: `t1`/`t2`/`pd`) and fixed forward gun muzzle as pixel offsets from the sprite centre (+x right, +y towards the stern, art facing up). These map directly onto `hardpoints` once a scale rule is chosen.
+Every hull (civilian and armed) has its weapon hardpoints and engine exits in `assets/sprites/ships/sow/hardpoints.json`, summarised per ship in `docs/art/hardpoints.md` (position, kind, mount type, suggested arc). Civilian turret segments also use empty rings now; no hull sprite has a baked-in turret.
 
 ## Kit standards
 
@@ -54,7 +54,7 @@ Armed hull sprites have **empty turret rings**; turrets are separate sprites (`p
 These sprites are **not wired in yet**. The ship JSON still points at `ships/<id>.png`, which doesn't exist, so the placeholder arrows are used. Before wiring them in, decide:
 
 1. **Scale.** The sprites are larger than the current hit radii (the shuttle is 48 × 119 px against `hit_radius` 13). Either scale the sprite node down, or raise hit radii and hardpoint offsets to match the art. Pick one rule for all ships.
-2. **Hardpoints.** Gun and turret exit points in the ship JSON should line up with the art: the shuttle's turret ring is the centre of the second module. Turrets will become separate rotating sprites (TUR-1) on mount points in the armed-hull pass; until then they're baked into the hull.
+2. **Hardpoints.** Use `hardpoints.json` / `docs/art/hardpoints.md`: every gun, turret ring, missile launcher and beam with its position. Turrets are separate rotating sprites on the rings.
 3. **Engine glow.** Nozzles are painted unlit at the rim; glow should be an in-engine effect anchored at each nozzle exit.
 4. **Solar panels** (C-C, F-A) are meant to roll toward the star as a separate sprite, with tilt frames still to draw.
 
@@ -68,3 +68,15 @@ python art_src/sow/export.py sow_f_a_stack n2   # just these
 ```
 
 Needs Python 3.10+ with `numpy` and `Pillow`. `art_src/.gdignore` keeps Godot from scanning the scripts.
+
+## Current ship data vs art (as of this branch)
+
+Suggested sprite for each data ship, and where its current loadout (`data/ships/*.json`) doesn't match the hardpoints in the art. Decide per ship whether the data or the art changes.
+
+| Data ship | Suggested sprite | Data loadout | Art hardpoints | Match |
+|---|---|---|---|---|
+| `shuttle` | S-A | 1 gun (nose) | 1 light turret ring, no fixed gun | ✗ |
+| `courier` | C-B Booster | 2 guns + 1 turret | none (civilian) | ✗ |
+| `freighter` | F-A Long stack | 1 turret | 1 light turret ring | ✓ |
+| `patrol_corvette` | P-B Patrol | 2 guns + 1 turret + 1 guided | 2 light turret rings + 1 VLS-4 launcher, no fixed guns | ✗ (P-A has 2 fixed guns + 1 turret, no launcher) |
+| `pirate_raider` | pirates/pirate_raider | 2 guns + 1 beam | 2 fixed guns + 1 beam | ✓ |
