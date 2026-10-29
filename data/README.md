@@ -37,7 +37,7 @@ Fields marked **required** have no default.
 | `boarding.time` | C9: seconds the boarding progress bar runs (more than 0) | `2` |
 | `boarding.assist_armor_pct` | C9 Assist: patched-up ships get back to this % of max armour, up to 100 (keep it above ships' `disable_armor_pct`) | `50` |
 | `combat.friendly_fire_pct` | % damage AI shots do to their own and allied governments' ships (C11); 0 = off. Player shots always do full damage | `100` |
-| `camera.zoom` | Camera zoom; above 1 zooms in | `1.0` |
+| `camera.zoom` | Camera zoom; above 1 zooms in (data: `0.75` for the 1:1 ship art) | `1.0` |
 | `camera.smoothing_speed` | How fast the camera catches up; `0` locks it to the ship | `0` |
 | `local_space.chunk_size` | Side of one local-space chunk in px | `1024` |
 | `radar.size` | Radar diameter in px (bottom-right corner) | `200` |

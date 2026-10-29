@@ -35,7 +35,7 @@
     "assist_armor_pct": 50
   },
   "combat": {"friendly_fire_pct": 100},
-  "camera": {"zoom": 1.0, "smoothing_speed": 0},
+  "camera": {"zoom": 0.75, "smoothing_speed": 0},
   "ai": {
     "thrust_angle": 35,
     "standoff_fraction": 0.4,
@@ -60,7 +60,7 @@
   "local_space": {"chunk_size": 1024},
   "radar": {
     "size": 200,
-    "range": 3000,
+    "range": 6000,
     "margin": 16,
     "colours": {
       "background": "#0a1426c0",
