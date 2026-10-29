@@ -6,7 +6,7 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ## Milestone 7: HUD and tuning pass (29 Oct 2026)
 
-Awaiting Jarrad's playtest. Branch `m7-hud-tuning`. Designed with Jarrad first (spec and decisions 2026-10-29); built in the cloud session (checked headless, by the scenario test, a 10-minute soak, and rendering under a virtual display).
+Playtest confirmed by Jarrad on 29 Oct 2026. Branch `m7-hud-tuning`. Designed with Jarrad first (spec and decisions 2026-10-29); built in the cloud session (checked headless, by the scenario test, a 10-minute soak, and rendering under a virtual display).
 
 ### 2026-10-29 — Playtest notes (Jarrad)
 
@@ -79,7 +79,7 @@ Awaiting Jarrad's playtest. Branch `m7-hud-tuning`. Designed with Jarrad first (
 
 ### Stopped at / Next step
 
-Stopped at: M7 built and reviewed, awaiting Jarrad's playtest. Next step: playtest against the success criteria, especially how long fights feel in the shuttle, then tune the data and merge.
+Stopped at: M7 merged to main (29 Oct 2026); every milestone in the spec is done. Next step: Jarrad decides what comes after the prototype (the open items above, or a new milestone via the design skill).
 
 ---
 
