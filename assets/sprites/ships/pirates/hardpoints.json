@@ -11,6 +11,8 @@
     "id": "B1",
     "kind": "beam",
     "mount": "fixed",
+    "size": "small",
+    "role": "fixed beam emitter",
     "pos": [
      0.0,
      -64.5
@@ -23,6 +25,8 @@
     "id": "G1",
     "kind": "gun",
     "mount": "fixed",
+    "size": "small",
+    "role": "fixed forward gun",
     "pos": [
      -9.3,
      -52.4
@@ -35,6 +39,8 @@
     "id": "G2",
     "kind": "gun",
     "mount": "fixed",
+    "size": "small",
+    "role": "fixed forward gun",
     "pos": [
      14.9,
      -29.7
@@ -58,6 +64,8 @@
     63.6
    ]
   ],
-  "summary": "3 hardpoints: 1 fixed beam (B1) at (0.0, -64.5), firing straight ahead (arc 0\u00b0); 1 fixed gun (G1) at (-9.3, -52.4), firing straight ahead (arc 0\u00b0); 1 fixed gun (G2) at (14.9, -29.7), firing straight ahead (arc 0\u00b0)."
+  "name": "Pirate raider (R-1C)",
+  "mounts": "1\u00d7 small fixed beam, 2\u00d7 small fixed gun",
+  "summary": "3 hardpoints: B1 small fixed beam at (0.0, -64.5), firing straight ahead; G1 small fixed gun at (-9.3, -52.4), firing straight ahead; G2 small fixed gun at (14.9, -29.7), firing straight ahead."
  }
 }
