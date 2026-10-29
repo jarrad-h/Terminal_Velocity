@@ -1,0 +1,63 @@
+{
+ "pirate_raider": {
+  "sprite": "ships/pirates/pirate_raider.png",
+  "design": "R-1C Integrated",
+  "size_px": [
+   62,
+   128
+  ],
+  "hardpoints": [
+   {
+    "id": "B1",
+    "kind": "beam",
+    "mount": "fixed",
+    "pos": [
+     0.0,
+     -64.5
+    ],
+    "facing": 0,
+    "arc": 0,
+    "note": "emitter tip; fires along the heading"
+   },
+   {
+    "id": "G1",
+    "kind": "gun",
+    "mount": "fixed",
+    "pos": [
+     -9.3,
+     -52.4
+    ],
+    "facing": 0,
+    "arc": 0,
+    "note": "muzzle point; fires along the heading"
+   },
+   {
+    "id": "G2",
+    "kind": "gun",
+    "mount": "fixed",
+    "pos": [
+     14.9,
+     -29.7
+    ],
+    "facing": 0,
+    "arc": 0,
+    "note": "muzzle point; fires along the heading"
+   }
+  ],
+  "engines": [
+   [
+    -8.4,
+    63.6
+   ],
+   [
+    0.0,
+    63.6
+   ],
+   [
+    8.4,
+    63.6
+   ]
+  ],
+  "summary": "3 hardpoints: 1 fixed beam (B1) at (0.0, -64.5), firing straight ahead (arc 0\u00b0); 1 fixed gun (G1) at (-9.3, -52.4), firing straight ahead (arc 0\u00b0); 1 fixed gun (G2) at (14.9, -29.7), firing straight ahead (arc 0\u00b0)."
+ }
+}
