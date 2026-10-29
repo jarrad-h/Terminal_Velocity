@@ -202,6 +202,12 @@ func is_active() -> bool:
 	return not health.is_destroyed and not docked and visible
 
 
+## G5: "hostile", "angry", "friendly" or "neutral" towards the player.
+func standing_to(player_ship: Ship) -> String:
+	var record: float = GameState.get_record(government) if government != "" else 0.0
+	return Relations.standing(player_ship.is_hostile_to(self), grievance, gov_def(), record)
+
+
 func forget_aggressor(ship: Ship) -> void:
 	_aggressors.erase(ship)
 
@@ -227,6 +233,7 @@ func _on_player_damage(player_ship: Ship, amount: float) -> void:
 	grievance = Grievance.add(grievance, amount, health.max_shield + health.max_armor)
 	if Grievance.exceeded(grievance, _tolerance()):
 		_aggressors[player_ship] = true
+		GameState.post_message("The %s turns hostile" % def.name, "standing")  # H4, A8
 		GameState.report_player_act(self, "shoot")
 
 
@@ -253,12 +260,13 @@ func _on_disabled() -> void:
 	set_tint(DISABLED_TINT)
 	if _attacked_by_player():
 		GameState.report_player_act(self, "disable")
-		GameState.post_message("%s disabled" % def.name)  # H4
+		GameState.post_message("%s disabled" % def.name, "combat")  # H4
 
 
 func _on_destroyed() -> void:
 	if _attacked_by_player():
 		GameState.report_player_act(self, "kill")
+		GameState.post_message("%s destroyed" % def.name, "combat")  # H4
 	Flash.spawn(get_parent(), global_position, hit_radius * 2.5, Color(1.0, 0.7, 0.3), 0.8)
 	ship_destroyed.emit(self)
 	hitbox_shape.set_deferred(&"disabled", true)

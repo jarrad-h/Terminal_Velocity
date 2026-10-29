@@ -33,6 +33,10 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"background": "#0a1426c0", "rim": "#5a7aa0", "player": "#ffffff",
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
 		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
+	"messages": {"show_seconds": 4.0, "fade_seconds": 1.0, "max_lines": 3, "colours": {
+		"info": "#d8e0f0", "combat": "#ffb060", "standing": "#ff7a7a", "credits": "#ffe070"}},
+	"hud": {"colours": {"shield": "#59a0ff", "armor": "#e69a4d", "schematic_full": "#40e070",
+		"schematic_half": "#f0e040", "schematic_empty": "#ff3030", "schematic_disabled": "#7a7a80"}},
 	"debug": {"time_scales": [0.25, 0.5, 1.0, 2.0, 4.0], "velocity_vector_seconds": 0.5,
 		"spawn_distance": 350.0, "spawn_at_start": []},
 }
@@ -166,6 +170,16 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var colours: DefReader = radar.object("colours")
 	for key: String in SETTINGS_DEFAULTS["radar"]["colours"]:
 		colours.colour(key)
+	var messages: DefReader = reader.object("messages")
+	messages.number("show_seconds", 0.0, false, 0.0)
+	messages.number("fade_seconds", 0.0, false, 0.0)
+	messages.integer("max_lines", 1, false, 1)
+	var message_colours: DefReader = messages.object("colours")
+	for key: String in SETTINGS_DEFAULTS["messages"]["colours"]:
+		message_colours.colour(key)
+	var hud_colours: DefReader = reader.object("hud").object("colours")
+	for key: String in SETTINGS_DEFAULTS["hud"]["colours"]:
+		hud_colours.colour(key)
 	for spawn: DefReader in reader.object("debug").objects("spawn_at_start"):
 		spawn.ref("ship", "ships", "", true)
 		spawn.ref("government", "governments")

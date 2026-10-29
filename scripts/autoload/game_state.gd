@@ -4,8 +4,9 @@ extends Node
 
 signal record_changed(government: String, record: float)
 signal credits_changed(credits: int)
-## H4: an event for the message line.
-signal message_posted(text: String)
+## H4: an event for the message line; `kind` picks its colour ("info",
+## "combat", "standing", "credits"; game.json messages.colours).
+signal message_posted(text: String, kind: String)
 
 var credits: int = 0
 var _records: Dictionary = {}
@@ -24,8 +25,15 @@ func get_record(government: String) -> float:
 
 
 func set_record(government: String, value: float) -> void:
+	var before: float = get_record(government)
 	_records[government] = value
 	record_changed.emit(government, value)
+	var gov: GovernmentDef = DataRegistry.get_government(government)
+	match Relations.threshold_crossing(gov, before, value):
+		-1:
+			post_message("%s now treats you as hostile" % gov.name, "standing")  # G3
+		1:
+			post_message("%s no longer treats you as hostile" % gov.name, "standing")
 
 
 func set_credits(value: int) -> void:
@@ -44,8 +52,8 @@ func report_player_act(target: Ship, act: String) -> void:
 
 
 ## H4: shows `text` on the message line.
-func post_message(text: String) -> void:
-	message_posted.emit(text)
+func post_message(text: String, kind: String = "info") -> void:
+	message_posted.emit(text, kind)
 
 
 func add_credits(amount: int) -> void:

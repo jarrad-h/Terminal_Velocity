@@ -9,6 +9,8 @@ var colour: Color
 var allies: Array[String] = []
 var enemies: Array[String] = []
 var crime_threshold: float
+## G5: friendly when the player's record is at or above this.
+var friendly_record: float
 ## "shoot" / "disable" / "board" / "kill" -> record lost.
 var penalties: Dictionary = {}
 var max_odds: float
@@ -28,6 +30,9 @@ static func parse(r: DefReader) -> GovernmentDef:
 	d.allies = r.ref_array("allies", "governments")
 	d.enemies = r.ref_array("enemies", "governments")
 	d.crime_threshold = r.number("crime_threshold", -50.0)
+	d.friendly_record = r.number("friendly_record", 25.0)
+	if d.friendly_record <= d.crime_threshold:
+		r.error("friendly_record", "must be above crime_threshold (%s)" % d.crime_threshold)
 	var pen: DefReader = r.object("penalties")
 	for kind: String in PENALTY_KINDS:
 		d.penalties[kind] = pen.number(kind, 0.0, false, 0.0)

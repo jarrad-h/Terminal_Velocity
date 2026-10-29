@@ -20,10 +20,7 @@
     "insured": true,
     "uninsured_ship": "shuttle",
     "rescue_fee_pct": 10,
-    "rescue_days": [
-      2,
-      5
-    ],
+    "rescue_days": [2, 5],
     "pod_speed": 600,
     "pod_time": 3
   },
@@ -44,18 +41,12 @@
     "waypoint_reached_fraction": 0.1,
     "object_patrol_chance": 0.6,
     "object_patrol_offset_factor": 0.3,
-    "roam_band": [
-      0.1,
-      0.6
-    ],
+    "roam_band": [0.1, 0.6],
     "jump_out_factor": 1.05,
     "planet_spawn_chance": 0.5,
     "arrival_speed_fraction": 0.5,
     "spawn_keep_away_factor": 1.2,
-    "inside_spawn_band": [
-      0.15,
-      0.7
-    ]
+    "inside_spawn_band": [0.15, 0.7]
   },
   "local_space": {"chunk_size": 1024},
   "radar": {
@@ -74,23 +65,35 @@
       "warned": "#ffb030"
     }
   },
+  "messages": {
+    "show_seconds": 4,
+    "fade_seconds": 1,
+    "max_lines": 3,
+    "colours": {
+      "info": "#d8e0f0",
+      "combat": "#ffb060",
+      "standing": "#ff7a7a",
+      "credits": "#ffe070"
+    }
+  },
+  "hud": {
+    "colours": {
+      "shield": "#59a0ff",
+      "armor": "#e69a4d",
+      "schematic_full": "#40e070",
+      "schematic_half": "#f0e040",
+      "schematic_empty": "#ff3030",
+      "schematic_disabled": "#7a7a80"
+    }
+  },
   "debug": {
-    "time_scales": [
-      0.25,
-      0.5,
-      1,
-      2,
-      4
-    ],
+    "time_scales": [0.25, 0.5, 1, 2, 4],
     "velocity_vector_seconds": 0.5,
     "spawn_distance": 350,
     "spawn_at_start": [
       {
         "ship": "target_dummy",
-        "position": [
-          0,
-          -450
-        ]
+        "position": [0, -450]
       }
     ]
   }

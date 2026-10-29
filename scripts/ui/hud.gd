@@ -1,7 +1,7 @@
 class_name Hud
 extends CanvasLayer
-## Minimal HUD for milestone 3: player shield/armour (H1), the selected
-## target's name, shield and armour (C8) and the radar (H2). Polished in M6.
+## Player panel (H1: ship name, shield and armour, credits, disabled warning),
+## target panel (H3), radar (H2), message line (H4) and the boarding bar (C9).
 
 var player: Ship = null:
 	set(value):
@@ -11,18 +11,16 @@ var player: Ship = null:
 
 var radar: Radar
 var messages: MessageLine
+var target_panel: TargetPanel
 ## Set by the system scene; boarding progress (C9).
 var actions: PlayerActions = null
 var _board_bar: ProgressBar
 
+var _ship_name: Label
 var _player_shield: ProgressBar
 var _player_armor: ProgressBar
 var _status: Label
 var _credits: Label
-var _target_box: VBoxContainer
-var _target_name: Label
-var _target_shield: ProgressBar
-var _target_armor: ProgressBar
 
 
 func _ready() -> void:
@@ -47,60 +45,56 @@ func _ready() -> void:
 	add_child(_board_bar)
 	radar.configure(DataRegistry.settings["radar"])
 	DataRegistry.data_reloaded.connect(func() -> void: radar.configure(DataRegistry.settings["radar"]))
+	var colours: Dictionary = DataRegistry.settings["hud"]["colours"]
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	box.offset_left = -240.0
+	box.offset_left = -270.0
 	box.offset_right = -12.0
 	box.offset_top = 12.0
 	box.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	add_child(box)
-	box.add_child(_label("Your ship"))
-	_credits = _label("")
+	_ship_name = Label.new()
+	box.add_child(_ship_name)
+	_credits = Label.new()
 	box.add_child(_credits)
-	_player_shield = _bar(box, "Shield", Color(0.35, 0.6, 1.0))
-	_player_armor = _bar(box, "Armour", Color(0.9, 0.6, 0.3))
-	_status = _label("")
+	_player_shield = make_bar(box, "Shield", Color.html(colours["shield"]), 250.0)
+	_player_armor = make_bar(box, "Armour", Color.html(colours["armor"]), 250.0)
+	_status = Label.new()
+	_status.add_theme_color_override("font_color", Color.html(colours["schematic_empty"]))
 	box.add_child(_status)
-	_target_box = VBoxContainer.new()
-	box.add_child(_target_box)
-	_target_name = _label("")
-	_target_box.add_child(_target_name)
-	_target_shield = _bar(_target_box, "Shield", Color(0.35, 0.6, 1.0))
-	_target_armor = _bar(_target_box, "Armour", Color(0.9, 0.6, 0.3))
+	target_panel = TargetPanel.new()
+	box.add_child(target_panel)
 
 
 func _process(_delta: float) -> void:
 	if player == null or not is_instance_valid(player):
 		return
+	_ship_name.text = player.def.name
 	_credits.text = "Credits %d" % GameState.credits
 	var progress: float = actions.board_progress() if actions != null else -1.0
 	_board_bar.visible = progress >= 0.0
 	_board_bar.value = maxf(progress, 0.0)
-	_fill(_player_shield, player.health.shield, player.health.max_shield)
-	_fill(_player_armor, player.health.armor, player.health.max_armor)
+	fill_bar(_player_shield, player.health.shield, player.health.max_shield)
+	fill_bar(_player_armor, player.health.armor, player.health.max_armor)
 	_status.text = "DISABLED" if player.health.is_disabled and not player.health.is_destroyed else ""
-	var target: Ship = player.get_target()
-	_target_box.visible = target != null
-	if target == null:
-		return
-	var state: String = "  (disabled)" if target.health.is_disabled else ""
-	_target_name.text = "Target: %s%s  %.0f px" % [target.def.name, state, target.global_position.distance_to(player.global_position)]
-	_fill(_target_shield, target.health.shield, target.health.max_shield)
-	_fill(_target_armor, target.health.armor, target.health.max_armor)
+	target_panel.player = player
+	target_panel.target = player.get_target()
+	target_panel.refresh()
 
 
-func _fill(bar: ProgressBar, value: float, max_value: float) -> void:
+static func fill_bar(bar: ProgressBar, value: float, max_value: float) -> void:
 	bar.max_value = maxf(max_value, 0.001)
 	bar.value = value
 	(bar.get_meta("label") as Label).text = "%s %.0f / %.0f" % [bar.get_meta("name"), value, max_value]
 
 
-func _bar(parent: Control, bar_name: String, colour: Color) -> ProgressBar:
-	var label := _label("")
+## A labelled bar: "<name> value / max" above a thin fill.
+static func make_bar(parent: Control, bar_name: String, colour: Color, width: float) -> ProgressBar:
+	var label := Label.new()
 	parent.add_child(label)
 	var bar := ProgressBar.new()
 	bar.show_percentage = false
-	bar.custom_minimum_size = Vector2(220.0, 8.0)
+	bar.custom_minimum_size = Vector2(width, 8.0)
 	var fill := StyleBoxFlat.new()
 	fill.bg_color = colour
 	bar.add_theme_stylebox_override("fill", fill)
@@ -108,9 +102,3 @@ func _bar(parent: Control, bar_name: String, colour: Color) -> ProgressBar:
 	bar.set_meta("name", bar_name)
 	parent.add_child(bar)
 	return bar
-
-
-func _label(text: String) -> Label:
-	var label := Label.new()
-	label.text = text
-	return label

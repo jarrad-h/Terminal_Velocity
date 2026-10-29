@@ -203,7 +203,7 @@ func _take(ship: Ship) -> void:
 	GameState.add_credits(ship.credits_aboard)
 	GameState.report_player_act(ship, "board")
 	ship.looted = true
-	GameState.post_message("Took %d credits from the %s" % [ship.credits_aboard, ship.def.name])
+	GameState.post_message("Took %d credits from the %s" % [ship.credits_aboard, ship.def.name], "credits")
 	dialog.close()
 
 
@@ -222,7 +222,7 @@ func _scuttle(ship: Ship) -> void:
 	var player: Ship = _player()
 	dialog.close()
 	ship.scuttle_by(player)
-	GameState.post_message("The %s is scuttled" % ship.def.name)
+	GameState.post_message("The %s is scuttled" % ship.def.name, "combat")
 
 
 # --- C10 escape pod and rescue ----------------------------------------------
