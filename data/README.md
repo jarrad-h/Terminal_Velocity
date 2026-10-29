@@ -20,7 +20,7 @@ Fields marked **required** have no default.
 | `mounts.arc.pivot`, `mounts.arc.turret` | V3: default total arc in degrees (0–360) for pivot and turret hardpoints, centred on the heading; a hardpoint's `arc` overrides it. Fixed mounts have no arc | `30`, `360` |
 | `mounts.traverse.pivot`, `mounts.traverse.turret` | V4: how fast a pivot or turret barrel swings, degrees/s; a hardpoint's `traverse` overrides it | `180`, `360` |
 | `mounts.fire_tolerance` | A turret fires once its barrel is within this many degrees of its aim point | `5` |
-| `mounts.turret_sprites` | V4: turret sprite (path under `assets/sprites/`) by hardpoint size `small`, `medium`, `large`, plus `point_defence` for PD hardpoints; `""` draws no turret | `""` each (data: `tur1`, `tur2`, none, `pd1`) |
+| `mounts.turret_sprites` | V4: turret sprite (path under `assets/sprites/`, must exist) by hardpoint size `small`, `medium`, `large`, plus `point_defence` for PD hardpoints; `""` draws no turret | `""` each (data: `tur1`, `tur2`, none, `pd1`) |
 | `player.credits` | Credits the player starts with | `0` |
 | `player.record` | Starting legal record with every government | `0` |
 | `player.escape_pod` | C10: owns an escape pod (until outfits exist). Without one, destruction ends the game | `true` |
@@ -43,6 +43,7 @@ Fields marked **required** have no default.
 | `radar.size` | Radar diameter in px (bottom-right corner) | `200` |
 | `radar.range` | World distance from the player to the radar rim, px | `3000` |
 | `radar.margin` | Gap from the screen edges, px | `16` |
+| `radar.disabled_pale` | H2: a disabled ship shows its standing colour blended this far towards white (0–1) | `0.55` |
 | `radar.colours` | `background`, `rim`, `player`, `hostile` (ships hostile to you), `warned` (ships with a grievance against you, not yet hostile), `friendly` (non-hostile ships with a government), `neutral` (ships with no government), `target` (ring round the selected target), `scenery` | see `game.json` |
 | `ai.thrust_angle` | AI thrusts only when within this many degrees of the direction it wants | `35` |
 | `ai.standoff_fraction` | In a fight, AI stops closing at this fraction of its weapon range | `0.4` |
@@ -57,6 +58,10 @@ Fields marked **required** have no default.
 | `ai.arrival_speed_fraction` | Ships jumping in at the edge start at this fraction of their top speed | `0.5` |
 | `ai.spawn_keep_away_factor` | Traffic placed at system load starts beyond sensor range × this from the player | `1.2` |
 | `ai.inside_spawn_band` | …and between these fractions of the edge radius `[min, max]` | `[0.15, 0.7]` |
+| `engine_glow.idle`, `engine_glow.response` | V5: glow strength at idle (0–1, share of full thrust) and how fast it changes (strength per second) | `0.25`, `6` |
+| `messages.show_seconds`, `messages.fade_seconds`, `messages.max_lines` | H4: how long a message shows before fading, the fade time, and how many lines show at once (at least 1) | `4`, `1`, `3` |
+| `messages.colours` | H4: text colour by kind: `info` (hints, refusals), `combat` (disabled, destroyed, scuttled), `standing` (turns hostile, crime threshold crossed), `credits` | see `game.json` |
+| `hud.colours` | H1, H3: `shield` and `armor` bar colours; the target schematic's fill at full, half and empty armour (`schematic_full`, `schematic_half`, `schematic_empty`, blended between) and when disabled (`schematic_disabled`); `warning` colours your DISABLED warning. The schematic's shield outline uses `shield` | see `game.json` |
 | `debug.time_scales` | Time-scale buttons in the debug panel | `[0.25, 0.5, 1, 2, 4]` |
 | `debug.velocity_vector_seconds` | Velocity overlay length, as seconds of travel | `0.5` |
 | `debug.spawn_distance` | How far ahead of the player debug-spawned ships appear (px); tick "Spawn at cursor" in the panel to place them with a click instead | `350` |
@@ -70,7 +75,7 @@ Fields marked **required** have no default.
 | `accel` | Thrust acceleration | **required** |
 | `top_speed` | Hard speed cap | **required** |
 | `turn_rate` | Turn rate | **required** |
-| `sprite` | Path under `assets/sprites/`, art facing up, drawn at 1:1 × `art_scale` (V1); placeholder arrow if missing | `""` |
+| `sprite` | Path under `assets/sprites/`, art facing up, drawn at 1:1 × `art_scale` (V1). A named file must exist; `""` draws the placeholder arrow | `""` |
 | `mass` | Mass (unused until boarding/capture) | `50` |
 | `shield`, `shield_regen` | Shield points and recharge per second (no recharge while disabled) | `0`, `0` |
 | `shield_recharge_delay` | Seconds without taking damage before shields start recharging; any hit resets it (C6) | `3` |
@@ -81,7 +86,7 @@ Fields marked **required** have no default.
 | `hit_size` | V2: capsule hitbox `[width, length]` in art px, running along the hull (width ≤ length; equal values make a circle). Cover the hull body, not ornaments. Also sizes the placeholder arrow | `[32, 32]` |
 | `hit_offset` | V2: capsule centre relative to the sprite centre, art px (e.g. the freighter's hull sits left of its solar panel) | `[0, 0]` |
 | `board_credits` | C9: credits aboard `[min, max]`, before the AI pool's `wealth_factor` | `[0, 0]` |
-| `hardpoints` | V3: `[{"id", "size", "mount", "pos", "arc", "traverse", "role"}]`. `id` names it (unique on the ship, from the art: `T1`, `G2`…); `size` is `small`, `medium` or `large`; `mount` is `fixed`, `pivot`, `turret` or `launcher`; `pos` is `[x, y]` in art px from the sprite centre (+x starboard, +y aft, ship facing up), copied from `assets/sprites/ships/*/hardpoints.json`. Optional: `arc` (0–360) and `traverse` override the `mounts` defaults; `role` `"point_defence"` (turrets only) picks the PD sprite (C13 behaviour comes later). All of `id`, `size`, `mount`, `pos` are **required** | `[]` |
+| `hardpoints` | V3: `[{"id", "size", "mount", "pos", "arc", "traverse", "role"}]`. `id` names it (unique on the ship, from the art: `T1`, `G2`…); `size` is `small`, `medium` or `large`; `mount` is `fixed`, `pivot`, `turret` or `launcher`; `pos` is `[x, y]` in art px from the sprite centre (+x starboard, +y aft, ship facing up), copied from `assets/sprites/ships/*/hardpoints.json`. Optional: `arc` (0–360) and `traverse` override the `mounts` defaults (pivot and turret only; an error on fixed or launcher mounts); `role` `"point_defence"` (turrets only) picks the PD sprite (C13 behaviour comes later). All of `id`, `size`, `mount`, `pos` are **required** | `[]` |
 | `loadout` | V3: installed weapons, `[{"hardpoint": <id>, "weapon": <weapon ID>, "mount": <mount type>}]`, at most one per hardpoint. `mount` is the mount the item was built for. The weapon's `size` must equal the hardpoint's, the item's `mount` must equal the hardpoint's, and the weapon must come in that mount; otherwise the game won't start | `[]` |
 | `engines` | V5: engine exits `[[x, y], …]` in art px (from `hardpoints.json`), where the glow is drawn | `[]` |
 | `engine_glow` | V5: `{"colour": "#rrggbb", "size": px}`; brightens with thrust | `{"colour": "#a8d8ff", "size": 6}` |
@@ -111,7 +116,7 @@ Mounts (V3) decide how a weapon aims, from the hardpoint it sits on: `fixed` fir
 
 ## `governments/`
 
-Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. All of a government's ships treat the player as hostile while the player's record with it is below `crime_threshold` (pirates start there). Damage the player does to a non-hostile ship builds that ship's grievance (% of its total shield + armour, draining at `forgiveness_pct_per_s`); past `tolerance_pct` × its personality's `tolerance_factor`, that ship alone turns hostile and the attack ("shoot") penalty is charged. Disable, board and kill penalties apply immediately, once each per ship. A ship that is already hostile (record below threshold) charges the attack penalty on the first hit. Ships with no government use the default tolerance (20%) and forgiveness (4%/s).
+Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. All of a government's ships treat the player as hostile while the player's record with it is below `crime_threshold` (pirates start there). Damage the player does to a non-hostile ship builds that ship's grievance (% of its total shield + armour, draining at `forgiveness_pct_per_s`); past `tolerance_pct` × its personality's `tolerance_factor`, that ship alone turns hostile and the attack ("shoot") penalty is charged. Disable, board and kill penalties apply immediately, once each per ship. A ship that is already hostile (record below threshold) charges the attack penalty on the first hit. Ships with no government use the default tolerance (10%) and forgiveness (0.5%/s). Keep forgiveness well below the share of a ship's health the player's guns deal per second, or sustained fire never turns it hostile.
 
 | Field | Meaning | Default |
 | --- | --- | --- |
@@ -119,11 +124,12 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `colour` | Radar/HUD colour | `"#ffffff"` |
 | `allies`, `enemies` | Lists of government IDs (one ID can't be in both) | `[]` |
 | `crime_threshold` | Record below which its warships attack the player | `-50` |
+| `friendly_record` | G5: record at or above which its ships show as friendly (radar, target panel); must be above `crime_threshold` | `25` |
 | `penalties` | `{"shoot", "disable", "board", "kill"}`: record lost per act | all `0` |
 | `max_odds` | Engages only if enemy strength ÷ own strength ≤ this | `1` |
 | `flee_shield_pct` | Retreats below this shield % | `25` |
-| `tolerance_pct` | A8: how much of a ship's total shield + armour the player can damage before that ship turns hostile (grievance) | `20` |
-| `forgiveness_pct_per_s` | A8: how fast grievance drains, % per second | `4` |
+| `tolerance_pct` | A8: how much of a ship's total shield + armour the player can damage before that ship turns hostile (grievance) | `10` |
+| `forgiveness_pct_per_s` | A8: how fast grievance drains, % per second | `0.5` |
 | `assist_reward` | C9: record gained for assisting one of its disabled ships | `0` |
 
 ## `ai_pools/` — traffic types

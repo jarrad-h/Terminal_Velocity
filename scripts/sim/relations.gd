@@ -50,3 +50,30 @@ static func damage_scale(shooter_is_player: bool, shooter_gov: GovernmentDef, ta
 ## C9: the record after the player assists one of the government's disabled ships.
 static func after_assist(record: float, gov: GovernmentDef) -> float:
 	return record + (gov.assist_reward if gov != null else 0.0)
+
+
+## G5: the player's standing with one ship: "hostile" (it treats the player
+## as hostile), "angry" (grievance, not yet hostile, A8), "friendly" (record at
+## or above the government's friendly_record) or "neutral".
+static func standing(hostile: bool, grievance: float, gov: GovernmentDef, record: float) -> String:
+	if hostile:
+		return "hostile"
+	if grievance > 0.0:
+		return "angry"
+	if gov != null and record >= gov.friendly_record:
+		return "friendly"
+	return "neutral"
+
+
+## H4, G3: -1 when a record change takes the player below the government's
+## crime threshold, +1 when it lifts them back above it, else 0.
+static func threshold_crossing(gov: GovernmentDef, before: float, after: float) -> int:
+	if gov == null:
+		return 0
+	var was: bool = hostile_to_player(gov, before)
+	var now: bool = hostile_to_player(gov, after)
+	if now and not was:
+		return -1
+	if was and not now:
+		return 1
+	return 0

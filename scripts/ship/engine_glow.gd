@@ -1,9 +1,7 @@
 class_name EngineGlow
 extends Node2D
-## V5: a glow at each engine exit, bright while thrusting and faint at idle.
-
-## Idle glow strength as a share of full thrust (cosmetic).
-const IDLE: float = 0.25
+## V5: a glow at each engine exit, bright while thrusting and faint at idle
+## (game.json engine_glow: idle strength and how fast it responds).
 
 var points: Array[Vector2] = []
 var colour: Color = Color.WHITE
@@ -24,8 +22,9 @@ func _process(delta: float) -> void:
 	if ship == null:
 		return
 	var thrusting: bool = ship.can_act() and ship.get_flight_input().thrust
-	var goal: float = 1.0 if thrusting else (IDLE if ship.can_act() else 0.0)
-	_strength = move_toward(_strength, goal, delta * 6.0)
+	var settings: Dictionary = DataRegistry.settings["engine_glow"]
+	var goal: float = 1.0 if thrusting else (float(settings["idle"]) if ship.can_act() else 0.0)
+	_strength = move_toward(_strength, goal, delta * float(settings["response"]))
 	queue_redraw()
 
 

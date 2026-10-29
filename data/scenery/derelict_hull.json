@@ -5,7 +5,7 @@
   "spin": [-5, 5],
   "drift": [0, 3],
   "solid": true,
-  "armor": 250,
+  "armor": 125,
   "fragments": [{"scenery": "small_debris", "count": 6}],
   "radar": true,
   "behaviour": "drift",

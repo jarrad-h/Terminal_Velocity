@@ -1,9 +1,8 @@
 class_name Radar
 extends Control
 ## H2: a round radar in the bottom-right corner, centred on the player.
-## Ships are coloured by hostility to the player (hostile, friendly, neutral when
-## they have no government); system objects
-## beyond range sit on the rim as hollow pips; scenery appears only for types
+## Ships are coloured by standing (G5: hostile, angry, friendly, neutral);
+## system objects beyond range sit on the rim as hollow pips; scenery appears only for types
 ## with radar: true, read from LocalSpace's short list rather than by scanning
 ## every scenery node. Size, range and colours come from game.json "radar".
 
@@ -11,11 +10,13 @@ var player: Ship = null
 var _range: float = 3000.0
 var _radius: float = 90.0
 var _colours: Dictionary = {}
+var _disabled_pale: float = 0.55
 
 
 func configure(settings: Dictionary) -> void:
 	_radius = float(settings["size"]) / 2.0
 	_range = float(settings["range"])
+	_disabled_pale = float(settings["disabled_pale"])
 	var margin: float = float(settings["margin"])
 	_colours = {}
 	for key: String in settings["colours"]:
@@ -80,13 +81,15 @@ func _dot(centre: Vector2, p: Vector2, size: float, colour: Color) -> void:
 		draw_rect(Rect2(centre + p - Vector2(size, size), Vector2(size, size) * 2.0), colour)
 
 
-## H2: by hostility to the player; ships with no government are neutral.
+## H2: by standing (G5); a disabled ship shows a pale version of that colour.
 func _ship_colour(ship: Ship) -> Color:
-	if player.is_hostile_to(ship):
-		return _colours["hostile"]
-	if ship.grievance > 0.0:
-		return _colours["warned"]  # A8: annoyed, not yet hostile
-	return _colours["friendly"] if ship.government != "" else _colours["neutral"]
+	var colour: Color = _colours[standing_colour_key(ship.standing_to(player))]
+	return colour.lerp(Color.WHITE, _disabled_pale) if ship.health.is_disabled else colour
+
+
+## Radar colour key for a G5 standing ("angry" uses the warning colour).
+static func standing_colour_key(standing: String) -> String:
+	return "warned" if standing == "angry" else standing
 
 
 ## H2: direction to the selected target when it is beyond radar range, else zero.

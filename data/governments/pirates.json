@@ -5,10 +5,11 @@
   "allies": [],
   "enemies": ["local_authority", "independent_traders"],
   "crime_threshold": 1000,
+  "friendly_record": 1100,
   "penalties": {"shoot": 0, "disable": 0, "board": 0, "kill": 0},
   "max_odds": 2.0,
-  "tolerance_pct": 10,
-  "forgiveness_pct_per_s": 2,
+  "tolerance_pct": 6,
+  "forgiveness_pct_per_s": 0.24,
   "assist_reward": 5,
   "flee_shield_pct": 30
 }

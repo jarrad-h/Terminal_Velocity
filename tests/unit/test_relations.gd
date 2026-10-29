@@ -79,3 +79,23 @@ func test_assist_raises_record() -> void:
 	law.assist_reward = 10.0
 	assert_near(Relations.after_assist(-5.0, law), 5.0, "assist reward (C9)")
 	assert_near(Relations.after_assist(-5.0, null), -5.0, "no government, no change")
+
+
+## G5: standing for the radar and target panel.
+func test_standing() -> void:
+	var law := _gov("law")
+	law.friendly_record = 25.0
+	assert_true(Relations.standing(true, 0.0, law, 100.0) == "hostile", "hostile wins")
+	assert_true(Relations.standing(false, 5.0, law, 100.0) == "angry", "grievance shows as angry")
+	assert_true(Relations.standing(false, 0.0, law, 25.0) == "friendly", "friendly at the threshold")
+	assert_true(Relations.standing(false, 0.0, law, 24.0) == "neutral", "neutral below it")
+	assert_true(Relations.standing(false, 0.0, null, 0.0) == "neutral", "no government: neutral")
+
+
+## H4, G3: messages when the record crosses the crime threshold.
+func test_threshold_crossing() -> void:
+	var law := _gov("law", [], [], -50.0)
+	assert_true(Relations.threshold_crossing(law, -40.0, -60.0) == -1, "fell below: now hostile")
+	assert_true(Relations.threshold_crossing(law, -60.0, -40.0) == 1, "rose above: no longer hostile")
+	assert_true(Relations.threshold_crossing(law, -40.0, -45.0) == 0, "no crossing")
+	assert_true(Relations.threshold_crossing(null, 0.0, -100.0) == 0, "no government")

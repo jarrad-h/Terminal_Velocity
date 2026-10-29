@@ -82,6 +82,10 @@ func _run() -> void:
 	player.target_nearest(false)
 	var target: Ship = player.get_target()
 	_check(target != null and target.def.id == "target_dummy", "nearest target is the dummy")
+	var hud: Hud = get_tree().get_first_node_in_group(&"system_scene").hud
+	await _frames(2)
+	_check(hud.target_panel.visible and hud.target_panel._class.text == "Target Dummy" and hud.target_panel._standing.text == "Neutral",
+		"target panel shows class and standing (H3, G5): %s / %s" % [hud.target_panel._class.text, hud.target_panel._standing.text])
 	player.cycle_target(false)
 	_check(player.get_target() == target, "cycling with one candidate keeps it")
 	player.target_nearest(true)
@@ -267,11 +271,12 @@ func _run() -> void:
 	await _frames(90)
 	var pirate_ai: AIController = pirate.controller
 	_check(pirate_ai.state == AIController.State.ATTACK and pirate_ai.target == trader, "pirate attacks the trader on sight (A3): %s" % pirate.get_state_label())
-	await _frames(240)
 	var trader_ai: AIController = trader.controller
-	_check(not is_instance_valid(trader) or trader_ai.state == AIController.State.FLEE or trader.health.shield < trader.health.max_shield,
+	await _frames(240)
+	# Ships are delicate (M7): the trader may already be disabled or gone.
+	_check(not is_instance_valid(trader) or trader.health.is_disabled or trader_ai.state == AIController.State.FLEE or trader.health.shield < trader.health.max_shield,
 		"trader under attack (A1): %s" % (trader.get_state_label() if is_instance_valid(trader) else "gone"))
-	if is_instance_valid(trader):
+	if is_instance_valid(trader) and not trader.health.is_disabled:
 		_check(trader_ai.state == AIController.State.FLEE, "steady trader flees when attacked (A1): %s" % trader.get_state_label())
 	var patrol: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), pirate.global_position + Vector2(0.0, 900.0), "", "steady")
 	await _frames(90)
@@ -288,6 +293,7 @@ func _run() -> void:
 	victim.health.apply_damage(1.0, 1.0, player)
 	victim.health.apply_damage(1.0, 1.0, player)
 	_check(victim.grievance > 0.0 and not victim.is_hostile_to(player), "a couple of stray hits are forgiven (A8)")
+	_check(victim.standing_to(player) == "angry", "grievance shows as angry (G5)")
 	_check(is_equal_approx(GameState.get_record("independent_traders"), record_before), "no record penalty for forgiven hits (G2)")
 	await _frames(30)
 	_check((victim.controller as AIController).state != AIController.State.ATTACK, "forgiven: the brave trader doesn't fight back")
@@ -295,6 +301,8 @@ func _run() -> void:
 	victim.health.apply_damage(total * 0.4, total * 0.4, player)
 	var shoot_penalty: float = DataRegistry.get_government("independent_traders").penalties["shoot"]
 	_check(victim.is_hostile_to(player) and player.is_hostile_to(victim), "sustained fire passes tolerance: hostile (A8)")
+	_check(victim.standing_to(player) == "hostile", "standing hostile (G5)")
+	_check(hud.messages.latest().contains("turns hostile") and hud.messages.latest_kind() == "standing", "turns-hostile message (H4): %s" % hud.messages.latest())
 	_check(is_equal_approx(GameState.get_record("independent_traders"), record_before - shoot_penalty), "attack penalty charged once, at the tolerance (G2)")
 	victim.health.apply_damage(1.0, 1.0, player)
 	_check(is_equal_approx(GameState.get_record("independent_traders"), record_before - shoot_penalty), "and only once")
@@ -311,8 +319,14 @@ func _run() -> void:
 	var threshold: float = DataRegistry.get_government("local_authority").crime_threshold
 	GameState.set_record("local_authority", threshold - 1.0)
 	_check(law_patrol.is_hostile_to(player), "patrol hostile below the crime threshold (G3)")
+	_check(hud.messages.latest().contains("now treats you as hostile"), "threshold message (H4, G3): %s" % hud.messages.latest())
 	GameState.set_record("local_authority", 0.0)
 	_check(not law_patrol.is_hostile_to(player), "neutral again above it")
+	_check(hud.messages.latest().contains("no longer treats you as hostile"), "threshold message on the way back (H4)")
+	var friendly_at: float = DataRegistry.get_government("local_authority").friendly_record
+	GameState.set_record("local_authority", friendly_at)
+	_check(law_patrol.standing_to(player) == "friendly", "friendly at friendly_record (G5)")
+	GameState.set_record("local_authority", 0.0)
 	# A8: one ship's grievance doesn't turn the rest of its government.
 	var other_patrol: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), Vector2(3000.0, 3000.0), "", "steady")
 	await _frames(2)
@@ -542,7 +556,7 @@ func _run() -> void:
 	_check(hulls > 0, "graveyard ring has derelict hulls")
 	var radar_list: Array[Scenery] = local_space.radar_objects()
 	_check(radar_list.size() > 0 and radar_list.all(func(sc: Scenery) -> bool: return sc.def.radar), "radar lists only radar: true scenery (H2)")
-	var hud: Hud = scene_root.hud
+	hud = scene_root.hud
 	_check(hud.radar != null and hud.radar.player == player, "radar follows the player (H2)")
 	_check(not _debug.switch_system("nowhere"), "unknown system is refused")
 	_check(local_space.destroyed.size() == 0, "destroyed set cleared on system change")

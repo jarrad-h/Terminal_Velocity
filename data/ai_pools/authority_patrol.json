@@ -11,7 +11,7 @@
     {"personality": "aggressive", "weight": 1},
     {"personality": "cautious", "weight": 1}
   ],
-  "sensor_range": 1800,
+  "sensor_range": 2700,
   "stay_time": [90, 180],
   "wealth_factor": 0.1,
   "fire_angle": 8

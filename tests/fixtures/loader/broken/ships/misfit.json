@@ -1,4 +1,4 @@
-{"name": "Misfit", "accel": 1, "top_speed": 1, "turn_rate": 1,
+{"name": "Misfit", "sprite": "ships/nope.png", "accel": 1, "top_speed": 1, "turn_rate": 1,
  "hardpoints": [{"id": "G1", "size": "small", "mount": "fixed", "pos": [0, 0]},
                 {"id": "P1", "size": "small", "mount": "pivot", "pos": [0, 0]},
                 {"id": "M1", "size": "medium", "mount": "fixed", "pos": [0, 0]}],

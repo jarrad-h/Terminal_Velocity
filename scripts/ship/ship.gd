@@ -38,6 +38,7 @@ var tolerance_factor: float = 1.0
 ## ships at once, the player once grievance passes tolerance (A8).
 var _aggressors: Dictionary = {}
 var _last_attacker: Ship = null
+var _scuttled: bool = false
 static var _DEFAULT_GOV: GovernmentDef = GovernmentDef.parse(DefReader.new({}, "", []))
 var _target: Ship = null
 var _target_id: int = 0
@@ -202,6 +203,12 @@ func is_active() -> bool:
 	return not health.is_destroyed and not docked and visible
 
 
+## G5: "hostile", "angry", "friendly" or "neutral" towards the player.
+func standing_to(player_ship: Ship) -> String:
+	var record: float = GameState.get_record(government) if government != "" else 0.0
+	return Relations.standing(player_ship.is_hostile_to(self), grievance, gov_def(), record)
+
+
 func forget_aggressor(ship: Ship) -> void:
 	_aggressors.erase(ship)
 
@@ -227,6 +234,7 @@ func _on_player_damage(player_ship: Ship, amount: float) -> void:
 	grievance = Grievance.add(grievance, amount, health.max_shield + health.max_armor)
 	if Grievance.exceeded(grievance, _tolerance()):
 		_aggressors[player_ship] = true
+		GameState.post_message("The %s turns hostile" % def.name, "standing")  # H4, A8
 		GameState.report_player_act(self, "shoot")
 
 
@@ -253,12 +261,14 @@ func _on_disabled() -> void:
 	set_tint(DISABLED_TINT)
 	if _attacked_by_player():
 		GameState.report_player_act(self, "disable")
-		GameState.post_message("%s disabled" % def.name)  # H4
+		GameState.post_message("%s disabled" % def.name, "combat")  # H4
 
 
 func _on_destroyed() -> void:
 	if _attacked_by_player():
 		GameState.report_player_act(self, "kill")
+		if not _scuttled:
+			GameState.post_message("%s destroyed" % def.name, "combat")  # H4
 	Flash.spawn(get_parent(), global_position, hit_radius * 2.5, Color(1.0, 0.7, 0.3), 0.8)
 	ship_destroyed.emit(self)
 	hitbox_shape.set_deferred(&"disabled", true)
@@ -372,4 +382,5 @@ func recover(armor_pct: float) -> void:
 ## C9: Scuttle — destroyed by the player (kill penalty applies).
 func scuttle_by(player_ship: Ship) -> void:
 	_last_attacker = player_ship
+	_scuttled = true  # PlayerActions posts its own "scuttled" message
 	health.force_destroy()

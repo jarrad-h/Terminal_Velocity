@@ -4,7 +4,7 @@
   "size": [90, 180],
   "spin": [-6, 6],
   "solid": true,
-  "armor": 400,
+  "armor": 200,
   "fragments": [{"scenery": "rock", "count": 3}, {"scenery": "small_debris", "count": 5}],
   "radar": true,
   "behaviour": "static",

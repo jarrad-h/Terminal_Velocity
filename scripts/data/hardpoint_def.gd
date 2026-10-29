@@ -23,6 +23,9 @@ static func parse(r: DefReader) -> HardpointDef:
 	h.size = r.choice("size", MountFit.SIZES, "small", true)
 	h.mount = r.choice("mount", MountFit.MOUNTS, "fixed", true)
 	h.pos = r.vec2("pos", Vector2.ZERO, true)
+	for key: String in ["arc", "traverse"]:
+		if r.has(key) and (h.mount == "fixed" or h.mount == "launcher"):
+			r.error(key, "has no effect on a %s mount" % h.mount)
 	if r.has("arc"):
 		h.arc = r.number("arc", -1.0, false, 0.0)
 		if h.arc > 360.0:

@@ -1,0 +1,2 @@
+{"name": "Bad Launcher", "accel": 1, "top_speed": 1, "turn_rate": 1,
+ "hardpoints": [{"id": "M1", "size": "small", "mount": "launcher", "pos": [0, 0], "traverse": 90}]}

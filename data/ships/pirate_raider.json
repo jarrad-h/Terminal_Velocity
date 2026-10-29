@@ -6,20 +6,20 @@
   "accel": 320,
   "top_speed": 340,
   "turn_rate": 200,
-  "shield": 180,
-  "shield_regen": 5,
-  "armor": 150,
+  "shield": 270,
+  "shield_regen": 7.5,
+  "armor": 225,
   "strength": 20,
   "crew": 4,
   "board_credits": [400, 2000],
   "hit_size": [50, 128],
   "hardpoints": [
-    {"id": "B1", "size": "small", "mount": "fixed", "pos": [0, -64.5]},
+    {"id": "B1", "size": "small", "mount": "pivot", "pos": [0, -64.5]},
     {"id": "G1", "size": "small", "mount": "fixed", "pos": [-9.3, -52.4]},
     {"id": "G2", "size": "small", "mount": "fixed", "pos": [14.9, -29.7]}
   ],
   "loadout": [
-    {"hardpoint": "B1", "weapon": "mining_beam", "mount": "fixed"},
+    {"hardpoint": "B1", "weapon": "mining_beam", "mount": "pivot"},
     {"hardpoint": "G1", "weapon": "laser_small", "mount": "fixed"},
     {"hardpoint": "G2", "weapon": "laser_small", "mount": "fixed"}
   ],

@@ -4,9 +4,9 @@
   "accel": 0,
   "top_speed": 0,
   "turn_rate": 0,
-  "shield": 300,
-  "shield_regen": 10,
-  "armor": 400,
+  "shield": 450,
+  "shield_regen": 15,
+  "armor": 600,
   "strength": 0,
   "crew": 0,
   "hit_size": [52, 52]
