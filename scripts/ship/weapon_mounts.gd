@@ -1,82 +1,137 @@
 class_name WeaponMounts
 extends Node2D
-## C1–C4: the ship's equipped weapons, each assigned an exit point of its kind
-## (shared round-robin when there are more weapons than points). Primary fire
-## drives guns, turrets and beams; secondary fire launches guided missiles.
+## C1–C4, V3–V4: the ship's installed weapons, one per hardpoint. Fixed mounts
+## fire along the heading; pivot and turret mounts swing a barrel toward the
+## selected target's lead point within their arc at their traverse rate, and
+## shots leave along the barrel. Primary fire drives lasers, flak and beams;
+## secondary fire launches guided missiles.
 
 
 class Mount:
 	var weapon: WeaponDef
+	var hardpoint: HardpointDef
+	## The item's mount type (fixed, pivot, turret, launcher).
+	var mount: String
+	## Exit point in ship space (art px × art_scale).
 	var point: Vector2
+	var arc: float = 0.0
+	var traverse: float = 0.0
+	## Barrel angle relative to the heading, radians (MountAim).
+	var angle: float = 0.0
 	var cooldown: float = 0.0
+	## Rotates with the barrel; parent of the beam and the turret sprite.
+	var barrel: Node2D = null
 	var beam: Beam = null
+
+	func tracks() -> bool:
+		return mount == "pivot" or mount == "turret"
 
 
 var mounts: Array[Mount] = []
+var _fire_tolerance: float = 0.0
 
 @onready var ship: Ship = get_parent()
 
 
-func setup(ship_def: ShipDef) -> void:
+func setup(ship_def: ShipDef, art_scale: float) -> void:
 	for mount: Mount in mounts:
-		if mount.beam != null:
-			mount.beam.queue_free()
+		remove_child(mount.barrel)  # free the name for the rebuilt barrel
+		mount.barrel.queue_free()
 	mounts.clear()
-	var used: Dictionary = {}
-	for loadout: Dictionary in ship_def.default_weapons:
-		var weapon: WeaponDef = DataRegistry.get_weapon(loadout["weapon"])
-		var points: Array = ship_def.hardpoints[weapon.kind]
-		for i: int in loadout["count"]:
-			var mount := Mount.new()
-			mount.weapon = weapon
-			var n: int = used.get(weapon.kind, 0)
-			mount.point = points[n % points.size()]
-			used[weapon.kind] = n + 1
-			if weapon.kind == "beam":
-				mount.beam = Beam.new()
-				mount.beam.weapon = weapon
-				mount.beam.position = mount.point
-				add_child(mount.beam)
-			mounts.append(mount)
+	var settings: Dictionary = DataRegistry.settings
+	_fire_tolerance = deg_to_rad(float(settings["mounts"]["fire_tolerance"]))
+	for entry: LoadoutEntry in ship_def.loadout:
+		var mount := Mount.new()
+		mount.weapon = DataRegistry.get_weapon(entry.weapon)
+		mount.hardpoint = ship_def.hardpoint(entry.hardpoint)
+		mount.mount = entry.mount
+		mount.point = mount.hardpoint.pos * art_scale
+		mount.arc = mount.hardpoint.arc_degrees(settings)
+		mount.traverse = mount.hardpoint.traverse_degrees(settings)
+		mount.barrel = Node2D.new()
+		mount.barrel.name = "Mount_" + mount.hardpoint.id
+		mount.barrel.position = mount.point
+		add_child(mount.barrel)
+		if mount.mount == "turret":
+			_add_turret_sprite(mount, settings, art_scale)
+		if mount.weapon.kind == "beam":
+			mount.beam = Beam.new()
+			mount.beam.weapon = mount.weapon
+			mount.barrel.add_child(mount.beam)
+		mounts.append(mount)
+
+
+## V4: the turret drawn on its ring; image centre is the pivot, barrels up.
+func _add_turret_sprite(mount: Mount, settings: Dictionary, art_scale: float) -> void:
+	var key: String = "point_defence" if mount.hardpoint.role == "point_defence" else mount.hardpoint.size
+	var path: String = Ship.SPRITE_DIR.path_join(String(settings["mounts"]["turret_sprites"][key]))
+	if not path.ends_with(".png") or not ResourceLoader.exists(path):
+		return
+	var sprite := Sprite2D.new()
+	sprite.name = "TurretSprite"
+	sprite.texture = load(path)
+	sprite.scale = Vector2.ONE * art_scale
+	mount.barrel.add_child(sprite)
 
 
 func _physics_process(delta: float) -> void:
 	var input: FlightInput = ship.get_flight_input()
+	var target: Ship = ship.get_target() if ship.can_act() else null
 	for mount: Mount in mounts:
 		mount.cooldown = maxf(mount.cooldown - delta, 0.0)
+		var desired: float = _desired_angle(mount, target)
+		if mount.tracks():
+			mount.angle = MountAim.step(mount.angle, desired, mount.traverse, mount.arc, delta)
+			mount.barrel.rotation = mount.angle
 		var wants: bool = input.fire_secondary if mount.weapon.kind == "guided" else input.fire_primary
+		wants = wants and _ready_to_fire(mount, target, desired)
 		if mount.beam != null:
 			if wants:
 				mount.beam.fire(ship, _exclude(), delta)
 			else:
 				mount.beam.stop()
-		elif wants and mount.cooldown <= 0.0 and _fire(mount):
+		elif wants and mount.cooldown <= 0.0:
+			_fire(mount, target)
 			mount.cooldown = mount.weapon.reload
 
 
-## Returns false when the shot was not taken (turret target outside its arc).
-func _fire(mount: Mount) -> bool:
+## Barrel angle the mount is trying to reach: the target's lead point
+## (clamped into the arc), or straight ahead with no target.
+func _desired_angle(mount: Mount, target: Ship) -> float:
+	if not mount.tracks() or target == null:
+		return 0.0
 	var at: Vector2 = ship.global_transform * mount.point
-	var heading: Vector2 = FlightModel.heading(ship.global_rotation)
-	var direction: Vector2 = heading
-	var target: Ship = ship.get_target()
-	if mount.weapon.kind == "turret" and target != null:
-		var shot_frame_velocity: Vector2 = ship.get_velocity() if mount.weapon.inherit_velocity else Vector2.ZERO
-		direction = Aim.intercept_direction(at, target.global_position, target.get_velocity() - shot_frame_velocity, mount.weapon.speed)
-		if not Aim.within_arc(ship.global_rotation, direction, mount.weapon.arc):
-			return false
+	var shot_frame_velocity: Vector2 = ship.get_velocity() if mount.weapon.inherit_velocity else Vector2.ZERO
+	var speed: float = mount.weapon.speed if mount.weapon.kind == "projectile" else 0.0
+	var direction: Vector2 = Aim.intercept_direction(at, target.global_position, target.get_velocity() - shot_frame_velocity, speed)
+	return MountAim.relative_angle(ship.global_rotation, direction)
+
+
+## Pivots always fire (held at the arc edge when the target is outside it).
+## A turret holds fire while its target is outside its arc or its barrel is
+## still swinging onto the aim point.
+func _ready_to_fire(mount: Mount, target: Ship, desired: float) -> bool:
+	if mount.mount != "turret":
+		return true
+	if target != null and not MountAim.in_arc(desired, mount.arc):
+		return false
+	return absf(angle_difference(mount.angle, MountAim.clamp_to_arc(desired, mount.arc))) <= _fire_tolerance
+
+
+func _fire(mount: Mount, target: Ship) -> void:
+	var at: Vector2 = ship.global_transform * mount.point
+	var direction: Vector2 = FlightModel.heading(ship.global_rotation + mount.angle)
 	var shots: Node = get_tree().get_first_node_in_group(&"shots")
 	Projectile.fire(shots, mount.weapon, at, direction, ship.get_velocity(), ship, _exclude(),
 		target if mount.weapon.kind == "guided" else null)
-	return true
 
 
 func _exclude() -> Array[RID]:
 	return [ship.hitbox.get_rid()]
 
 
-## AI helpers: longest reach of primary weapons (guns, turrets, beams), and
-## of guided weapons; speed of the first gun or turret shot (for lead).
+## AI helpers: longest reach of primary weapons (projectiles, beams), and of
+## guided weapons; speed of the first projectile (for lead).
 func primary_range() -> float:
 	return _reach(func(kind: String) -> bool: return kind != "guided")
 
@@ -87,13 +142,20 @@ func guided_range() -> float:
 
 func primary_shot_speed() -> float:
 	for mount: Mount in mounts:
-		if mount.weapon.kind == "gun" or mount.weapon.kind == "turret":
+		if mount.weapon.kind == "projectile":
 			return mount.weapon.speed
 	return 0.0
 
 
-func has_turret() -> bool:
-	return mounts.any(func(m: Mount) -> bool: return m.weapon.kind == "turret")
+## AI: how far off the nose (degrees, either side) the ship's primary
+## weapons can still bring fire to bear: 180 with a full turret, half the
+## widest pivot or turret arc otherwise, 0 with fixed weapons only.
+func tracking_slack() -> float:
+	var best: float = 0.0
+	for mount: Mount in mounts:
+		if mount.tracks() and mount.weapon.kind != "guided":
+			best = maxf(best, minf(mount.arc, 360.0) / 2.0)
+	return best
 
 
 func _reach(want: Callable) -> float:

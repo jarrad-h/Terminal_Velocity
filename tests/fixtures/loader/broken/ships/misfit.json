@@ -1,0 +1,10 @@
+{"name": "Misfit", "accel": 1, "top_speed": 1, "turn_rate": 1,
+ "hardpoints": [{"id": "G1", "size": "small", "mount": "fixed", "pos": [0, 0]},
+                {"id": "P1", "size": "small", "mount": "pivot", "pos": [0, 0]},
+                {"id": "M1", "size": "medium", "mount": "fixed", "pos": [0, 0]}],
+ "loadout": [{"hardpoint": "X9", "weapon": "beamer", "mount": "fixed"},
+             {"hardpoint": "M1", "weapon": "beamer", "mount": "fixed"},
+             {"hardpoint": "G1", "weapon": "beamer", "mount": "turret"},
+             {"hardpoint": "P1", "weapon": "beamer", "mount": "pivot"},
+             {"hardpoint": "G1", "weapon": "beamer", "mount": "fixed"},
+             {"hardpoint": "G1", "weapon": "beamer", "mount": "fixed"}]}

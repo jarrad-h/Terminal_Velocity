@@ -1,7 +1,7 @@
 {
   "id": "freighter",
   "name": "Freighter",
-  "sprite": "ships/freighter.png",
+  "sprite": "ships/sow/ships/sow_f_a_stack.png",
   "mass": 200,
   "accel": 110,
   "top_speed": 180,
@@ -12,11 +12,17 @@
   "strength": 8,
   "crew": 6,
   "board_credits": [2000, 6000],
-  "hit_radius": 30,
-  "hardpoints": {
-    "turret": [[0, 0]]
-  },
-  "default_weapons": [
-    {"weapon": "flak_turret", "count": 1}
+  "hit_size": [46, 184],
+  "hit_offset": [-14, 0],
+  "hardpoints": [
+    {"id": "T1", "size": "small", "mount": "turret", "pos": [-14, -16.4]}
+  ],
+  "loadout": [
+    {"hardpoint": "T1", "weapon": "laser_small", "mount": "turret"}
+  ],
+  "engines": [
+    [-30.8, 85.2],
+    [-14, 91.4],
+    [2.8, 85.2]
   ]
 }

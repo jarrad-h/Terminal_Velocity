@@ -14,8 +14,13 @@ Fields marked **required** have no default.
 
 | Field | Meaning | Default |
 | --- | --- | --- |
-| `player_ship` | Ship ID the player starts in | `"courier"` |
+| `player_ship` | Ship ID the player starts in | `"shuttle"` |
 | `system` | System ID loaded at start | `"test_nebula"` |
+| `art_scale` | V1: one scale for all ship art: sprites, hitboxes, hardpoints and engine exits (all written in art px) are multiplied by it. More than 0 | `1.0` |
+| `mounts.arc.pivot`, `mounts.arc.turret` | V3: default total arc in degrees (0–360) for pivot and turret hardpoints, centred on the heading; a hardpoint's `arc` overrides it. Fixed mounts have no arc | `30`, `360` |
+| `mounts.traverse.pivot`, `mounts.traverse.turret` | V4: how fast a pivot or turret barrel swings, degrees/s; a hardpoint's `traverse` overrides it | `180`, `360` |
+| `mounts.fire_tolerance` | A turret fires once its barrel is within this many degrees of its aim point | `5` |
+| `mounts.turret_sprites` | V4: turret sprite (path under `assets/sprites/`) by hardpoint size `small`, `medium`, `large`, plus `point_defence` for PD hardpoints; `""` draws no turret | `""` each (data: `tur1`, `tur2`, none, `pd1`) |
 | `player.credits` | Credits the player starts with | `0` |
 | `player.record` | Starting legal record with every government | `0` |
 | `player.escape_pod` | C10: owns an escape pod (until outfits exist). Without one, destruction ends the game | `true` |
@@ -32,7 +37,7 @@ Fields marked **required** have no default.
 | `boarding.time` | C9: seconds the boarding progress bar runs (more than 0) | `2` |
 | `boarding.assist_armor_pct` | C9 Assist: patched-up ships get back to this % of max armour, up to 100 (keep it above ships' `disable_armor_pct`) | `50` |
 | `combat.friendly_fire_pct` | % damage AI shots do to their own and allied governments' ships (C11); 0 = off. Player shots always do full damage | `100` |
-| `camera.zoom` | Camera zoom; above 1 zooms in | `1.0` |
+| `camera.zoom` | Camera zoom; above 1 zooms in (data: `0.75` for the 1:1 ship art) | `1.0` |
 | `camera.smoothing_speed` | How fast the camera catches up; `0` locks it to the ship | `0` |
 | `local_space.chunk_size` | Side of one local-space chunk in px | `1024` |
 | `radar.size` | Radar diameter in px (bottom-right corner) | `200` |
@@ -65,7 +70,7 @@ Fields marked **required** have no default.
 | `accel` | Thrust acceleration | **required** |
 | `top_speed` | Hard speed cap | **required** |
 | `turn_rate` | Turn rate | **required** |
-| `sprite` | Path under `assets/sprites/`, art facing up; placeholder arrow if missing | `""` |
+| `sprite` | Path under `assets/sprites/`, art facing up, drawn at 1:1 × `art_scale` (V1); placeholder arrow if missing | `""` |
 | `mass` | Mass (unused until boarding/capture) | `50` |
 | `shield`, `shield_regen` | Shield points and recharge per second (no recharge while disabled) | `0`, `0` |
 | `shield_recharge_delay` | Seconds without taking damage before shields start recharging; any hit resets it (C6) | `3` |
@@ -73,27 +78,33 @@ Fields marked **required** have no default.
 | `disable_armor_pct` | Disabled (drifts, can't fire) at or below this % of max armour; destroyed at 0 | `33` |
 | `strength` | Combat strength for AI odds | `1` |
 | `crew` | Crew count | `1` |
-| `hit_radius` | Hit circle radius in px (also placeholder art size) | `16` |
+| `hit_size` | V2: capsule hitbox `[width, length]` in art px, running along the hull (width ≤ length; equal values make a circle). Cover the hull body, not ornaments. Also sizes the placeholder arrow | `[32, 32]` |
+| `hit_offset` | V2: capsule centre relative to the sprite centre, art px (e.g. the freighter's hull sits left of its solar panel) | `[0, 0]` |
 | `board_credits` | C9: credits aboard `[min, max]`, before the AI pool's `wealth_factor` | `[0, 0]` |
-| `hardpoints` | `{"gun": [[x, y], …], "turret": …, "guided": …, "beam": …}` exit points relative to the ship centre, ship facing up. Every equipped weapon needs at least one point of its kind; extra weapons share points | none |
-| `default_weapons` | `[{"weapon": <weapon ID>, "count": n}]`; `count` defaults to 1 | `[]` |
+| `hardpoints` | V3: `[{"id", "size", "mount", "pos", "arc", "traverse", "role"}]`. `id` names it (unique on the ship, from the art: `T1`, `G2`…); `size` is `small`, `medium` or `large`; `mount` is `fixed`, `pivot`, `turret` or `launcher`; `pos` is `[x, y]` in art px from the sprite centre (+x starboard, +y aft, ship facing up), copied from `assets/sprites/ships/*/hardpoints.json`. Optional: `arc` (0–360) and `traverse` override the `mounts` defaults; `role` `"point_defence"` (turrets only) picks the PD sprite (C13 behaviour comes later). All of `id`, `size`, `mount`, `pos` are **required** | `[]` |
+| `loadout` | V3: installed weapons, `[{"hardpoint": <id>, "weapon": <weapon ID>, "mount": <mount type>}]`, at most one per hardpoint. `mount` is the mount the item was built for. The weapon's `size` must equal the hardpoint's, the item's `mount` must equal the hardpoint's, and the weapon must come in that mount; otherwise the game won't start | `[]` |
+| `engines` | V5: engine exits `[[x, y], …]` in art px (from `hardpoints.json`), where the glow is drawn | `[]` |
+| `engine_glow` | V5: `{"colour": "#rrggbb", "size": px}`; brightens with thrust | `{"colour": "#a8d8ff", "size": 6}` |
 
 ## `weapons/`
 
-Kinds: `gun` fires along the heading; `turret` leads the selected target within its arc (fires ahead with no target); `guided` homes on the target selected at launch at `turn_rate` (straight with no target); `beam` hits the first thing along its length every frame while held. Primary fire (Space) drives guns, turrets and beams; secondary (F) launches guided weapons.
+Kinds: `projectile` fires shots (lasers, flak); `guided` homes on the target selected at launch at `turn_rate` (straight with no target); `beam` hits the first thing along its length every frame while held. Primary fire (Space) drives projectiles and beams; secondary (F) launches guided weapons.
+
+Mounts (V3) decide how a weapon aims, from the hardpoint it sits on: `fixed` fires along the heading; `pivot` swings toward the selected target's lead point within its arc (held at the edge, still firing, when the target is outside); `turret` swings toward it within its arc at its traverse rate and fires once on target (forward with no target; holds fire while the target is outside its arc); `launcher` is for guided weapons. A weapon's numbers are the same on every mount it comes in; there is one file per size (`laser_small`, `laser_medium`, `laser_large`).
 
 | Field | Meaning | Default |
 | --- | --- | --- |
 | `name` | Display name | **required** |
-| `kind` | `gun`, `turret`, `guided` or `beam` | **required** |
+| `kind` | `projectile`, `guided` or `beam` | **required** |
+| `size` | V3: `small`, `medium` or `large`; fits hardpoints of the same size | `"small"` |
+| `mounts` | V3: mount types it comes in, from `fixed`, `pivot`, `turret`; guided weapons use `launcher` (and only they do) | **required** |
 | `damage_shield`, `damage_armor` | Damage per hit (per second for beams) | `0`, `0` |
 | `range` | Max distance in px; `0` means use `lifetime` | `0` |
 | `lifetime` | Shot lifetime in s | `1` |
 | `speed` | Shot speed | `600` |
 | `reload` | Seconds between shots | `0.5` |
 | `turn_rate` | Missile turn rate (guided) | `0` |
-| `arc` | Turret tracking arc in degrees, centred on the heading; the turret holds fire when the lead point is outside it | `360` |
-| `inherit_velocity` | Guns and turrets: shots add the ship's velocity | `true` |
+| `inherit_velocity` | Projectiles: shots add the ship's velocity | `true` |
 | `falloff_start_pct` | Full damage up to this % of the weapon's reach (C12), 0–100; 100 = no falloff. Shots measure their own travel (speed × time), so the ship's speed doesn't change it | `100` |
 | `falloff_min_pct` | Damage % at full reach, 0–100, falling linearly from `falloff_start_pct`. Shots and beams fade to match | `100` |
 | `colour`, `sprite`, `sound` | Look and sound | `"#ffffff"`, `""`, `""` |

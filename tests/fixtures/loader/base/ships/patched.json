@@ -1,2 +1,3 @@
 {"name": "Patched", "accel": 1, "top_speed": 1, "turn_rate": 1,
- "default_weapons": [{"weapon": "weapon_only_in_base"}]}
+ "hardpoints": [{"id": "G1", "size": "small", "mount": "fixed", "pos": [0, 0]}],
+ "loadout": [{"hardpoint": "G1", "weapon": "weapon_only_in_base", "mount": "fixed"}]}

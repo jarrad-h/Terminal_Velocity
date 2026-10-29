@@ -1,1 +1,1 @@
-{"name": "Beamer", "kind": "beam", "range": 200}
+{"name": "Beamer", "kind": "beam", "mounts": ["fixed"], "range": 200}

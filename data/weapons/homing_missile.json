@@ -2,6 +2,8 @@
   "id": "homing_missile",
   "name": "Homing Missile",
   "kind": "guided",
+  "size": "small",
+  "mounts": ["launcher"],
   "damage_shield": 30,
   "damage_armor": 45,
   "lifetime": 4,

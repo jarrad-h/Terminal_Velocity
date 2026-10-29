@@ -105,6 +105,43 @@ func _run() -> void:
 	await _frames(roundi(dummy.health.recharge_delay * 60.0))
 	_check(dummy.health.shield > shield_hit, "recharging after the delay (C6)")
 
+	# M6: ship art, hull capsule, turret and pivot mounts (V1–V5).
+	_check(player.def.id == "shuttle", "player starts in the shuttle (M6)")
+	var capsule: CapsuleShape2D = player.hitbox_shape.shape as CapsuleShape2D
+	_check(capsule != null and is_equal_approx(capsule.height, player.def.hit_size.y * player.art_scale), "capsule hitbox from hit_size (V2)")
+	_check(player.visual.get_node_or_null(^"EngineGlow") != null and player.visual.get_child_count() == 2, "sprite plus engine glow (V1, V5)")
+	await _teleport(player, dummy.global_position + Vector2(300.0, 0.0))  # dummy abeam to port, ship facing up
+	player.set_target(dummy)
+	await _frames(30)
+	var turret: WeaponMounts.Mount = player.weapons.mounts[0]
+	_check(turret.mount == "turret" and absf(angle_difference(turret.angle, -PI / 2.0)) < 0.1,
+		"turret swings onto a target abeam (V4): %.1f°" % rad_to_deg(turret.angle))
+	_check(turret.barrel.get_node_or_null(^"TurretSprite") != null and is_equal_approx(turret.barrel.rotation, turret.angle), "turret sprite turns with the barrel (V4)")
+	var abeam_before: float = dummy.health.shield + dummy.health.armor
+	Input.action_press(&"fire_primary")
+	await _frames(40)
+	Input.action_release(&"fire_primary")
+	await _frames(30)
+	_check(dummy.health.shield + dummy.health.armor < abeam_before, "turret hits a target the ship isn't facing (C2)")
+	var setup_errors: Array[String] = []
+	var pivot_def: ShipDef = ShipDef.parse(DefReader.new({"name": "Pivot test", "accel": 1, "top_speed": 1, "turn_rate": 1,
+		"hardpoints": [{"id": "P1", "size": "small", "mount": "pivot", "pos": [0, -20]}],
+		"loadout": [{"hardpoint": "P1", "weapon": "laser_small", "mount": "pivot"}]}, "scenario", setup_errors))
+	player.setup(pivot_def)
+	await _frames(30)
+	var pivot: WeaponMounts.Mount = player.weapons.mounts[0]
+	_check(setup_errors.is_empty() and absf(absf(pivot.angle) - deg_to_rad(15.0)) < 0.01, "pivot held at its ±15° edge (V3): %.1f°" % rad_to_deg(pivot.angle))
+	var shots: Node = get_tree().get_first_node_in_group(&"shots")
+	var shots_before: int = shots.get_child_count()
+	Input.action_press(&"fire_primary")
+	await _frames(2)
+	Input.action_release(&"fire_primary")
+	_check(shots.get_child_count() > shots_before, "pivot keeps firing with the target outside its arc (V3)")
+	# The pivot sits 20 px ahead of the centre: put the dummy 10° to port of it.
+	await _teleport(player, dummy.global_position + Vector2(280.0 * tan(deg_to_rad(10.0)), 300.0))
+	await _frames(30)
+	_check(absf(absf(pivot.angle) - deg_to_rad(10.0)) < 0.03, "pivot tracks a target 10° off the nose (V3): %.1f°" % rad_to_deg(pivot.angle))
+
 	_debug.swap_player_ship("patrol_corvette")
 	await _teleport(player, dummy.global_position + Vector2(300.0, 300.0))  # off to one side, facing up
 	player.set_target(dummy)
@@ -368,7 +405,7 @@ func _run() -> void:
 	player.place(Vector2(-4000.0, -4000.0), 0.0)
 	await _frames(2)
 	_check(actions.try_board() == "far", "too far to board (C9)")
-	player.place(prize.global_position + Vector2(prize.hit_radius + player.hit_radius + 10.0, 0.0), 0.0)
+	player.place(prize.global_position + Vector2(prize.hull_half_width() + player.hull_half_width() + 10.0, 0.0), 0.0)
 	_check(actions.try_board() == "", "boarding starts alongside (C9)")
 	await _frames(30)
 	_check(actions.board_progress() > 0.0 and actions.board_progress() < 1.0, "progress bar running (C9)")
@@ -396,7 +433,7 @@ func _run() -> void:
 	await _frames(2)
 	stranded.health.force_disable()
 	stranded.place(Vector2(-3000.0, -3000.0), 0.0)
-	player.place(Vector2(-3000.0 + stranded.hit_radius + player.hit_radius + 10.0, -3000.0), 0.0)
+	player.place(Vector2(-3000.0 + stranded.hull_half_width() + player.hull_half_width() + 10.0, -3000.0), 0.0)
 	var record_before_assist: float = GameState.get_record("independent_traders")
 	actions.try_board()
 	await _frames(roundi(float(DataRegistry.settings["boarding"]["time"]) * 60.0) + 5)
@@ -407,7 +444,7 @@ func _run() -> void:
 	# Assist is once per ship: disable it again and the option is gone.
 	stranded.health.force_disable()
 	stranded.place(Vector2(-3000.0, -3000.0), 0.0)
-	player.place(Vector2(-3000.0 + stranded.hit_radius + player.hit_radius + 10.0, -3000.0), 0.0)
+	player.place(Vector2(-3000.0 + stranded.hull_half_width() + player.hull_half_width() + 10.0, -3000.0), 0.0)
 	actions.try_board()
 	await _frames(roundi(float(DataRegistry.settings["boarding"]["time"]) * 60.0) + 5)
 	_check(actions.dialog != null and not actions.dialog.has_choice("assist"), "no second assist on the same ship (C9)")
@@ -421,7 +458,7 @@ func _run() -> void:
 	await _frames(3)
 	_check(actions.board_progress() < 0.0 and not player.health.damaged.is_connected(actions._on_player_hit_while_boarding), "freed wreck cancels boarding cleanly (C9)")
 	# Scuttle the looted wreck.
-	player.place(prize.global_position + Vector2(prize.hit_radius + player.hit_radius + 10.0, 0.0), 0.0)
+	player.place(prize.global_position + Vector2(prize.hull_half_width() + player.hull_half_width() + 10.0, 0.0), 0.0)
 	actions.try_board()
 	await _frames(roundi(float(DataRegistry.settings["boarding"]["time"]) * 60.0) + 5)
 	actions.dialog.choose("scuttle")

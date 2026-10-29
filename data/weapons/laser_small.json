@@ -1,0 +1,13 @@
+{
+  "id": "laser_small",
+  "name": "Small Laser",
+  "kind": "projectile",
+  "size": "small",
+  "mounts": ["fixed", "pivot", "turret"],
+  "damage_shield": 10,
+  "damage_armor": 6,
+  "range": 1000,
+  "speed": 900,
+  "reload": 0.25,
+  "colour": "#ff5050"
+}

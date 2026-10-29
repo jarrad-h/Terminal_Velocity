@@ -22,14 +22,14 @@ One system, one player ship, combat and AI first; everything that needs more tha
 | --- | --- | --- |
 | World | One system: a star, 2–3 planets, 1 station, a noise-generated backdrop, local debris and an asteroid field | Multiple systems, hyperspace, galaxy map, fuel (spent only on jumps and afterburners) |
 | Player ship | Fly, fire, take damage, be disabled, die and respawn | Buying ships, escorts, capture keeping the ship |
-| Weapons | Fixed gun, turret, guided missile, beam | Afterburner, ammo economy, point defence, ion, jamming, cloaking |
+| Weapons | Lasers, beams and guided missiles in sizes and mount types (fixed, pivot, turret, launcher) | Buying and fitting weapons, missile variants, point-defence behaviour (C13), afterburner, ammo economy, ion, jamming, cloaking |
 | Damage model | Shields, armour, disabled state, destruction | Armour recharge, repair systems |
 | AI | Trader, warship and pirate behaviours, flee threshold | Interceptor scanning, bribes, hailing |
 | Governments | 3 governments with ally/enemy relations and a legal record | Reputation spreading to allies, ranks |
 | Boarding | Board a disabled ship for credits | Plunder of cargo and outfits, capture odds |
 | Landing | Stub screen: repair, take off | Shipyard, outfitter, trade, bar, missions |
 | Data | Ships, weapons, governments, AI pools, system definition | Missions, flags, crons, persons, plugins |
-| Presentation | Placeholder art, basic HUD, radar | Final art, audio polish, menus, save/load |
+| Presentation | Generated ship art for the SOW hulls and the pirate raider (scope change 2026-10-29), placeholder art for everything else, basic HUD, radar | Final art beyond ships, audio polish, menus, save/load |
 | Debug | Debug panel and console: ship swap, spawning, invulnerability, time scale, data hot-reload, overlays | Player-facing cheats, mission and flag debugging |
 
 ## Functional requirements
@@ -55,8 +55,8 @@ Each requirement has an ID so later milestones and tests can refer to it.
 
 **Combat**
 
-- C1: Weapons fire from named exit points on the ship (gun, turret, guided, beam).
-- C2: Fixed guns fire along the ship's heading; turrets track the selected target within an arc.
+- C1: Weapons fire from the ship's hardpoints; each hardpoint has a size and a mount type, and a weapon fits only a hardpoint of its size and mount (V3).
+- C2: Fixed weapons fire along the ship's heading; pivot mounts track the selected target within a narrow forward arc; turrets rotate to track it within their arc (V3, V4).
 - C3: Guided missiles home on the target with their own turn rate and lifetime.
 - C4: Beams hit instantly along their length while held; their damage can fall off with distance (C12).
 - C5: Damage hits shields first, then armour; weapons can weight shield vs armour damage differently.
@@ -67,6 +67,8 @@ Each requirement has an ID so later milestones and tests can refer to it.
 - C10: When the player's ship is destroyed and they own an escape pod, the pod launches at high speed for a few seconds, then a window reports that days have passed and who rescued them, charges a rescue fee (a share of credits) and wakes them landed at the nearest port that will accept them (G4), else any landable port. If insured, the ship is replaced like for like; if not, they get a basic hull. Rescue counts as leaving and returning: wrecks and destroyed scenery are cleared and traffic refreshed; legal record and grudges remain. Without an escape pod, the game ends ("lost with all hands", restart). Until outfits exist, escape pod and insurance are data flags that start owned.
 - C11: AI shots damage ships of their own and allied governments at a percentage set in data (100 = full damage, 0 = friendly fire off). The player's shots always do full damage.
 - C12: A weapon's damage can fall off with distance (shot travel or beam length): full damage up to a set fraction of its range, falling linearly to a set minimum at full range. Shots and beams fade with distance so the falloff is visible.
+
+- C13 (specified now, built when a hull with point-defence mounts enters the game): point defence is a small turret weapon with a point-defence role. It runs its own behaviour: it fires automatically, without player or AI input, at incoming missiles (and later other threats) in range, rather than at the selected target. The role tag lives on the hardpoint (and picks the PD turret sprite); the behaviour lives on the weapon.
 
 **AI**
 
@@ -97,7 +99,15 @@ Each requirement has an ID so later milestones and tests can refer to it.
 - H1: Shield and armour bars; credits.
 - H2: A small radar in a screen corner shows ships, system objects (star, planets, stations) and the selected target around the player. Ships are coloured by government until hostility exists (milestone 4), then by hostility; a ship with grievance against the player that isn't yet hostile shows as a warning colour. Scenery appears only when its definition sets radar visibility, which the prototype data sets on large asteroids and derelict hulls; dust, small debris and rocks never show. Radar range comes from data. When the selected target is beyond radar range, an arrow on the radar rim points towards it.
 - H3: Target panel: name, government, shield and armour.
-- H4: Message line for events (target disabled, landing refused). A minimal version comes forward into milestone 5; milestone 6 polishes it.
+- H4: Message line for events (target disabled, landing refused). A minimal version comes forward into milestone 5; milestone 7 polishes it.
+
+**Ship art (visuals)**
+
+- V1: Ships with generated art draw their sprite at 1:1 times one global `art_scale` (game.json, default 1.0). Hardpoint, engine and hitbox positions are copied from the art data (`assets/sprites/ships/*/hardpoints.json`, summarised in `docs/art/hardpoints.md`) and multiplied by `art_scale`, keeping any asymmetry. Ships without art keep their placeholder drawing.
+- V2: The hitbox is a capsule (width × length, plus an offset) covering the main hull body; ornamental parts such as the freighter's solar panel are not hit. The hitbox overlay (D9) draws the capsule.
+- V3: Mounts and sizes. Each hardpoint has an ID (from the art, e.g. T1, G2), a size (small, medium, large) and a mount type: **fixed** (fires along the heading), **pivot** (tracks the target within a narrow arc), **turret** (rotating, within its arc) or **launcher** (missiles). Each weapon has a size and the mount types it comes in; within one size a weapon's numbers are the same on every mount, only the aiming differs. A ship's loadout names, per hardpoint, the weapon and the mount the item is built for (an installed item records its mount, because later the player buys a weapon by mount type). The loader refuses a loadout whose weapon size or mount doesn't match its hardpoint. Arcs come from mount-type defaults in game.json (fixed 0°, pivot 30° total, turret 360°) and a hardpoint may override its arc.
+- V4: A turret weapon draws a turret sprite as a rotating child on its ring (image centre is the pivot, barrels up at rotation 0): small turrets use `parts/tur1.png`, medium `parts/tur2.png`, and a point-defence hardpoint `parts/pd1.png`. Turrets turn at a traverse rate from data and their shots leave along the drawn barrel. Fixed guns, beams and launchers are part of the hull sprite.
+- V5: Engine glow is drawn at each engine exit from the art data, brightening with thrust; colour and size come from data.
 
 **Debug tools**
 
@@ -109,7 +119,7 @@ Each requirement has an ID so later milestones and tests can refer to it.
 - D6: Set credits and the player's legal record with each government.
 - D7: Time scale from 0.25× to 4×, plus pause and single-frame step.
 - D8: Reload all data files at runtime, so tuning a JSON value needs no restart.
-- D9: Overlays: hitboxes, velocity vectors, AI state labels, FPS and ship count. The debug panel always shows the player's world position and current local-space chunk (grid) coordinates.
+- D9: Overlays: hitboxes (capsules, V2), hardpoints and engine exits (V3, V5), velocity vectors, AI state labels, FPS and ship count. The debug panel always shows the player's world position and current local-space chunk (grid) coordinates.
 - D10: A text console accepts the same actions as typed commands (for example `spawn pirate_raider 3`); panel and console call one shared command layer.
 
 ## Data requirements
@@ -118,8 +128,8 @@ Seven definition types load from JSON files at startup; IDs are readable strings
 
 | Type | Defines | Key fields |
 | --- | --- | --- |
-| `ship` | A hull class | name, sprite, mass, accel, top\_speed, turn\_rate, shield, shield\_regen, armor, hardpoints (gun/turret/guided/beam exit points), default\_weapons, strength, crew, shield recharge delay, board credits range (C9) |
-| `weapon` | A gun, turret, missile or beam | kind, damage\_shield, damage\_armor, range or lifetime, speed, reload, turn\_rate (guided), arc (turret), damage falloff (C12), sprite or colour, sound |
+| `ship` | A hull class | name, sprite, hit\_size and hit\_offset (V2), mass, accel, top\_speed, turn\_rate, shield, shield\_regen, armor, hardpoints (id, size, mount, position, optional arc, traverse and role; V3), engines (V5), loadout (per hardpoint: weapon and mount; V3), strength, crew, shield recharge delay, board credits range (C9) |
+| `weapon` | A laser, beam, flak or missile | kind (projectile, beam, guided), size, mounts it comes in (V3), damage\_shield, damage\_armor, range or lifetime, speed, reload, turn\_rate (guided), damage falloff (C12), sprite or colour, sound |
 | `government` | A faction | name, colour, allies, enemies, crime\_threshold, penalties (shoot, disable, board, kill), max\_odds, flee\_shield\_pct, tolerance and forgiveness (A8), assist reward (C9) |
 | `ai_pool` | A traffic type (Nova's dude) | government, behaviour (trader, warship, pirate), weighted list of ship IDs, weighted list of personality IDs, sensor range, stay and dwell times, wealth factor (C9) |
 | `personality` | An individual AI temperament (A7) | name, odds factor, flee threshold offset, response when attacked, whether it starts fights, tolerance factor (A8) |
@@ -142,12 +152,15 @@ An example ship file:
   "armor": 120,
   "strength": 10,
   "crew": 2,
-  "hardpoints": {
-    "gun": [[-6, -18], [6, -18]],
-    "turret": [[0, 4]]
-  },
-  "default_weapons": [
-    {"weapon": "light_laser", "count": 2}
+  "hardpoints": [
+    {"id": "G1", "size": "small", "mount": "fixed", "pos": [-6, -18]},
+    {"id": "G2", "size": "small", "mount": "fixed", "pos": [6, -18]},
+    {"id": "T1", "size": "small", "mount": "turret", "pos": [0, 4]}
+  ],
+  "loadout": [
+    {"hardpoint": "G1", "weapon": "laser_small", "mount": "fixed"},
+    {"hardpoint": "G2", "weapon": "laser_small", "mount": "fixed"},
+    {"hardpoint": "T1", "weapon": "laser_small", "mount": "turret"}
   ]
 }
 ```
@@ -195,31 +208,32 @@ DebugCommands (autoload) ◄── DebugPanel, Console
 
 ## Prototype content
 
-Just enough content to make the three behaviours and the four weapon kinds distinguishable; all art is placeholder.
+Just enough content to make the three behaviours and the weapon kinds and mounts distinguishable; ships use the generated art (V1), everything else is placeholder.
 
 | Content | Count | Items |
 | --- | --- | --- |
-| Ships | 5 | Shuttle (player start), courier, freighter, patrol corvette, pirate raider |
-| Weapons | 4 | Light laser (gun), flak turret, homing missile, mining beam |
+| Ships | 5 | Shuttle (player start; SOW S-A, small laser turret), courier (SOW C-B Booster, unarmed), freighter (SOW F-A Stack, small laser turret), patrol corvette (SOW P-B, 2 small laser turrets + homing missile in a small launcher), pirate raider (2 small fixed lasers + small fixed mining beam); plus the placeholder target dummy |
+| Weapons | 6 | Small, medium and large laser (each on fixed, pivot or turret mounts), small mining beam (same mounts), small flak turret (stand-in for point defence until C13; no current ship carries it), homing missile (small launcher) |
 | Governments | 3 | Local authority, independent traders, pirates (enemy of both) |
 | AI pools | 3 | Trader traffic, authority patrol, pirate raid |
 | System objects | 5 | A star, 2 landable planets, 1 station, 1 gas giant (not landable) |
 | Scenery | 5 | Dust, small debris, rock, large asteroid, derelict hull (proves a data-only swap) |
 
-Placeholder art: single top-down sprites rotated in engine (no 36-frame sheets), flat-coloured planets, a noise-generated nebula backdrop, and generated beam and projectile visuals. Free asset packs (Kenney space shooter assets are CC0) cover ships and effects until real art exists.
+Placeholder art: single top-down sprites rotated in engine (no 36-frame sheets), flat-coloured planets, a noise-generated nebula backdrop, and generated beam and projectile visuals. Free asset packs (Kenney space shooter assets are CC0) cover ships and effects until real art exists. Ship art (2026-10-29): Standard Orbital Works hulls and the pirate raider are generated sprites (`art_src/sow/export.py`, see `docs/art/`), never hand-edited; the target dummy and anything without art keep placeholders.
 
 ## Milestones
 
-Six steps, each ending in something playable; the data loader comes second so nothing after it is hard-coded.
+Seven steps, each ending in something playable; the data loader comes second so nothing after it is hard-coded.
 
 1. ✅ (merged 2026-10-26) **Fly:** player ship, flight model, camera, starfield. Done when flight feels right (F1–F4).
 2. ✅ (merged 2026-10-26) **Data loader and local space:** JSON definitions for all six types, typed resource classes, reference validation, mod override and hot reload; then the system file drives the backdrop and local-space scenery, replacing the milestone 1 starfield. Done when changing the backdrop or scenery in JSON changes the scene (B1–B2, L1–L3) and the player ship loads from `courier.json`.
 3. ✅ (merged 2026-10-26) **Fight:** four weapon kinds, shields and armour, disable and destroy, targeting, a static dummy target. Placeholder drawing of system objects and the radar (H2) come forward into this milestone. Done when C1–C8 work against a dummy, shots damage and destroy solid scenery (L4), and the radar shows the dummy, system objects and large scenery.
 4. ✅ (merged 2026-10-28) **AI and governments:** trader, warship and pirate behaviours, traffic spawning, government relations and the legal record. Done when a pirate raid on traders draws in the patrol (A1–A8, G1–G3, C11, C12, and the C6/C8 playtest changes).
 5. ✅ (merged 2026-10-29) **Board and land:** boarding (with the boarding window), landing with the repair stub, escape pod and rescue, plus the debug console, hold-to-aim (F5), the radar target arrow and a minimal message line (H4). Done when C9–C10, G4, S1–S3, F5 and D10 work.
-6. **HUD and tuning pass:** target panel, messages, radar polish, then a balance pass on the data files only. Done when the success criteria in the first section are met.
+6. ✅ (merged 2026-10-29) **Art integration** (added 2026-10-29): the generated ship sprites at one scale rule, capsule hitboxes, hardpoints with sizes and mount types taken from the art, the pivot mount, rotating turret sprites and engine glow; ship data follows the art (courier unarmed, player starts in the shuttle, patrol corvette on the P-B hull), and the world grows in data to match the bigger ships (planet radii ×4, positions and system edge ×2, camera zoom 0.75, radar range 6000). The hitbox and hardpoint overlays come with it (D9). Done when V1–V5 work, every ship's loadout passes the fit rule, and turrets visibly track their target.
+7. **HUD and tuning pass:** target panel, messages, radar polish, then a balance pass on the data files only. Done when the success criteria in the first section are met.
 
-Debug tools grow with the milestones rather than waiting for the end: the toggle, time scale and overlays in milestone 1; ship swap and data hot-reload in 2; invulnerability, target kill and spawning in 3; AI pause, legal record and government overrides in 4; the console in 5.
+Debug tools grow with the milestones rather than waiting for the end: the toggle, time scale and overlays in milestone 1; ship swap and data hot-reload in 2; invulnerability, target kill and spawning in 3; AI pause, legal record and government overrides in 4; the console in 5; hitbox and hardpoint overlays in 6.
 
 Rough effort for one part-time developer: 6–10 weekends, most of it in milestones 3 and 4.
 

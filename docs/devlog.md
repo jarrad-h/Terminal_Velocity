@@ -4,6 +4,64 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Milestone 6: Art integration (29 Oct 2026)
+
+Playtest confirmed by Jarrad on 29 Oct 2026. Branch `m6-art` (with `art/sow-kit` merged in). Designed with Jarrad first (spec and decisions 2026-10-29), built in the cloud session (checked headless, by the scenario test, and by rendering under a virtual display).
+
+### Built
+
+- **V1 sprites.**
+  - SOW and pirate hulls are drawn at 1:1 × `art_scale` (game.json, 1.0).
+  - Ships use the art: shuttle = S-A, courier = C-B Booster, freighter = F-A Stack, patrol corvette = P-B, pirate raider = R-1C.
+  - The target dummy keeps its placeholder.
+- **V2 capsule hitboxes.** `hit_size` [w, l] and `hit_offset` cover the hull body only; the freighter's hull sits 14 px left of its solar panel. Boarding range is measured hull edge to hull edge (`Capsule.gap`).
+- **V3 hardpoints by size and mount.**
+  - Hardpoints are copied verbatim from `hardpoints.json` (raider asymmetry kept).
+  - Weapons have a `size` and the `mounts` they come in.
+  - A ship's `loadout` names the hardpoint, the weapon and the item's mount. The loader refuses misfits (`MountFit`).
+  - Arcs and traverse come from game.json `mounts` defaults (pivot 30°, turret 360°; 180 and 360°/s); a hardpoint can override them.
+  - Pivots hold at the arc edge and keep firing. Turrets fire once the barrel is within `fire_tolerance` (5°).
+- **V4 turret sprites.** A rotating child on each turret ring (tur1 small, tur2 medium, pd1 for `point_defence` hardpoints); shots leave along the barrel.
+- **V5 engine glow.** At the art's engine exits; bright while thrusting, faint at idle. Colour and size come from data (pirates orange).
+- **Data follows the art.**
+  - The courier is unarmed and the player starts in the shuttle.
+  - Patrol: 2 small turret lasers + homing missile in a small launcher.
+  - Freighter: small turret laser.
+  - Raider: 2 small fixed lasers + small fixed mining beam.
+  - `light_laser` became `laser_small`, plus `laser_medium` (×1.6 damage) and `laser_large` (×2.5).
+  - Weapon kinds are now `projectile`, `beam` and `guided`.
+- **World scale (data only).** Planet radii ×4; object positions, scenery regions and the system edge ×2; camera zoom 0.75; radar range 6000.
+- **D9.** The hitbox overlay draws capsules, hardpoints with barrel and arc lines, and engine exits.
+- **C13** point defence is specified only: the hardpoint `role` is accepted and picks the PD sprite.
+- **Tests.**
+  - Unit (`test_mounts.gd`): `MountFit`, `MountAim` (arc clamp, traverse, short way round, limited arcs never swing through the back) and `Capsule.gap`.
+  - Loader: every new validation rule, plus a check that the real ships follow the art.
+  - Scenario: shuttle start, capsule, glow, a turret swinging onto and hitting a target abeam, a pivot held at ±15° and still firing, and a pivot tracking 10° off the nose.
+
+### Deviations and why
+
+- **Traverse is on the mount, not the weapon.** It follows the "arcs belong to the mount" decision, so a weapon's numbers are identical on every mount.
+- **The world also doubled in size, and the radar range doubled with it.** Planets ×4 alone would have crowded the system.
+- **`docs/` has a `.gdignore`,** so Godot doesn't import the art spec sheets.
+
+### Known issues (from review and playtest; for M7)
+
+- **Playtest: hold-to-aim (F5) and the raider's beam.** While the player is moving, T leads the target for the lasers, whose shots inherit the ship's velocity, so they drift onto it. The beam is instant and inherits nothing, so it lands beside the target by that lead offset. Stopped, both hit. One heading can't serve both while drifting. The AI's attack aim has the same split. Options for M7: aim for the beam when one is fitted, aim for the weapon group being fired, or put beams on pivot mounts so they track the target themselves.
+
+- AI `sensor_range` is unchanged in a world twice the size, so raids may find traders less often. The unarmed courier keeps `strength` 10, which skews AI odds.
+- AI fire uses the widest mount arc. A future hull mixing fixed guns with a 360° turret would fire its fixed guns off-axis (no current ship does).
+- Engine-glow shape numbers (idle level, fade, halo sizes) are code constants. A missing or mistyped turret sprite path draws nothing, without an error.
+- `arc` or `traverse` on a fixed or launcher hardpoint is accepted and ignored.
+- Flak is defined but no ship carries it until point-defence hulls arrive.
+
+### Key tuning values
+
+- **Hulls (art px):** shuttle 48×119 (hit 46×119), courier 74×94 (64×94), freighter 76×184 (46×184, offset −14), patrol 48×159 (46×159), raider 62×128 (50×128).
+- **Mounts:** pivot arc 30°, traverse 180°/s; turret arc 360°, traverse 360°/s; fire tolerance 5°.
+- **World:** `test_nebula` edge 14000, Haven r 640, Tethys r 1200; `test_graveyard` edge 12000. Zoom 0.75, radar 6000.
+
+---
+
 ## Milestone 5: Board and land (28–29 Oct 2026)
 
 Playtest confirmed by Jarrad on 29 Oct 2026; detail tweaks to follow later.

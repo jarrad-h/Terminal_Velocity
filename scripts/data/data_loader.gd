@@ -12,8 +12,11 @@ const SETTINGS_FILE: String = "game.json"
 
 ## Global settings defaults; documented in data/README.md.
 const SETTINGS_DEFAULTS: Dictionary = {
-	"player_ship": "courier",
+	"player_ship": "shuttle",
 	"system": "test_nebula",
+	"art_scale": 1.0,
+	"mounts": {"arc": {"pivot": 30.0, "turret": 360.0}, "traverse": {"pivot": 180.0, "turret": 360.0},
+		"fire_tolerance": 5.0, "turret_sprites": {"small": "", "medium": "", "large": "", "point_defence": ""}},
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
 	"player": {"credits": 0, "record": 0.0, "escape_pod": true, "insured": true, "uninsured_ship": "shuttle",
 		"rescue_fee_pct": 10.0, "rescue_days": [2.0, 5.0], "pod_speed": 600.0, "pod_time": 3.0},
@@ -116,6 +119,19 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var reader := DefReader.new(data_set.settings, SETTINGS_FILE, errors)
 	reader.ref("player_ship", "ships")
 	reader.ref("system", "systems")
+	if reader.number("art_scale", 1.0, false, 0.0) <= 0.0:
+		reader.error("art_scale", "must be more than 0")
+	var mounts: DefReader = reader.object("mounts")
+	for group: String in ["arc", "traverse"]:
+		var sub: DefReader = mounts.object(group)
+		for key: String in SETTINGS_DEFAULTS["mounts"][group]:
+			var value: float = sub.number(key, 0.0, false, 0.0)
+			if group == "arc" and value > 360.0:
+				sub.error(key, "must be at most 360")
+	mounts.number("fire_tolerance", 0.0, false, 0.0)
+	var sprites: DefReader = mounts.object("turret_sprites")
+	for key: String in SETTINGS_DEFAULTS["mounts"]["turret_sprites"]:
+		sprites.string(key)
 	var player: DefReader = reader.object("player")
 	player.number("credits", 0.0)
 	player.number("record", 0.0)

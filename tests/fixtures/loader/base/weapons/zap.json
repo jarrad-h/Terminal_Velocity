@@ -1,1 +1,1 @@
-{"name": "Zap", "kind": "gun"}
+{"name": "Zap", "kind": "projectile", "mounts": ["fixed", "turret"]}

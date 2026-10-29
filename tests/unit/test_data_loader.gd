@@ -44,7 +44,10 @@ func test_id_comes_from_file_name() -> void:
 func test_optional_fields_take_defaults() -> void:
 	var set: DataSet = _load([BASE])
 	var ship: ShipDef = set.get_def("ships", "alpha")
-	assert_near(ship.hit_radius, 16.0, "hit_radius default")
+	assert_vec_near(ship.hit_size, Vector2(32, 32), "hit_size default")
+	assert_vec_near(ship.hit_offset, Vector2.ZERO, "hit_offset default")
+	assert_true(ship.engines.is_empty(), "no engines by default")
+	assert_near(ship.engine_size, 6.0, "engine glow size default")
 	assert_near(ship.armor, 100.0, "armor default")
 	var weapon: WeaponDef = set.get_def("weapons", "zap")
 	assert_near(weapon.reload, 0.5, "reload default")
@@ -58,7 +61,16 @@ func test_optional_fields_take_defaults() -> void:
 func test_typed_nested_values() -> void:
 	var set: DataSet = _load([BASE])
 	var ship: ShipDef = set.get_def("ships", "alpha")
-	assert_true(ship.default_weapons[0]["weapon"] == "zap" and ship.default_weapons[0]["count"] == 2, "loadout parsed")
+	assert_true(ship.hardpoints.size() == 2 and ship.hardpoints[1].id == "T1", "hardpoints parsed")
+	var turret: HardpointDef = ship.hardpoint("T1")
+	assert_true(turret.size == "small" and turret.mount == "turret" and turret.role == "point_defence", "hardpoint fields")
+	assert_vec_near(turret.pos, Vector2(0, 4), "hardpoint position")
+	assert_near(turret.arc_degrees(set.settings), 270.0, "per-hardpoint arc override")
+	assert_near(ship.hardpoint("G1").arc_degrees(set.settings), 0.0, "fixed mounts have no arc")
+	assert_near(turret.traverse_degrees(set.settings), 360.0, "turret traverse from game.json default")
+	assert_true(ship.loadout.size() == 2 and ship.loadout[1].weapon == "zap" and ship.loadout[1].mount == "turret", "loadout parsed")
+	var zap: WeaponDef = set.get_def("weapons", "zap")
+	assert_true(zap.kind == "projectile" and zap.size == "small" and zap.mounts == ["fixed", "turret"], "weapon size and mounts")
 	var speck: SceneryDef = set.get_def("scenery", "speck")
 	assert_vec_near(speck.depth, Vector2(0.9, 1.1), "depth range")
 	var ring: LocalSpaceEntry = (set.get_def("systems", "home") as SystemDef).local_space[1]
@@ -89,7 +101,7 @@ func test_mod_file_replaces_same_id() -> void:
 	var ship: ShipDef = set.get_def("ships", "alpha")
 	assert_true(ship.name == "Alpha Mk2", "mod version wins")
 	assert_near(ship.top_speed, 400.0, "mod values used")
-	assert_true(ship.default_weapons.is_empty(), "replacement is whole-file, not a merge")
+	assert_true(ship.loadout.is_empty() and ship.hardpoints.is_empty(), "replacement is whole-file, not a merge")
 	assert_true(set.overrides.size() == 2, "both overrides reported: %s" % [set.overrides])
 
 
@@ -121,7 +133,7 @@ func test_settings_merge_and_refs() -> void:
 
 func test_missing_reference_names_file_and_field() -> void:
 	var set: DataSet = _load([BROKEN])
-	_expect_error(set, ["bad_ref.json", "default_weapons[0].weapon", "missing_gun"])
+	_expect_error(set, ["bad_ref.json", "loadout[0].weapon", "missing_gun"])
 	_expect_error(set, ["ghost_fleet.json", "'government'", "nobody"])
 	_expect_error(set, ["ghost_fleet.json", "ships[0].ship", "ghost"])
 	_expect_error(set, ["bad_fragment.json", "fragments[0].scenery", "nothing"])
@@ -170,7 +182,24 @@ func test_field_errors_name_file_and_field() -> void:
 	_expect_error(set, ["bad_loot.json", "board_credits", "greater than max"])
 	_expect_error(set, ["broke.json", "wealth_factor", "at least 0"])
 	_expect_error(set, ["stingy.json", "assist_reward", "at least 0"])
-	_expect_error(set, ["no_hardpoint.json", "default_weapons[0]", "no beam exit points"])
+	_expect_error(set, ["misfit.json", "loadout[0]", "no hardpoint 'X9'"])
+	_expect_error(set, ["misfit.json", "loadout[1]", "small weapon doesn't fit a medium hardpoint"])
+	_expect_error(set, ["misfit.json", "loadout[2]", "doesn't come in a turret mount"])
+	_expect_error(set, ["misfit.json", "loadout[3]", "doesn't come in a pivot mount"])
+	_expect_error(set, ["misfit.json", "loadout[5]", "'G1' already has a weapon"])
+	_expect_error(set, ["bad_hull.json", "hit_size", "more than length"])
+	_expect_error(set, ["bad_hull.json", "hardpoints[0].size", "tiny"])
+	_expect_error(set, ["bad_hull.json", "hardpoints[1].id", "already used"])
+	_expect_error(set, ["bad_hull.json", "hardpoints[1].role", "needs a turret mount"])
+	_expect_error(set, ["bad_hull.json", "hardpoints[2].arc", "at most 360"])
+	_expect_error(set, ["bad_hull.json", "engines[1]", "expected [x, y]"])
+	_expect_error(set, ["bad_mounts.json", "size", "huge"])
+	_expect_error(set, ["bad_mounts.json", "mounts[0]", "launcher mount, and only"])
+	_expect_error(set, ["bad_mounts.json", "mounts[1]", "gimbal"])
+	_expect_error(set, ["no_mounts.json", "mounts", "is required"])
+	_expect_error(set, ["game.json", "art_scale", "more than 0"])
+	_expect_error(set, ["game.json", "mounts.arc.pivot", "at most 360"])
+	_expect_error(set, ["game.json", "mounts.traverse.turret", "at least 0"])
 	_expect_error(set, ["bad_ring.json", "local_space[1].region.inner_radius", "smaller than radius"])
 
 
@@ -185,9 +214,25 @@ func test_real_game_data_is_valid() -> void:
 	var set: DataSet = _load(["res://data", "res://mods"])
 	assert_true(set.errors.is_empty(), "data/ has errors:\n    %s" % "\n    ".join(set.errors))
 	assert_true(set.ids("ships").size() == 6, "5 prototype ships plus target_dummy")
-	assert_true(set.ids("weapons").size() == 4, "4 weapons")
+	assert_true(set.ids("weapons").size() == 6, "3 laser sizes, flak, missile, beam")
 	assert_true(set.ids("governments").size() == 3, "3 governments")
 	assert_true(set.ids("ai_pools").size() == 3, "3 AI pools")
 	assert_true(set.ids("scenery").size() == 5, "5 scenery types")
 	assert_true(set.ids("personalities").size() == 5, "5 personalities")
 	assert_true(set.ids("systems") == ["test_graveyard", "test_nebula"], "2 test systems")
+
+
+## V3: the art-led loadouts (docs/art/hardpoints.md, decisions 2026-10-29).
+func test_real_ships_follow_the_art() -> void:
+	var set: DataSet = _load(["res://data", "res://mods"])
+	var courier: ShipDef = set.get_def("ships", "courier")
+	assert_true(courier.loadout.is_empty() and courier.hardpoints.is_empty(), "courier is unarmed (C-B Booster)")
+	assert_true(set.settings["player_ship"] == "shuttle", "player starts in the shuttle")
+	var patrol: ShipDef = set.get_def("ships", "patrol_corvette")
+	var mounts: Array[String] = []
+	for e: LoadoutEntry in patrol.loadout:
+		mounts.append(e.mount)
+	assert_true(mounts == ["turret", "turret", "launcher"], "patrol: 2 turrets + launcher (P-B): %s" % [mounts])
+	var raider: ShipDef = set.get_def("ships", "pirate_raider")
+	assert_vec_near(raider.hardpoint("G2").pos, Vector2(14.9, -29.7), "raider keeps its asymmetric gun")
+	assert_vec_near((set.get_def("ships", "freighter") as ShipDef).hit_offset, Vector2(-14, 0), "freighter hitbox on the hull body")

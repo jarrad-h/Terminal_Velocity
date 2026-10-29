@@ -1,0 +1,71 @@
+{
+ "pirate_raider": {
+  "sprite": "ships/pirates/pirate_raider.png",
+  "design": "R-1C Integrated",
+  "size_px": [
+   62,
+   128
+  ],
+  "hardpoints": [
+   {
+    "id": "B1",
+    "kind": "beam",
+    "mount": "fixed",
+    "size": "small",
+    "role": "fixed beam emitter",
+    "pos": [
+     0.0,
+     -64.5
+    ],
+    "facing": 0,
+    "arc": 0,
+    "note": "emitter tip; fires along the heading"
+   },
+   {
+    "id": "G1",
+    "kind": "gun",
+    "mount": "fixed",
+    "size": "small",
+    "role": "fixed forward gun",
+    "pos": [
+     -9.3,
+     -52.4
+    ],
+    "facing": 0,
+    "arc": 0,
+    "note": "muzzle point; fires along the heading"
+   },
+   {
+    "id": "G2",
+    "kind": "gun",
+    "mount": "fixed",
+    "size": "small",
+    "role": "fixed forward gun",
+    "pos": [
+     14.9,
+     -29.7
+    ],
+    "facing": 0,
+    "arc": 0,
+    "note": "muzzle point; fires along the heading"
+   }
+  ],
+  "engines": [
+   [
+    -8.4,
+    63.6
+   ],
+   [
+    0.0,
+    63.6
+   ],
+   [
+    8.4,
+    63.6
+   ]
+  ],
+  "name": "Pirate raider (R-1C)",
+  "mounts": "1\u00d7 small fixed beam, 2\u00d7 small fixed gun",
+  "summary": "3 hardpoints: B1 small fixed beam at (0.0, -64.5), firing straight ahead; G1 small fixed gun at (-9.3, -52.4), firing straight ahead; G2 small fixed gun at (14.9, -29.7), firing straight ahead."
+ }
+}

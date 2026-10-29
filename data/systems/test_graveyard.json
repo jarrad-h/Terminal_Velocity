@@ -1,18 +1,18 @@
 {
   "id": "test_graveyard",
   "name": "Test Graveyard",
-  "edge_radius": 6000,
+  "edge_radius": 12000,
   "respawn_delay": [5, 15],
   "seed": 2002,
   "objects": [
-    {"id": "dim", "type": "star", "name": "Dim", "position": [0, 0], "radius": 300, "colour": "#ffb080"},
-    {"id": "bastion", "type": "planet", "name": "Bastion", "position": [4500, 0], "radius": 140, "colour": "#6080a0",
+    {"id": "dim", "type": "star", "name": "Dim", "position": [0, 0], "radius": 1200, "colour": "#ffb080"},
+    {"id": "bastion", "type": "planet", "name": "Bastion", "position": [9000, 0], "radius": 560, "colour": "#6080a0",
      "description": "A fortress world watching the old battlefield.", "landable": true, "government": "local_authority", "min_record": -20},
-    {"id": "scrapyard", "type": "planet", "name": "Scrapyard", "position": [-4200, 1800], "radius": 100, "colour": "#806050",
+    {"id": "scrapyard", "type": "planet", "name": "Scrapyard", "position": [-8400, 3600], "radius": 400, "colour": "#806050",
      "description": "Salvagers strip the wrecks for parts.", "landable": true, "government": "independent_traders", "min_record": -80},
-    {"id": "watch", "type": "station", "name": "Graveyard Watch", "position": [0, 4200], "radius": 60, "colour": "#a0a8b8",
+    {"id": "watch", "type": "station", "name": "Graveyard Watch", "position": [0, 8400], "radius": 240, "colour": "#a0a8b8",
      "description": "A listening post.", "landable": true, "government": "local_authority", "min_record": -10},
-    {"id": "titan", "type": "planet", "name": "Titan", "position": [-2000, -4800], "radius": 280, "colour": "#b09060",
+    {"id": "titan", "type": "planet", "name": "Titan", "position": [-4000, -9600], "radius": 1120, "colour": "#b09060",
      "description": "A gas giant.", "landable": false}
   ],
   "traffic": [
@@ -31,10 +31,10 @@
   "local_space": [
     {"scenery": "dust", "density": 35},
     {"scenery": "derelict_hull", "density": 4,
-     "region": {"shape": "ring", "centre": [0, 0], "inner_radius": 1200, "radius": 3200}},
+     "region": {"shape": "ring", "centre": [0, 0], "inner_radius": 2400, "radius": 6400}},
     {"scenery": "small_debris", "density": 12,
-     "region": {"shape": "ring", "centre": [0, 0], "inner_radius": 1100, "radius": 3300}},
+     "region": {"shape": "ring", "centre": [0, 0], "inner_radius": 2200, "radius": 6600}},
     {"scenery": "large_asteroid", "density": 1.5,
-     "region": {"shape": "circle", "centre": [-2500, -2500], "radius": 1200}}
+     "region": {"shape": "circle", "centre": [-5000, -5000], "radius": 2400}}
   ]
 }

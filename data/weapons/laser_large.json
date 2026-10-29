@@ -1,0 +1,13 @@
+{
+  "id": "laser_large",
+  "name": "Large Laser",
+  "kind": "projectile",
+  "size": "large",
+  "mounts": ["fixed", "pivot", "turret"],
+  "damage_shield": 25,
+  "damage_armor": 15,
+  "range": 1000,
+  "speed": 900,
+  "reload": 0.25,
+  "colour": "#ff5050"
+}

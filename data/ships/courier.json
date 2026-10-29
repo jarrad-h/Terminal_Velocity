@@ -1,7 +1,7 @@
 {
   "id": "courier",
   "name": "Courier",
-  "sprite": "ships/courier.png",
+  "sprite": "ships/sow/ships/sow_c_b_booster.png",
   "mass": 40,
   "accel": 300,
   "top_speed": 320,
@@ -12,12 +12,15 @@
   "strength": 10,
   "crew": 2,
   "board_credits": [300, 1200],
-  "hit_radius": 16,
-  "hardpoints": {
-    "gun": [[-6, -18], [6, -18]],
-    "turret": [[0, 4]]
-  },
-  "default_weapons": [
-    {"weapon": "light_laser", "count": 2}
+  "hit_size": [64, 94],
+  "hardpoints": [],
+  "loadout": [],
+  "engines": [
+    [-32.4, 46.2],
+    [-13.6, 41.7],
+    [-4.5, 41.7],
+    [4.5, 41.7],
+    [13.6, 41.7],
+    [32.4, 46.2]
   ]
 }

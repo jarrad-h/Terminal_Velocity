@@ -1,7 +1,7 @@
 {
   "id": "shuttle",
   "name": "Shuttle",
-  "sprite": "ships/shuttle.png",
+  "sprite": "ships/sow/ships/sow_s_a_shuttle.png",
   "mass": 25,
   "accel": 220,
   "top_speed": 260,
@@ -12,11 +12,17 @@
   "strength": 5,
   "crew": 1,
   "board_credits": [100, 400],
-  "hit_radius": 13,
-  "hardpoints": {
-    "gun": [[0, -14]]
-  },
-  "default_weapons": [
-    {"weapon": "light_laser", "count": 1}
+  "hit_size": [46, 119],
+  "hardpoints": [
+    {"id": "T1", "size": "small", "mount": "turret", "pos": [0, -14]}
+  ],
+  "loadout": [
+    {"hardpoint": "T1", "weapon": "laser_small", "mount": "turret"}
+  ],
+  "engines": [
+    [-13.6, 59.3],
+    [-4.5, 59.3],
+    [4.5, 59.3],
+    [13.6, 59.3]
   ]
 }

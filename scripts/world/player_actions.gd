@@ -158,7 +158,7 @@ func _end_boarding() -> void:
 
 func _board_check(player: Ship, ship: Ship) -> String:
 	var settings: Dictionary = DataRegistry.settings["boarding"]
-	var gap: float = player.global_position.distance_to(ship.global_position) - player.hit_radius - ship.hit_radius
+	var gap: float = player.hull_gap(ship)
 	var relative: float = (player.get_velocity() - ship.get_velocity()).length()
 	return PortRules.boarding_check(gap, float(settings["range"]), relative, float(settings["max_speed"]))
 
