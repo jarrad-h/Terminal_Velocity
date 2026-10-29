@@ -4,6 +4,79 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Milestone 7: HUD and tuning pass (29 Oct 2026)
+
+Awaiting Jarrad's playtest. Branch `m7-hud-tuning`. Designed with Jarrad first (spec and decisions 2026-10-29); built in the cloud session (checked headless, by the scenario test, a 10-minute soak, and rendering under a virtual display).
+
+### Built
+
+- **H3 target panel.**
+  - A nose-up silhouette of the target, in green → yellow → red by armour, with a shield outline that fades as its shield drops; grey when disabled.
+  - Beside it: class, type (role), government, standing, shield and armour bars, distance, and a hint ("Disabled: B to board", read from the key binding).
+  - Shader: `assets/shaders/silhouette.gdshader`; colour maths: `HudMath`.
+- **H1 player panel:** ship name, credits, bars, and a DISABLED warning. Colours come from game.json `hud`.
+- **H4 messages** come in four kinds (info, combat, standing, credits), each with its own colour. Timing is data (`messages`). New events:
+  - destroyed;
+  - "turns hostile" (A8);
+  - a government "now / no longer treats you as hostile" (G3 threshold, posted from `GameState.set_record`);
+  - credits taken.
+- **G5 standing.** Hostile, angry (grievance), friendly (record ≥ the government's `friendly_record`, default 25; pirates 1100) or neutral. The radar and target panel both use it (`Relations.standing`).
+- **Tidy-ups from the M6 review:**
+  - the loader checks that ship and turret sprite paths exist;
+  - `arc` or `traverse` on fixed and launcher mounts is an error;
+  - the engine glow's idle level and response come from `engine_glow`.
+- **Raider's mining beam** now sits on a pivot mount.
+- **`tools/balance.py`:** an offline report of time to disable and destroy for each pair of ships, plus one-on-one duels. Assumes accuracy (default 50%), fight distance (default 400 px) and no shield regen under constant fire.
+- **Balance pass (data only):**
+  - ship shield, regen and armour ×3; weapon damage ×0.5; scenery armour ×0.5 (time to break rocks unchanged);
+  - AI sensor ranges ×1.5 (2700 / 2400 / 1800);
+  - courier strength 1;
+  - A8 retuned to match (found at review: after the ×6 longer fights, forgiveness out-ran the damage, so nothing ever turned hostile). Tolerance and forgiveness: traders 6% and 0.3%/s, authority 5% and 0.25%/s, pirates 3% and 0.12%/s; defaults 5% and 0.25%/s.
+- **Tests:**
+  - unit: `Relations.standing` and `threshold_crossing`, `HudMath`, and the new loader rules;
+  - a real-data A8 regression: sustained fire from the start ship turns every lawful pool ship hostile within 40 s, while five stray hits are forgiven;
+  - scenario: the target panel, standing, the turns-hostile and threshold messages, and friendly at `friendly_record`.
+
+### Balance report (50% hits, 400 px)
+
+- **Raider vs shuttle:** the raider disables the shuttle in 26 s ✓ target 20–30 s. The shuttle needs 104 s to disable a raider.
+- **Patrol corvette vs raider:** the corvette disables the raider in 42 s; the raider needs 92 s to disable the corvette ✓.
+- **Other times:** the raider needs 90 s on a freighter; the shuttle needs 224 s on a freighter and 100 s on a courier.
+- **Every fight is now 6× longer than in M6.** The targets are met, but the start shuttle is weak against everything, which is a risk to "10 minutes without feeling flat". Jarrad to judge in the playtest. The levers are data: weapon damage, health, or the start ship.
+
+### Soak (10 simulated minutes, `test_nebula`, player parked out of the way)
+
+- 0 errors.
+- At most 13 ships at once.
+- 18 AI attack spells (median 15 s, longest 91 s): pirates attacked shuttles, couriers, freighters and corvettes; patrols attacked pirates.
+- Raiders disabled 2 shuttles; patrols disabled 2 raiders. Nothing was destroyed, because the AI doesn't finish off disabled ships (known since M4).
+
+### Deviations and why
+
+- **Grievance tuning changed** with the health scale (above); the A8 rule itself is unchanged.
+- **The loader checks sprite paths only for ships and turrets.** Scenery and system-object sprites still fall back to placeholders silently.
+
+### Known issues (for later)
+
+- **Hold-to-aim (F5)** leads for the first projectile. A fixed beam is aimed by hand (accepted 2026-10-29). Mixed shot speeds (mass drivers later) will need a choice of which weapon to lead for.
+- **Hot reload** recolours the radar but not the HUD or target panel; a restart does.
+- **The balance report** ignores shield regen. With regen ×3, a pause in fire longer than the recharge delay undoes progress faster than the report suggests.
+- **"Turns hostile"** can post twice if a ship forgets the player while still over tolerance.
+- Everything still open from M6 (AI fire uses the widest arc, flak unused).
+
+### Key tuning values
+
+- **Shuttle:** shield 360, armour 240. **Raider:** 540 / 450. **Corvette:** 1200 / 900. **Freighter:** 900 / 1200. **Courier:** 600 / 360.
+- **Weapons:** small laser 5 / 3 per shot every 0.25 s; medium 8 / 5; large 12 / 8; mining beam 4 / 10 per s; homing missile 15 / 22; flak 3 / 4.
+- **AI sensor range:** patrol 2700, pirates 2400, traders 1800.
+- **Messages:** 4 s shown, 1 s fade, 3 lines.
+
+### Stopped at / Next step
+
+Stopped at: M7 built and reviewed, awaiting Jarrad's playtest. Next step: playtest against the success criteria, especially how long fights feel in the shuttle, then tune the data and merge.
+
+---
+
 ## Milestone 6: Art integration (29 Oct 2026)
 
 Playtest confirmed by Jarrad on 29 Oct 2026. Branch `m6-art` (with `art/sow-kit` merged in). Designed with Jarrad first (spec and decisions 2026-10-29), built in the cloud session (checked headless, by the scenario test, and by rendering under a virtual display).

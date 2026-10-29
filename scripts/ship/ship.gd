@@ -38,6 +38,7 @@ var tolerance_factor: float = 1.0
 ## ships at once, the player once grievance passes tolerance (A8).
 var _aggressors: Dictionary = {}
 var _last_attacker: Ship = null
+var _scuttled: bool = false
 static var _DEFAULT_GOV: GovernmentDef = GovernmentDef.parse(DefReader.new({}, "", []))
 var _target: Ship = null
 var _target_id: int = 0
@@ -266,7 +267,8 @@ func _on_disabled() -> void:
 func _on_destroyed() -> void:
 	if _attacked_by_player():
 		GameState.report_player_act(self, "kill")
-		GameState.post_message("%s destroyed" % def.name, "combat")  # H4
+		if not _scuttled:
+			GameState.post_message("%s destroyed" % def.name, "combat")  # H4
 	Flash.spawn(get_parent(), global_position, hit_radius * 2.5, Color(1.0, 0.7, 0.3), 0.8)
 	ship_destroyed.emit(self)
 	hitbox_shape.set_deferred(&"disabled", true)
@@ -380,4 +382,5 @@ func recover(armor_pct: float) -> void:
 ## C9: Scuttle — destroyed by the player (kill penalty applies).
 func scuttle_by(player_ship: Ship) -> void:
 	_last_attacker = player_ship
+	_scuttled = true  # PlayerActions posts its own "scuttled" message
 	health.force_destroy()

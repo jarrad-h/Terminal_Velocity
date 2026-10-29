@@ -85,8 +85,8 @@ func test_playtest_field_defaults() -> void:
 	var weapon: WeaponDef = data.get_def("weapons", "zap")
 	assert_near(weapon.falloff_at(10000.0), 1.0, "C12 no falloff by default")
 	var law: GovernmentDef = data.get_def("governments", "law")
-	assert_near(law.tolerance_pct, 20.0, "A8 tolerance default")
-	assert_near(law.forgiveness_pct_per_s, 4.0, "A8 forgiveness default")
+	assert_near(law.tolerance_pct, 5.0, "A8 tolerance default")
+	assert_near(law.forgiveness_pct_per_s, 0.25, "A8 forgiveness default")
 
 
 func test_ai_pool_defaults_follow_role() -> void:
@@ -200,6 +200,7 @@ func test_field_errors_name_file_and_field() -> void:
 	_expect_error(set, ["game.json", "art_scale", "more than 0"])
 	_expect_error(set, ["too_friendly.json", "friendly_record", "above crime_threshold"])
 	_expect_error(set, ["bad_hull.json", "hardpoints[3].arc", "no effect on a fixed mount"])
+	_expect_error(set, ["bad_launcher.json", "hardpoints[0].traverse", "no effect on a launcher mount"])
 	_expect_error(set, ["misfit.json", "sprite", "no image at"])
 	_expect_error(set, ["game.json", "mounts.turret_sprites.small", "no image at"])
 	_expect_error(set, ["game.json", "engine_glow.idle", "at most 1"])
@@ -243,3 +244,35 @@ func test_real_ships_follow_the_art() -> void:
 	var raider: ShipDef = set.get_def("ships", "pirate_raider")
 	assert_vec_near(raider.hardpoint("G2").pos, Vector2(14.9, -29.7), "raider keeps its asymmetric gun")
 	assert_vec_near((set.get_def("ships", "freighter") as ShipDef).hit_offset, Vector2(-14, 0), "freighter hitbox on the hull body")
+
+
+## A8 regression (M7 review): with the real data, sustained fire from the
+## player's start ship turns any non-pirate pool ship hostile within 40 s at
+## 50% hits, while five stray hits are forgiven. Guards against tuning health
+## or damage without tuning tolerance and forgiveness.
+func test_real_grievance_tuning_still_bites() -> void:
+	var set: DataSet = _load(["res://data", "res://mods"])
+	var start: ShipDef = set.get_def("ships", set.settings["player_ship"])
+	var per_second: float = 0.0
+	var per_hit: float = 0.0
+	for entry: LoadoutEntry in start.loadout:
+		var w: WeaponDef = set.get_def("weapons", entry.weapon)
+		if w.kind == "projectile":
+			per_second += w.damage_shield / maxf(w.reload, 1.0 / 60.0) * 0.5
+			per_hit = maxf(per_hit, w.damage_shield)
+	assert_true(per_second > 0.0, "start ship is armed")
+	for pool_id: String in set.ids("ai_pools"):
+		var pool: AiPoolDef = set.get_def("ai_pools", pool_id)
+		var gov: GovernmentDef = set.get_def("governments", pool.government)
+		if gov == null or gov.crime_threshold > 0.0:
+			continue  # pirates start hostile
+		for pick: Dictionary in pool.ships:
+			var ship: ShipDef = set.get_def("ships", pick["ship"])
+			var total: float = ship.shield + ship.armor
+			var grievance: float = 0.0
+			var t: float = 0.0
+			while t < 40.0 and not Grievance.exceeded(grievance, Grievance.tolerance(gov.tolerance_pct, 1.0)):
+				grievance = Grievance.decay(Grievance.add(grievance, per_second * 0.1, total), gov.forgiveness_pct_per_s, 0.1)
+				t += 0.1
+			assert_true(t < 40.0, "%s/%s: sustained fire turns it hostile (%.0f s)" % [pool_id, ship.id, t])
+			assert_true(not Grievance.exceeded(per_hit * 5.0 / total * 100.0, gov.tolerance_pct), "%s/%s: five stray hits forgiven" % [pool_id, ship.id])

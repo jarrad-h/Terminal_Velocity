@@ -60,7 +60,7 @@ Fields marked **required** have no default.
 | `engine_glow.idle`, `engine_glow.response` | V5: glow strength at idle (0–1, share of full thrust) and how fast it changes (strength per second) | `0.25`, `6` |
 | `messages.show_seconds`, `messages.fade_seconds`, `messages.max_lines` | H4: how long a message shows before fading, the fade time, and how many lines show at once (at least 1) | `4`, `1`, `3` |
 | `messages.colours` | H4: text colour by kind: `info` (hints, refusals), `combat` (disabled, destroyed, scuttled), `standing` (turns hostile, crime threshold crossed), `credits` | see `game.json` |
-| `hud.colours` | H1, H3: `shield` and `armor` bar colours; the target schematic's fill at full, half and empty armour (`schematic_full`, `schematic_half`, `schematic_empty`, blended between) and when disabled (`schematic_disabled`). The schematic's shield outline uses `shield` | see `game.json` |
+| `hud.colours` | H1, H3: `shield` and `armor` bar colours; the target schematic's fill at full, half and empty armour (`schematic_full`, `schematic_half`, `schematic_empty`, blended between) and when disabled (`schematic_disabled`); `warning` colours your DISABLED warning. The schematic's shield outline uses `shield` | see `game.json` |
 | `debug.time_scales` | Time-scale buttons in the debug panel | `[0.25, 0.5, 1, 2, 4]` |
 | `debug.velocity_vector_seconds` | Velocity overlay length, as seconds of travel | `0.5` |
 | `debug.spawn_distance` | How far ahead of the player debug-spawned ships appear (px); tick "Spawn at cursor" in the panel to place them with a click instead | `350` |
@@ -115,7 +115,7 @@ Mounts (V3) decide how a weapon aims, from the hardpoint it sits on: `fixed` fir
 
 ## `governments/`
 
-Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. All of a government's ships treat the player as hostile while the player's record with it is below `crime_threshold` (pirates start there). Damage the player does to a non-hostile ship builds that ship's grievance (% of its total shield + armour, draining at `forgiveness_pct_per_s`); past `tolerance_pct` × its personality's `tolerance_factor`, that ship alone turns hostile and the attack ("shoot") penalty is charged. Disable, board and kill penalties apply immediately, once each per ship. A ship that is already hostile (record below threshold) charges the attack penalty on the first hit. Ships with no government use the default tolerance (20%) and forgiveness (4%/s).
+Hostility (G1, G3, A8): two governments are hostile if either lists the other in `enemies`. All of a government's ships treat the player as hostile while the player's record with it is below `crime_threshold` (pirates start there). Damage the player does to a non-hostile ship builds that ship's grievance (% of its total shield + armour, draining at `forgiveness_pct_per_s`); past `tolerance_pct` × its personality's `tolerance_factor`, that ship alone turns hostile and the attack ("shoot") penalty is charged. Disable, board and kill penalties apply immediately, once each per ship. A ship that is already hostile (record below threshold) charges the attack penalty on the first hit. Ships with no government use the default tolerance (5%) and forgiveness (0.25%/s). Keep forgiveness well below the share of a ship's health the player's guns deal per second, or sustained fire never turns it hostile.
 
 | Field | Meaning | Default |
 | --- | --- | --- |
@@ -127,8 +127,8 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `penalties` | `{"shoot", "disable", "board", "kill"}`: record lost per act | all `0` |
 | `max_odds` | Engages only if enemy strength ÷ own strength ≤ this | `1` |
 | `flee_shield_pct` | Retreats below this shield % | `25` |
-| `tolerance_pct` | A8: how much of a ship's total shield + armour the player can damage before that ship turns hostile (grievance) | `20` |
-| `forgiveness_pct_per_s` | A8: how fast grievance drains, % per second | `4` |
+| `tolerance_pct` | A8: how much of a ship's total shield + armour the player can damage before that ship turns hostile (grievance) | `5` |
+| `forgiveness_pct_per_s` | A8: how fast grievance drains, % per second | `0.25` |
 | `assist_reward` | C9: record gained for assisting one of its disabled ships | `0` |
 
 ## `ai_pools/` — traffic types

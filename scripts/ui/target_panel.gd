@@ -43,9 +43,10 @@ class Schematic:
 		return _texture_cache[path]
 
 	func _draw() -> void:
-		var ship: Ship = panel.target
-		if ship == null or not is_instance_valid(ship):
-			return
+		var raw: Variant = panel.target
+		if not is_instance_valid(raw):
+			return  # freed objects compare equal to null; check validity first
+		var ship: Ship = raw
 		var colours: Dictionary = DataRegistry.settings["hud"]["colours"]
 		var fill: Color = Color.html(colours["schematic_disabled"])
 		if not ship.health.is_disabled:
@@ -102,6 +103,16 @@ func _label(parent: Control) -> Label:
 	return label
 
 
+## The first key bound to `action`, for hints.
+static func _key_name(action: StringName) -> String:
+	for event: InputEvent in InputMap.action_get_events(action):
+		if event is InputEventKey:
+			var key: InputEventKey = event
+			var code: Key = key.physical_keycode if key.physical_keycode != KEY_NONE else key.keycode
+			return OS.get_keycode_string(code)
+	return String(action)
+
+
 func refresh() -> void:
 	visible = target != null and is_instance_valid(target) and player != null
 	if not visible:
@@ -116,5 +127,5 @@ func refresh() -> void:
 	Hud.fill_bar(_shield, target.health.shield, target.health.max_shield)
 	Hud.fill_bar(_armor, target.health.armor, target.health.max_armor)
 	_distance.text = "%.0f px away" % target.global_position.distance_to(player.global_position)
-	_hint.text = "Disabled: B to board" if target.health.is_disabled else ""
+	_hint.text = "Disabled: %s to board" % _key_name(&"board") if target.health.is_disabled else ""
 	_schematic.queue_redraw()

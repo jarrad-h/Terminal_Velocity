@@ -37,7 +37,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"messages": {"show_seconds": 4.0, "fade_seconds": 1.0, "max_lines": 3, "colours": {
 		"info": "#d8e0f0", "combat": "#ffb060", "standing": "#ff7a7a", "credits": "#ffe070"}},
 	"hud": {"colours": {"shield": "#59a0ff", "armor": "#e69a4d", "schematic_full": "#40e070",
-		"schematic_half": "#f0e040", "schematic_empty": "#ff3030", "schematic_disabled": "#7a7a80"}},
+		"schematic_half": "#f0e040", "schematic_empty": "#ff3030", "schematic_disabled": "#7a7a80", "warning": "#ff5050"}},
 	"debug": {"time_scales": [0.25, 0.5, 1.0, 2.0, 4.0], "velocity_vector_seconds": 0.5,
 		"spawn_distance": 350.0, "spawn_at_start": []},
 }

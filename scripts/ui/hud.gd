@@ -60,7 +60,7 @@ func _ready() -> void:
 	_player_shield = make_bar(box, "Shield", Color.html(colours["shield"]), 250.0)
 	_player_armor = make_bar(box, "Armour", Color.html(colours["armor"]), 250.0)
 	_status = Label.new()
-	_status.add_theme_color_override("font_color", Color.html(colours["schematic_empty"]))
+	_status.add_theme_color_override("font_color", Color.html(colours["warning"]))
 	box.add_child(_status)
 	target_panel = TargetPanel.new()
 	box.add_child(target_panel)

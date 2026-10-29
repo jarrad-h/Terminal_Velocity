@@ -84,7 +84,8 @@
       "schematic_full": "#40e070",
       "schematic_half": "#f0e040",
       "schematic_empty": "#ff3030",
-      "schematic_disabled": "#7a7a80"
+      "schematic_disabled": "#7a7a80",
+      "warning": "#ff5050"
     }
   },
   "debug": {

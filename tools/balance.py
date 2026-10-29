@@ -41,8 +41,9 @@ def load(kind):
 def reach(w):
     if w["kind"] == "beam":
         return w.get("range", 0) or w.get("speed", 600) * w.get("lifetime", 1)
-    life = w.get("range", 0) / w.get("speed", 600) if w.get("range", 0) > 0 else w.get("lifetime", 1)
-    return w.get("speed", 600) * life
+    speed = w.get("speed", 600)
+    life = w.get("range", 0) / speed if w.get("range", 0) > 0 and speed > 0 else w.get("lifetime", 1)
+    return speed * life
 
 
 def falloff(w, distance):

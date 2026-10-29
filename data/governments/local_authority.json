@@ -7,8 +7,8 @@
   "crime_threshold": -50,
   "penalties": {"shoot": 5, "disable": 20, "board": 30, "kill": 50},
   "max_odds": 1.5,
-  "tolerance_pct": 20,
-  "forgiveness_pct_per_s": 4,
+  "tolerance_pct": 5,
+  "forgiveness_pct_per_s": 0.25,
   "assist_reward": 10,
   "flee_shield_pct": 15
 }
