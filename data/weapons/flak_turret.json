@@ -1,12 +1,13 @@
 {
   "id": "flak_turret",
   "name": "Flak Turret",
-  "kind": "turret",
+  "kind": "projectile",
+  "size": "small",
+  "mounts": ["turret"],
   "damage_shield": 6,
   "damage_armor": 8,
   "range": 1000,
   "speed": 600,
   "reload": 0.6,
-  "arc": 270,
   "colour": "#ffc040"
 }

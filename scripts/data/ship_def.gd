@@ -2,8 +2,6 @@ class_name ShipDef
 extends Def
 ## A hull class (data/ships). Defaults are documented in data/README.md.
 
-const HARDPOINT_KINDS: Array[String] = ["gun", "turret", "guided", "beam"]
-
 var name: String
 var sprite: String
 var mass: float
@@ -19,13 +17,20 @@ var armor: float
 var disable_armor_pct: float
 var strength: float
 var crew: int
-var hit_radius: float
+## V2: capsule hitbox [width, length] in art px (width ≤ length), and its centre
+## offset from the sprite centre (hull body only, not ornaments).
+var hit_size: Vector2
+var hit_offset: Vector2
 ## C9: credits aboard [min, max] before the AI pool's wealth factor.
 var board_credits: Vector2
-## Kind ("gun", "turret"…) -> Array of Vector2 exit points, relative to the ship centre, ship facing up.
-var hardpoints: Dictionary = {}
-## [{"weapon": String, "count": int}]
-var default_weapons: Array[Dictionary] = []
+## V3: weapon hardpoints, positions in art px.
+var hardpoints: Array[HardpointDef] = []
+## V3: installed weapon items, at most one per hardpoint.
+var loadout: Array[LoadoutEntry] = []
+## V5: engine exits in art px, and the glow drawn there.
+var engines: Array[Vector2] = []
+var engine_colour: Color
+var engine_size: float
 
 
 static func parse(r: DefReader) -> ShipDef:
@@ -43,28 +48,65 @@ static func parse(r: DefReader) -> ShipDef:
 	d.disable_armor_pct = r.number("disable_armor_pct", 33.0, false, 0.0)
 	d.strength = r.number("strength", 1.0, false, 0.0)
 	d.crew = r.integer("crew", 1, false, 0)
-	d.hit_radius = r.number("hit_radius", 16.0, false, 1.0)
+	d.hit_size = r.vec2("hit_size", Vector2(32.0, 32.0))
+	if d.hit_size.x <= 0.0 or d.hit_size.y <= 0.0:
+		r.error("hit_size", "width and length must be more than 0")
+		d.hit_size = Vector2(32.0, 32.0)
+	elif d.hit_size.x > d.hit_size.y:
+		r.error("hit_size", "width %s is more than length %s (the capsule runs along the hull)" % [d.hit_size.x, d.hit_size.y])
+	d.hit_offset = r.vec2("hit_offset", Vector2.ZERO)
 	d.board_credits = r.range2("board_credits", Vector2.ZERO, 0.0)
-	var points: DefReader = r.object("hardpoints")
-	for kind: String in HARDPOINT_KINDS:
-		var list: Array[Vector2] = []
-		var raw: Array = points.array(kind)
-		for i: int in raw.size():
-			var p: Variant = raw[i]
-			if p is Array and p.size() == 2 and (p[0] is float or p[0] is int) and (p[1] is float or p[1] is int):
-				list.append(Vector2(p[0], p[1]))
-			else:
-				points.error("%s[%d]" % [kind, i], "expected [x, y]")
-		d.hardpoints[kind] = list
-	for w: DefReader in r.objects("default_weapons"):
-		d.default_weapons.append({"weapon": w.ref("weapon", "weapons", "", true), "count": w.integer("count", 1, false, 1)})
+	var ids: Dictionary = {}
+	for h: DefReader in r.objects("hardpoints"):
+		var hardpoint: HardpointDef = HardpointDef.parse(h)
+		if ids.has(hardpoint.id):
+			h.error("id", "'%s' is already used by another hardpoint" % hardpoint.id)
+		ids[hardpoint.id] = true
+		d.hardpoints.append(hardpoint)
+	for e: DefReader in r.objects("loadout"):
+		d.loadout.append(LoadoutEntry.parse(e))
+	var raw_engines: Array = r.array("engines")
+	for i: int in raw_engines.size():
+		var p: Variant = raw_engines[i]
+		if p is Array and p.size() == 2 and (p[0] is float or p[0] is int) and (p[1] is float or p[1] is int):
+			d.engines.append(Vector2(p[0], p[1]))
+		else:
+			r.error("engines[%d]" % i, "expected [x, y]")
+	var glow: DefReader = r.object("engine_glow")
+	d.engine_colour = glow.colour("colour", Color.html("#a8d8ff"))
+	d.engine_size = glow.number("size", 6.0, false, 0.0)
 	return d
 
 
-## C1: each equipped weapon needs at least one exit point of its kind.
+func hardpoint(hardpoint_id: String) -> HardpointDef:
+	for h: HardpointDef in hardpoints:
+		if h.id == hardpoint_id:
+			return h
+	return null
+
+
+## Bounding radius around the sprite centre (flashes, markers), art px.
+func bounding_radius() -> float:
+	return hit_size.y / 2.0 + hit_offset.length()
+
+
+## V3, C1: every item names a real hardpoint, at most one item per hardpoint,
+## and the weapon fits it (size and mount, MountFit).
 func validate(defs: Dictionary, errors: Array[String]) -> void:
-	for i: int in default_weapons.size():
-		var weapon: WeaponDef = defs["weapons"].get(default_weapons[i]["weapon"])
-		if weapon != null and hardpoints[weapon.kind].is_empty():
-			errors.append("%s: field 'default_weapons[%d]': '%s' is a %s weapon but 'hardpoints' has no %s exit points" \
-				% [file, i, weapon.id, weapon.kind, weapon.kind])
+	var used: Dictionary = {}
+	for i: int in loadout.size():
+		var entry: LoadoutEntry = loadout[i]
+		var field: String = "%s: field 'loadout[%d]'" % [file, i]
+		var h: HardpointDef = hardpoint(entry.hardpoint)
+		if h == null:
+			errors.append("%s: no hardpoint '%s' on this ship" % [field, entry.hardpoint])
+			continue
+		if used.has(entry.hardpoint):
+			errors.append("%s: hardpoint '%s' already has a weapon" % [field, entry.hardpoint])
+		used[entry.hardpoint] = true
+		var weapon: WeaponDef = defs["weapons"].get(entry.weapon)
+		if weapon == null:
+			continue  # reported as a missing reference
+		var problem: String = MountFit.problem(weapon.size, weapon.mounts, entry.mount, h.size, h.mount)
+		if problem != "":
+			errors.append("%s: '%s' on hardpoint '%s': %s" % [field, weapon.id, h.id, problem])

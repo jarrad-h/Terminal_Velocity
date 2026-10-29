@@ -27,7 +27,7 @@ static func _refresh(dialog: Dialog, port: SystemObjectDef, player: Ship, on_tak
 	dialog.add_choice("repair", label, func() -> void:
 		GameState.add_credits(-cost)
 		player.health.repair_full()
-		player.visual.modulate = Color.WHITE
+		player.set_tint(Color.WHITE)
 		_refresh(dialog, port, player, on_take_off, "Repaired."), needs_repair and GameState.credits >= cost)
 	dialog.add_choice("take_off", "Take off", func() -> void:
 		dialog.close()

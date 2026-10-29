@@ -1,1 +1,1 @@
-{"name": "Bad Falloff", "kind": "gun", "falloff_start_pct": 150, "falloff_min_pct": 120}
+{"name": "Bad Falloff", "kind": "projectile", "mounts": ["fixed"], "falloff_start_pct": 150, "falloff_min_pct": 120}

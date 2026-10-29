@@ -12,7 +12,11 @@ const SPRITE_DIR: String = "res://assets/sprites"
 const DISABLED_TINT := Color(0.45, 0.45, 0.5)
 
 var def: ShipDef = null
+## Bounding radius around the ship centre (flashes, markers), px. The hitbox
+## itself is a capsule (V2).
 var hit_radius: float = 0.0
+## V1: game.json art_scale, applied to sprite, hitbox, hardpoints and engines.
+var art_scale: float = 1.0
 var controller: Node = null
 ## Government ID ("" = none). Set at spawn.
 var government: String = ""
@@ -60,22 +64,25 @@ func _ready() -> void:
 ## disabled state, so reloading never heals or revives anything.
 func setup(ship_def: ShipDef, keep_health: bool = false) -> void:
 	def = ship_def
-	hit_radius = def.hit_radius
+	art_scale = float(DataRegistry.settings["art_scale"])
+	hit_radius = def.bounding_radius() * art_scale
 	body.stats = FlightStats.from_ship_def(def)
-	var circle := CircleShape2D.new()
-	circle.radius = hit_radius
-	hitbox_shape.shape = circle
-	weapons.setup(def)
+	var capsule := CapsuleShape2D.new()
+	capsule.radius = def.hit_size.x * art_scale / 2.0
+	capsule.height = def.hit_size.y * art_scale
+	hitbox_shape.shape = capsule
+	hitbox_shape.position = def.hit_offset * art_scale
+	weapons.setup(def, art_scale)
 	_build_visual()
 	if keep_health:
 		health.retune(def.shield, def.armor, def.shield_regen, def.disable_armor_pct / 100.0, def.shield_recharge_delay)
 		if health.is_disabled:
-			visual.modulate = DISABLED_TINT
+			set_tint(DISABLED_TINT)
 	else:
 		health.setup(def.shield, def.armor, def.shield_regen, def.disable_armor_pct / 100.0, def.shield_recharge_delay)
 		hitbox_shape.set_deferred(&"disabled", false)
 		visible = true
-		visual.modulate = Color.WHITE
+		set_tint(Color.WHITE)
 		body.set_physics_process(true)
 	if docked:
 		set_docked(true)  # a docked trader stays docked through swap/reload
@@ -243,7 +250,7 @@ func _attacked_by_player() -> bool:
 
 
 func _on_disabled() -> void:
-	visual.modulate = DISABLED_TINT
+	set_tint(DISABLED_TINT)
 	if _attacked_by_player():
 		GameState.report_player_act(self, "disable")
 		GameState.post_message("%s disabled" % def.name)  # H4
@@ -271,21 +278,50 @@ func _on_data_reloaded() -> void:
 
 func _build_visual() -> void:
 	for child: Node in visual.get_children():
+		visual.remove_child(child)
 		child.queue_free()
+	if not def.engines.is_empty():
+		var glow := EngineGlow.new()
+		glow.name = "EngineGlow"
+		for p: Vector2 in def.engines:
+			glow.points.append(p * art_scale)
+		glow.colour = def.engine_colour
+		glow.size = def.engine_size * art_scale
+		visual.add_child(glow)
 	var sprite_path: String = SPRITE_DIR.path_join(def.sprite)
 	if def.sprite != "" and ResourceLoader.exists(sprite_path):
 		var sprite := Sprite2D.new()
 		sprite.texture = load(sprite_path)
+		sprite.scale = Vector2.ONE * art_scale
 		visual.add_child(sprite)
 		return
-	# Placeholder art: an arrowhead pointing along the heading (up).
-	var r: float = hit_radius
+	# Placeholder art: an arrowhead pointing along the heading (up), sized to the hull.
+	var w: float = def.hit_size.x * art_scale / 2.0
+	var l: float = def.hit_size.y * art_scale / 2.0
 	var shape := Polygon2D.new()
 	shape.polygon = PackedVector2Array([
-		Vector2(0.0, -r), Vector2(r * 0.7, r * 0.8), Vector2(0.0, r * 0.4), Vector2(-r * 0.7, r * 0.8),
+		Vector2(0.0, -l), Vector2(w * 0.7, l * 0.8), Vector2(0.0, l * 0.4), Vector2(-w * 0.7, l * 0.8),
 	])
+	shape.position = def.hit_offset * art_scale
 	shape.color = placeholder_colour()
 	visual.add_child(shape)
+
+
+## Disabled tint (C7) on the hull and its turrets.
+func set_tint(colour: Color) -> void:
+	visual.modulate = colour
+	weapons.modulate = colour
+
+
+## V2: edge-to-edge distance between this hull and `other` (capsules).
+func hull_gap(other: Ship) -> float:
+	return Capsule.gap(global_position, global_rotation, def.hit_size * art_scale, def.hit_offset * art_scale,
+		other.global_position, other.global_rotation, other.def.hit_size * other.art_scale, other.def.hit_offset * other.art_scale)
+
+
+## Half the hull's width, px (placing ships alongside).
+func hull_half_width() -> float:
+	return def.hit_size.x * art_scale / 2.0
 
 
 ## Placeholder art colour: the player is pale blue, other ships take their
@@ -326,7 +362,7 @@ func wealth_factor() -> float:
 ## C9 Assist: back on its feet; forgives the player.
 func recover(armor_pct: float) -> void:
 	health.recover(armor_pct)
-	visual.modulate = Color.WHITE
+	set_tint(Color.WHITE)
 	grievance = 0.0
 	for other: Variant in _aggressors.keys():
 		if is_instance_valid(other) and (other as Ship).is_player():

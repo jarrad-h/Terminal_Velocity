@@ -1,0 +1,5 @@
+{"name": "Bad Hull", "accel": 1, "top_speed": 1, "turn_rate": 1, "hit_size": [80, 40],
+ "hardpoints": [{"id": "G1", "size": "tiny", "mount": "fixed", "pos": [0, 0]},
+                {"id": "G1", "size": "small", "mount": "fixed", "pos": [0, 0], "role": "point_defence"},
+                {"id": "T1", "size": "small", "mount": "turret", "pos": [0, 0], "arc": 400}],
+ "engines": [[0, 10], "nozzle"]}

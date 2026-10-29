@@ -9,5 +9,5 @@
   "armor": 400,
   "strength": 0,
   "crew": 0,
-  "hit_radius": 26
+  "hit_size": [52, 52]
 }

@@ -1,12 +1,15 @@
 class_name WeaponDef
 extends Def
-## A gun, turret, missile or beam (data/weapons). Used from milestone 3.
-## For beams, damage is per second while firing.
+## A laser, flak, beam or missile (data/weapons). For beams, damage is per
+## second while firing. V3: a weapon has a size and the mount types it comes
+## in; its numbers are the same on every mount, only the aiming differs.
 
-const KINDS: Array[String] = ["gun", "turret", "guided", "beam"]
+const KINDS: Array[String] = ["projectile", "beam", "guided"]
 
 var name: String
 var kind: String
+var size: String
+var mounts: Array[String] = []
 var damage_shield: float
 var damage_armor: float
 ## Max distance in px. 0 means the shot lives for `lifetime` instead.
@@ -15,12 +18,11 @@ var lifetime: float
 var speed: float
 var reload: float
 var turn_rate: float
-var arc: float
 var colour: Color
 ## C12: full damage up to this % of range, then linear down to falloff_min_pct.
 var falloff_start_pct: float
 var falloff_min_pct: float
-## Guns and turrets: shots add the firing ship's velocity.
+## Projectiles: shots add the firing ship's velocity.
 var inherit_velocity: bool
 var sprite: String
 var sound: String
@@ -29,7 +31,20 @@ var sound: String
 static func parse(r: DefReader) -> WeaponDef:
 	var d := WeaponDef.new()
 	d.name = r.string("name", "", true)
-	d.kind = r.choice("kind", KINDS, "gun", true)
+	d.kind = r.choice("kind", KINDS, "projectile", true)
+	d.size = r.choice("size", MountFit.SIZES, "small")
+	if not r.has("mounts"):
+		r.error("mounts", "is required")
+	var mounts: Array[String] = r.string_array("mounts")
+	if r.has("mounts") and mounts.is_empty():
+		r.error("mounts", "needs at least one mount type")
+	for i: int in mounts.size():
+		if mounts[i] not in MountFit.MOUNTS:
+			r.error("mounts[%d]" % i, "'%s' is not one of %s" % [mounts[i], ", ".join(MountFit.MOUNTS)])
+		elif (mounts[i] == "launcher") != (d.kind == "guided"):
+			r.error("mounts[%d]" % i, "guided weapons use the launcher mount, and only they do")
+		elif mounts[i] not in d.mounts:
+			d.mounts.append(mounts[i])
 	d.damage_shield = r.number("damage_shield", 0.0, false, 0.0)
 	d.damage_armor = r.number("damage_armor", 0.0, false, 0.0)
 	d.max_range = r.number("range", 0.0, false, 0.0)
@@ -37,7 +52,6 @@ static func parse(r: DefReader) -> WeaponDef:
 	d.speed = r.number("speed", 600.0, false, 0.0)
 	d.reload = r.number("reload", 0.5, false, 0.0)
 	d.turn_rate = r.number("turn_rate", 0.0, false, 0.0)
-	d.arc = r.number("arc", 360.0, false, 0.0)
 	d.colour = r.colour("colour", Color.WHITE)
 	d.inherit_velocity = r.boolean("inherit_velocity", true)
 	d.falloff_start_pct = r.number("falloff_start_pct", 100.0, false, 0.0)

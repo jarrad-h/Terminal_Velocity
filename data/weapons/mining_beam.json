@@ -2,6 +2,8 @@
   "id": "mining_beam",
   "name": "Mining Beam",
   "kind": "beam",
+  "size": "small",
+  "mounts": ["fixed", "pivot", "turret"],
   "damage_shield": 8,
   "damage_armor": 20,
   "range": 1000,

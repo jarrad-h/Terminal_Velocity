@@ -1,2 +1,5 @@
 {"name": "Alpha", "accel": 100, "top_speed": 200, "turn_rate": 90,
- "default_weapons": [{"weapon": "zap", "count": 2}]}
+ "hardpoints": [{"id": "G1", "size": "small", "mount": "fixed", "pos": [-6, -18]},
+                {"id": "T1", "size": "small", "mount": "turret", "pos": [0, 4], "arc": 270, "role": "point_defence"}],
+ "loadout": [{"hardpoint": "G1", "weapon": "zap", "mount": "fixed"},
+             {"hardpoint": "T1", "weapon": "zap", "mount": "turret"}]}

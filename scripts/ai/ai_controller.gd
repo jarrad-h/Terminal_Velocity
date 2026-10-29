@@ -267,7 +267,7 @@ func _steer_attack(s: FlightState, stats: FlightStats, delta: float) -> void:
 	_input = Steering.face(s, stats, aim, delta)
 	_input.thrust = distance > reach * _ai("standoff_fraction") and Steering.aligned(s.rotation, to_target, _ai("thrust_angle"))
 	var in_range: bool = distance <= reach
-	_input.fire_primary = in_range and (ship.weapons.has_turret() or Steering.aligned(s.rotation, aim, pool.fire_angle))
+	_input.fire_primary = in_range and Steering.aligned(s.rotation, aim, pool.fire_angle + ship.weapons.tracking_slack())
 	_input.fire_secondary = distance <= ship.weapons.guided_range()
 
 

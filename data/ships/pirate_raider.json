@@ -1,7 +1,7 @@
 {
   "id": "pirate_raider",
   "name": "Pirate Raider",
-  "sprite": "ships/pirate_raider.png",
+  "sprite": "ships/pirates/pirate_raider.png",
   "mass": 60,
   "accel": 320,
   "top_speed": 340,
@@ -12,13 +12,24 @@
   "strength": 20,
   "crew": 4,
   "board_credits": [400, 2000],
-  "hit_radius": 17,
-  "hardpoints": {
-    "gun": [[-6, -16], [6, -16]],
-    "beam": [[0, -18]]
-  },
-  "default_weapons": [
-    {"weapon": "light_laser", "count": 2},
-    {"weapon": "mining_beam", "count": 1}
-  ]
+  "hit_size": [50, 128],
+  "hardpoints": [
+    {"id": "B1", "size": "small", "mount": "fixed", "pos": [0, -64.5]},
+    {"id": "G1", "size": "small", "mount": "fixed", "pos": [-9.3, -52.4]},
+    {"id": "G2", "size": "small", "mount": "fixed", "pos": [14.9, -29.7]}
+  ],
+  "loadout": [
+    {"hardpoint": "B1", "weapon": "mining_beam", "mount": "fixed"},
+    {"hardpoint": "G1", "weapon": "laser_small", "mount": "fixed"},
+    {"hardpoint": "G2", "weapon": "laser_small", "mount": "fixed"}
+  ],
+  "engines": [
+    [-8.4, 63.6],
+    [0, 63.6],
+    [8.4, 63.6]
+  ],
+  "engine_glow": {
+    "colour": "#ffa040",
+    "size": 7
+  }
 }

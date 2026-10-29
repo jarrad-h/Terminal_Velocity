@@ -1,6 +1,18 @@
 {
-  "player_ship": "courier",
+  "player_ship": "shuttle",
   "system": "test_nebula",
+  "art_scale": 1.0,
+  "mounts": {
+    "arc": {"pivot": 30, "turret": 360},
+    "traverse": {"pivot": 180, "turret": 360},
+    "fire_tolerance": 5,
+    "turret_sprites": {
+      "small": "ships/sow/parts/tur1.png",
+      "medium": "ships/sow/parts/tur2.png",
+      "large": "",
+      "point_defence": "ships/sow/parts/pd1.png"
+    }
+  },
   "player": {
     "credits": 0,
     "record": 0,
@@ -8,28 +20,22 @@
     "insured": true,
     "uninsured_ship": "shuttle",
     "rescue_fee_pct": 10,
-    "rescue_days": [2, 5],
+    "rescue_days": [
+      2,
+      5
+    ],
     "pod_speed": 600,
     "pod_time": 3
   },
-  "landing": {
-    "max_speed": 60,
-    "radius_fraction": 0.6,
-    "repair_cost_per_point": 0
-  },
+  "landing": {"max_speed": 60, "radius_fraction": 0.6, "repair_cost_per_point": 0},
   "boarding": {
     "range": 60,
     "max_speed": 40,
     "time": 2,
     "assist_armor_pct": 50
   },
-  "combat": {
-    "friendly_fire_pct": 100
-  },
-  "camera": {
-    "zoom": 1.0,
-    "smoothing_speed": 0
-  },
+  "combat": {"friendly_fire_pct": 100},
+  "camera": {"zoom": 1.0, "smoothing_speed": 0},
   "ai": {
     "thrust_angle": 35,
     "standoff_fraction": 0.4,
@@ -38,16 +44,20 @@
     "waypoint_reached_fraction": 0.1,
     "object_patrol_chance": 0.6,
     "object_patrol_offset_factor": 0.3,
-    "roam_band": [0.1, 0.6],
+    "roam_band": [
+      0.1,
+      0.6
+    ],
     "jump_out_factor": 1.05,
     "planet_spawn_chance": 0.5,
     "arrival_speed_fraction": 0.5,
     "spawn_keep_away_factor": 1.2,
-    "inside_spawn_band": [0.15, 0.7]
+    "inside_spawn_band": [
+      0.15,
+      0.7
+    ]
   },
-  "local_space": {
-    "chunk_size": 1024
-  },
+  "local_space": {"chunk_size": 1024},
   "radar": {
     "size": 200,
     "range": 3000,
@@ -65,11 +75,23 @@
     }
   },
   "debug": {
-    "time_scales": [0.25, 0.5, 1, 2, 4],
+    "time_scales": [
+      0.25,
+      0.5,
+      1,
+      2,
+      4
+    ],
     "velocity_vector_seconds": 0.5,
     "spawn_distance": 350,
     "spawn_at_start": [
-      {"ship": "target_dummy", "position": [0, -450]}
+      {
+        "ship": "target_dummy",
+        "position": [
+          0,
+          -450
+        ]
+      }
     ]
   }
 }
