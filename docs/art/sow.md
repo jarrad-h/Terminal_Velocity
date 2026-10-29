@@ -32,11 +32,13 @@ Class letter + size letter. A is the smallest hull in a class.
 | P-A | Picket corvette (armoured, forward guns, 1 light turret) | `ships/sow_p_a_picket.png` |
 | P-B | Patrol corvette (2 light turrets, missile segment) | `ships/sow_p_b_patrol.png` |
 | K-A | Boarding cutter (docking collar + clamps, 1 light turret) | `ships/sow_k_a_boarding.png` |
-| K-B | Escort cutter (wide, heavy turret, missiles, 2 PD) | `ships/sow_k_b_escort.png` |
-| R-A | Gun cruiser (3 heavy + 2 light turrets, 4 PD, forward guns) | `ships/sow_r_a_gun_cruiser.png` |
-| R-B | Missile cruiser (3 missile segments, heavy + 2 light turrets, 4 PD, twin N2) | `ships/sow_r_b_missile_cruiser.png` |
+| K-B | Escort cutter (heavy turret, neck, strip launcher, 2 PD, small nacelles) | `ships/sow_k_b_escort.png` |
+| R-A | Gun cruiser (2 heavy + 2 light turrets, 2 PD, forward guns, big nacelles) | `ships/sow_r_a_gun_cruiser.png` |
+| R-B | Missile cruiser (bow tubes, lid + round launchers, box pods, heavy + 2 light turrets, 2 PD, big nacelles) | `ships/sow_r_b_missile_cruiser.png` |
 
-Armed hull sprites have **empty turret rings**; turrets are separate sprites (`parts/tur1.png` light twin, `parts/tur2.png` heavy twin, `parts/pd1.png` point defence) whose **image centre is the pivot**, barrels pointing up at rotation 0. `preview/` holds the same hulls with turrets fitted, for reference only.
+Armed hull sprites have **empty turret rings**; turrets are separate sprites (`parts/tur1.png` light twin, `parts/tur2.png` heavy twin, `parts/pd1.png` point defence) whose **image centre is the pivot**, barrels pointing up at rotation 0. Larger armed hulls stay on the standard 46 px plate and grow by length: narrow spine necks (SPN-N) between modules and engine nacelles (NAC) on pylons, rather than the wide plate. Missile launcher styles are exported as `parts/msl_*.png` (VLS-1..5, POD-1, ML-1 rotating launcher, INT-1 flank slots, INT-2 bow tubes); `parts/ml1.png` is the rotating launcher sprite (mount kind `ml`).
+
+`preview/` holds the same hulls with turrets fitted, for reference only.
 
 `mounts.json` lists, per armed hull, the sprite size and each turret mount (`kind`: `t1`/`t2`/`pd`) and fixed forward gun muzzle as pixel offsets from the sprite centre (+x right, +y towards the stern, art facing up). These map directly onto `hardpoints` once a scale rule is chosen.
 

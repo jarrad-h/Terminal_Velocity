@@ -14,6 +14,7 @@ from kit2 import seg, aft, adapter, container, clamp, spine_bay, booster, solar,
     courier_b as clamp_courier, freighter_c as wide_freighter
 from kit3 import tank, radiator, aft_cruise
 import kit5 as k5
+import kit6
 from kit4 import fuel, aft_cruise_w, courier_c as longhaul_courier, freighter_a as stack_freighter, \
     freighter_b as spine_freighter
 
@@ -71,7 +72,13 @@ PARTS = {
     'sen': (lambda q: k5.booms(q, 12), 20),
     'fwd': (lambda q: k5.fwd_guns(q, 4), 18),
     'spn_pd': (lambda q: k5.sponson(q, 40, 6, 1), 12),
+    'spn_n': (lambda q: kit6.neck(q, 2, 8), 12),
+    'nac': (lambda q: kit6.nacelle(q, 40, 2, 17, 8, 50, (8,)), 26),
+    'nac_big': (lambda q: kit6.nacelle(q, 40, 2, 21, 11, 52, (10,), big=True), 30),
+    'pod_box': (lambda q: kit6.pod_box(q, 40, 2, 14, 6), 18),
 }
+for _code, _label, _fn in kit6.STYLES:
+    PARTS['msl_' + _code] = ((lambda f: (lambda q: (f(q, 4), kit6.fit(q))))(_fn), 24)
 
 def render(fn, h):
     p = Paint(80, h); p.mounts = []; p.mounts_fixed = []; fn(p); im = reduce(p); return im.crop(im.getbbox())
@@ -79,12 +86,19 @@ def render(fn, h):
 # ---- armed hulls: hull sprite without turrets + mount positions; turret sprites centred on their pivot ----
 import json
 from kit import K
-from kit5 import SHIPS as ARMED, build, ring, turret_sprite, TUR
+from kit5 import SHIPS as _ARMED_V1, ring, turret_sprite, TUR
+import kit6
+from kit6 import build
+# P-A, P-B, K-A from pass 1; K-B, R-A, R-B from pass 2 (standard width, necks, nacelles)
+ARMED = {k: v for k, v in _ARMED_V1.items() if k in ('sow_p_a_picket', 'sow_p_b_patrol', 'sow_k_a_boarding')}
+ARMED.update(kit6.SHIPS)
 
 def turret_part(kind, ring_only=False):
-    half = math.ceil(TUR[kind]['r'] * 0.4 + TUR[kind]['ln'] + 1.5)
+    half = 8 if kind == 'ml' else math.ceil(TUR[kind]['r'] * 0.4 + TUR[kind]['ln'] + 1.5)
     p = Paint(2 * half, 2 * half); p.mounts = []
-    (ring if ring_only else turret_sprite)(p, half, half, kind)
+    if ring_only: ring(p, half, half, kind)
+    elif kind == 'ml': kit6.launcher_turret(p, half, half)
+    else: turret_sprite(p, half, half, kind)
     return reduce(p)          # not cropped: the image centre is the pivot
 
 import math
@@ -112,7 +126,7 @@ if __name__ == '__main__':
         print(f'ships/{name}.png', im.size, len(p.mounts), 'mounts')
     if mounts:
         with open(os.path.join(OUT, 'mounts.json'), 'w') as f: json.dump(mounts, f, indent=1)
-    for kind, code in (('t1', 'tur1'), ('t2', 'tur2'), ('pd', 'pd1')):
+    for kind, code in (('t1', 'tur1'), ('t2', 'tur2'), ('pd', 'pd1'), ('ml', 'ml1')):
         if only and code not in only: continue
         turret_part(kind).save(os.path.join(OUT, 'parts', f'{code}.png'))
         turret_part(kind, True).save(os.path.join(OUT, 'parts', f'{code}_ring.png'))
