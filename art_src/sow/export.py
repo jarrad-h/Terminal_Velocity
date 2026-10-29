@@ -15,6 +15,7 @@ from kit2 import seg, aft, adapter, container, clamp, spine_bay, booster, solar,
 from kit3 import tank, radiator, aft_cruise
 import kit5 as k5
 import kit6
+import kit7
 from kit4 import fuel, aft_cruise_w, courier_c as longhaul_courier, freighter_a as stack_freighter, \
     freighter_b as spine_freighter
 
@@ -64,8 +65,6 @@ PARTS = {
     'sol_flat': (lambda q: solar(q, 1, 8, 30), 16),
     'tnk': (lambda q: tank(q, 40, 2, 14.4, 46), 18),
     'rad': (lambda q: radiator(q, 1, 2, 30), 16),
-    'msl16': (lambda q: k5.msl(q, 2), 20),
-    'mslw16': (lambda q: k5.msl(q, 2, 16, 20, 60), 20),
     'arm16_t1': (lambda q: k5.seg_armed(q, 2, 16, mounts=[(0, 0.5, 't1')], armoured=True), 20),
     'armw16_t2': (lambda q: k5.seg_armed(q, 2, 16, 20, 60, mounts=[(0, 0.5, 't2')], armoured=True), 20),
     'dck': (lambda q: k5.docking_bow(q, 10), 20),
@@ -73,11 +72,13 @@ PARTS = {
     'fwd': (lambda q: k5.fwd_guns(q, 4), 18),
     'spn_pd': (lambda q: k5.sponson(q, 40, 6, 1), 12),
     'spn_n': (lambda q: kit6.neck(q, 2, 8), 12),
-    'nac': (lambda q: kit6.nacelle(q, 40, 2, 17, 8, 50, (8,)), 26),
-    'nac_big': (lambda q: kit6.nacelle(q, 40, 2, 21, 11, 52, (10,), big=True), 30),
-    'pod_box': (lambda q: kit6.pod_box(q, 40, 2, 14, 6), 18),
+    'nac': (lambda q: kit7.nacelle(q, 1, 2, 18, 7), 28),
+    'nac_big': (lambda q: kit7.nacelle(q, 1, 2, 22, 10, big=True), 32),
+    'tpr_in': (lambda q: kit7.taper(q, 2, 5, 26, 12), 9),
+    'tpr_out': (lambda q: kit7.taper(q, 2, 5, 12, 26), 9),
 }
 for _code, _label, _fn in kit6.STYLES:
+    if _code not in ('vls_round', 'vls_strip'): continue
     PARTS['msl_' + _code] = ((lambda f: (lambda q: (f(q, 4), kit6.fit(q))))(_fn), 24)
 
 def render(fn, h):
@@ -91,7 +92,10 @@ import kit6
 from kit6 import build
 # P-A, P-B, K-A from pass 1; K-B, R-A, R-B from pass 2 (standard width, necks, nacelles)
 ARMED = {k: v for k, v in _ARMED_V1.items() if k in ('sow_p_a_picket', 'sow_p_b_patrol', 'sow_k_a_boarding')}
-ARMED.update(kit6.SHIPS)
+import kit7
+ARMED = {k: v for k, v in ARMED.items() if k not in kit7.SHIPS}
+ARMED.update(kit7.SHIPS)      # pass 3: P-B (VLS-4), K-B, R-A, R-B (tapers, necks, hugging nacelles)
+build = kit7.build
 
 def turret_part(kind, ring_only=False):
     half = 8 if kind == 'ml' else math.ceil(TUR[kind]['r'] * 0.4 + TUR[kind]['ln'] + 1.5)
@@ -111,7 +115,8 @@ if __name__ == '__main__':
             im = render(fn, h); im.save(os.path.join(OUT, sub, f'{name}.png'))
             print(f'{sub}/{name}.png', im.size)
     os.makedirs(os.path.join(OUT, 'preview'), exist_ok=True)
-    mounts = {}
+    _mp = os.path.join(OUT, 'mounts.json')
+    mounts = json.load(open(_mp)) if os.path.exists(_mp) else {}
     for name, (fn, h) in ARMED.items():
         if only and name not in only: continue
         for turrets, sub in ((False, 'ships'), (True, 'preview')):
@@ -126,7 +131,7 @@ if __name__ == '__main__':
         print(f'ships/{name}.png', im.size, len(p.mounts), 'mounts')
     if mounts:
         with open(os.path.join(OUT, 'mounts.json'), 'w') as f: json.dump(mounts, f, indent=1)
-    for kind, code in (('t1', 'tur1'), ('t2', 'tur2'), ('pd', 'pd1'), ('ml', 'ml1')):
+    for kind, code in (('t1', 'tur1'), ('t2', 'tur2'), ('pd', 'pd1')):
         if only and code not in only: continue
         turret_part(kind).save(os.path.join(OUT, 'parts', f'{code}.png'))
         turret_part(kind, True).save(os.path.join(OUT, 'parts', f'{code}_ring.png'))

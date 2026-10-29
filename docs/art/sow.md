@@ -30,13 +30,13 @@ Class letter + size letter. A is the smallest hull in a class.
 | Designation | Name | Sprite |
 |---|---|---|
 | P-A | Picket corvette (armoured, forward guns, 1 light turret) | `ships/sow_p_a_picket.png` |
-| P-B | Patrol corvette (2 light turrets, missile segment) | `ships/sow_p_b_patrol.png` |
+| P-B | Patrol corvette (2 light turrets, VLS-4 strip launcher) | `ships/sow_p_b_patrol.png` |
 | K-A | Boarding cutter (docking collar + clamps, 1 light turret) | `ships/sow_k_a_boarding.png` |
-| K-B | Escort cutter (heavy turret, neck, strip launcher, 2 PD, small nacelles) | `ships/sow_k_b_escort.png` |
+| K-B | Escort cutter (heavy turret, tapered neck, VLS-4 strip, 2 PD, small nacelles) | `ships/sow_k_b_escort.png` |
 | R-A | Gun cruiser (2 heavy + 2 light turrets, 2 PD, forward guns, big nacelles) | `ships/sow_r_a_gun_cruiser.png` |
-| R-B | Missile cruiser (bow tubes, lid + round launchers, box pods, heavy + 2 light turrets, 2 PD, big nacelles) | `ships/sow_r_b_missile_cruiser.png` |
+| R-B | Missile cruiser (2× VLS-3 round-hatch batteries, heavy + 2 light turrets, 2 PD, big nacelles) | `ships/sow_r_b_missile_cruiser.png` |
 
-Armed hull sprites have **empty turret rings**; turrets are separate sprites (`parts/tur1.png` light twin, `parts/tur2.png` heavy twin, `parts/pd1.png` point defence) whose **image centre is the pivot**, barrels pointing up at rotation 0. Larger armed hulls stay on the standard 46 px plate and grow by length: narrow spine necks (SPN-N) between modules and engine nacelles (NAC) on pylons, rather than the wide plate. Missile launcher styles are exported as `parts/msl_*.png` (VLS-1..5, POD-1, ML-1 rotating launcher, INT-1 flank slots, INT-2 bow tubes); `parts/ml1.png` is the rotating launcher sprite (mount kind `ml`).
+Armed hull sprites have **empty turret rings**; turrets are separate sprites (`parts/tur1.png` light twin, `parts/tur2.png` heavy twin, `parts/pd1.png` point defence) whose **image centre is the pivot**, barrels pointing up at rotation 0. Larger armed hulls stay on the standard 46 px plate and grow by length. A neck is always taper (TPR, standard hull plating) → narrow spine (SPN-N) → taper back out. Engine nacelles (NAC, NAC big) hug the hull on short stub pylons and splay 8° outward towards the stern. Missile launchers come in two styles: VLS-4 centre strip (`parts/msl_vls_strip.png`) on small hulls, VLS-3 round hatches (`parts/msl_vls_round.png`) on cruisers.
 
 `preview/` holds the same hulls with turrets fitted, for reference only.
 
