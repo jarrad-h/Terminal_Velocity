@@ -1,1 +1,26 @@
-{"id": "courier", "name": "Courier", "sprite": "ships/sow/ships/sow_c_b_booster.png", "mass": 40, "accel": 300, "top_speed": 320, "turn_rate": 180, "shield": 200, "shield_regen": 6, "armor": 120, "strength": 10, "crew": 2, "board_credits": [300, 1200], "hit_size": [64, 94], "hardpoints": [], "loadout": [], "engines": [ [-32.4, 46.2], [-13.6, 41.7], [-4.5, 41.7], [4.5, 41.7], [13.6, 41.7], [32.4, 46.2] ]}
+{
+  "id": "courier",
+  "name": "Courier",
+  "sprite": "ships/sow/ships/sow_c_b_booster.png",
+  "mass": 40,
+  "accel": 300,
+  "top_speed": 320,
+  "turn_rate": 180,
+  "shield": 200,
+  "shield_regen": 6,
+  "armor": 120,
+  "strength": 10,
+  "crew": 2,
+  "board_credits": [300, 1200],
+  "hit_size": [64, 94],
+  "hardpoints": [],
+  "loadout": [],
+  "engines": [
+    [-32.4, 46.2],
+    [-13.6, 41.7],
+    [-4.5, 41.7],
+    [4.5, 41.7],
+    [13.6, 41.7],
+    [32.4, 46.2]
+  ]
+}

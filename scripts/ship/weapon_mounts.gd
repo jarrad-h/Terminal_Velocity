@@ -35,6 +35,7 @@ var _fire_tolerance: float = 0.0
 
 func setup(ship_def: ShipDef, art_scale: float) -> void:
 	for mount: Mount in mounts:
+		remove_child(mount.barrel)  # free the name for the rebuilt barrel
 		mount.barrel.queue_free()
 	mounts.clear()
 	var settings: Dictionary = DataRegistry.settings
