@@ -13,6 +13,7 @@ from kit import (Paint, reduce, collar, m_bow_bridge, m_segment, m_aft_engine, b
 from kit2 import seg, aft, adapter, container, clamp, spine_bay, booster, solar, courier_a as booster_courier, \
     courier_b as clamp_courier, freighter_c as wide_freighter
 from kit3 import tank, radiator, aft_cruise
+import kit5 as k5
 from kit4 import fuel, aft_cruise_w, courier_c as longhaul_courier, freighter_a as stack_freighter, \
     freighter_b as spine_freighter
 
@@ -56,18 +57,37 @@ PARTS = {
     'cnt_teal': (lambda q: container(q, 34, 2, 46, 14, 'teal'), 16),
     'cnt_sand': (lambda q: container(q, 34, 2, 46, 14, 'sand'), 16),
     'cnt_grey': (lambda q: container(q, 34, 2, 46, 14, 'grey'), 16),
-    'tur1': (lambda q: turret(q, 40, 13), 20),
     'hat': (lambda q: hatch(q, 40, 7), 14),
     'grl': (lambda q: grille(q, 38, 2), 11),
     'lgt': (lambda q: lightstrip(q, 39, 2), 8),
     'sol_flat': (lambda q: solar(q, 1, 8, 30), 16),
     'tnk': (lambda q: tank(q, 40, 2, 14.4, 46), 18),
     'rad': (lambda q: radiator(q, 1, 2, 30), 16),
+    'msl16': (lambda q: k5.msl(q, 2), 20),
+    'mslw16': (lambda q: k5.msl(q, 2, 16, 20, 60), 20),
+    'arm16_t1': (lambda q: k5.seg_armed(q, 2, 16, mounts=[(0, 0.5, 't1')], armoured=True), 20),
+    'armw16_t2': (lambda q: k5.seg_armed(q, 2, 16, 20, 60, mounts=[(0, 0.5, 't2')], armoured=True), 20),
+    'dck': (lambda q: k5.docking_bow(q, 10), 20),
+    'sen': (lambda q: k5.booms(q, 12), 20),
+    'fwd': (lambda q: k5.fwd_guns(q, 4), 18),
+    'spn_pd': (lambda q: k5.sponson(q, 40, 6, 1), 12),
 }
 
 def render(fn, h):
-    p = Paint(80, h); fn(p); im = reduce(p); return im.crop(im.getbbox())
+    p = Paint(80, h); p.mounts = []; p.mounts_fixed = []; fn(p); im = reduce(p); return im.crop(im.getbbox())
 
+# ---- armed hulls: hull sprite without turrets + mount positions; turret sprites centred on their pivot ----
+import json
+from kit import K
+from kit5 import SHIPS as ARMED, build, ring, turret_sprite, TUR
+
+def turret_part(kind, ring_only=False):
+    half = math.ceil(TUR[kind]['r'] * 0.4 + TUR[kind]['ln'] + 1.5)
+    p = Paint(2 * half, 2 * half); p.mounts = []
+    (ring if ring_only else turret_sprite)(p, half, half, kind)
+    return reduce(p)          # not cropped: the image centre is the pivot
+
+import math
 if __name__ == '__main__':
     only = set(sys.argv[1:])
     for sub, table in (('ships', SHIPS), ('parts', PARTS)):
@@ -76,3 +96,24 @@ if __name__ == '__main__':
             if only and name not in only: continue
             im = render(fn, h); im.save(os.path.join(OUT, sub, f'{name}.png'))
             print(f'{sub}/{name}.png', im.size)
+    os.makedirs(os.path.join(OUT, 'preview'), exist_ok=True)
+    mounts = {}
+    for name, (fn, h) in ARMED.items():
+        if only and name not in only: continue
+        for turrets, sub in ((False, 'ships'), (True, 'preview')):
+            p = build(fn, h, turrets=turrets); im = reduce(p); bb = im.getbbox(); im = im.crop(bb)
+            im.save(os.path.join(OUT, sub, f'{name}.png'))
+        cx, cy = bb[0] + im.width / 2, bb[1] + im.height / 2
+        mounts[name] = {
+            'size_px': [im.width, im.height],
+            'turrets': [{'kind': k, 'pos': [round(x * K - cx, 1), round(y * K - cy, 1)]} for x, y, k in p.mounts],
+            'fixed_guns': [[round(x * K - cx, 1), round(y * K - cy, 1)] for x, y in p.mounts_fixed],
+        }
+        print(f'ships/{name}.png', im.size, len(p.mounts), 'mounts')
+    if mounts:
+        with open(os.path.join(OUT, 'mounts.json'), 'w') as f: json.dump(mounts, f, indent=1)
+    for kind, code in (('t1', 'tur1'), ('t2', 'tur2'), ('pd', 'pd1')):
+        if only and code not in only: continue
+        turret_part(kind).save(os.path.join(OUT, 'parts', f'{code}.png'))
+        turret_part(kind, True).save(os.path.join(OUT, 'parts', f'{code}_ring.png'))
+        print(f'parts/{code}.png + ring')
