@@ -5,7 +5,22 @@
   "edge_radius": 12000,
   "jump_radius": 10000,
   "objects": [
-    {"id": "lumen_gate", "type": "gate", "name": "Lumen Gate", "position": [-2000, 6500], "radius": 300, "colour": "#d9a05a", "description": "A consortium-built hyperspace gate.", "government": "local_authority", "min_record": 15, "fee": 80},
+    {
+      "id": "lumen_gate",
+      "type": "gate",
+      "name": "Lumen Gate",
+      "position": [
+        -2000,
+        6500
+      ],
+      "radius": 300,
+      "colour": "#d9a05a",
+      "description": "A consortium-built hyperspace gate.",
+      "government": "local_authority",
+      "min_record": 15,
+      "fee": 80,
+      "art": "gate_halo"
+    },
     {
       "id": "lumen",
       "type": "star",
@@ -15,7 +30,8 @@
         0
       ],
       "radius": 1800,
-      "colour": "#ffffff"
+      "colour": "#ffffff",
+      "art": "star"
     },
     {
       "id": "glassway",
@@ -30,7 +46,8 @@
       "description": "Orbital mirrors keep this cold world farmed.",
       "landable": true,
       "government": "local_authority",
-      "min_record": -20
+      "min_record": -20,
+      "art": "planet_ice"
     },
     {
       "id": "lantern",
@@ -45,7 +62,8 @@
       "description": "A trading moon under authority licence.",
       "landable": true,
       "government": "independent_traders",
-      "min_record": -60
+      "min_record": -60,
+      "art": "planet_desert"
     }
   ],
   "traffic": [

@@ -1,6 +1,7 @@
 {
   "id": "rock",
   "name": "Rock",
+  "sprites": ["stellars/scenery/asteroid_rock_1.png", "stellars/scenery/asteroid_rock_2.png", "stellars/scenery/asteroid_rock_3.png", "stellars/scenery/asteroid_rock_4.png", "stellars/scenery/asteroid_rock_5.png", "stellars/scenery/asteroid_rock_6.png"],
   "size": [20, 45],
   "spin": [-25, 25],
   "drift": [0, 6],

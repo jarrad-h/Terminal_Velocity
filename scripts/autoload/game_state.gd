@@ -12,6 +12,8 @@ signal message_posted(text: String, kind: String)
 ## TM3: one galaxy step per day passed (persistent entities, system memory,
 ## price events and deadlines connect here in later milestones).
 signal day_passed(day: int)
+## TR6: a flag changed (gates reopen or close).
+signal flags_changed
 
 var credits: int = 0
 var _records: Dictionary = {}
@@ -49,6 +51,7 @@ func set_flag(name: String, value: int) -> void:
 		flags.erase(name)
 	else:
 		flags[name] = value
+	flags_changed.emit()
 
 
 ## TM2: actions advance the date; each day steps the galaxy in order (TM3).

@@ -716,6 +716,36 @@ func _lighting_checks(player: Ship, scene_root: Node) -> void:
 	await get_tree().process_frame
 	var down: Vector2 = Vector2.DOWN.rotated(lighting.star_light.rotation)
 	_check(down.dot(lighting.light_direction()) > 0.99, "V7: the light travels from the star towards the player")
+	# V9: stellars drawn from their art sets.
+	var objects: SystemObjects = scene_root.system_objects
+	for o: SystemObjectDef in scene_root.system.objects:
+		var view: Node2D = objects.view_of(o.id)
+		_check(view != null, "V9: %s is drawn from its art" % o.name)
+		if view != null:
+			_check(is_equal_approx(view.scale.x, o.radius * 2.0 / StellarArt.diameter_px(o.art)), "V9: %s scaled from its radius" % o.name)
+	var haven: Node2D = objects.view_of("haven")
+	_check(haven != null and haven.has_node("Surface") and haven.has_node("Clouds") and haven.has_node("Atmosphere"), "V9: planet layers")
+	_check(haven != null and haven.get_node("Emission").material is ShaderMaterial, "V9: city lights masked to the night side")
+	_check(objects.view_of("cinder").get_node("Emission").material == LitSprite.emissive_material(), "V9: lava glows everywhere")
+	_check(objects.view_of("tethys").has_node("Rings"), "V9: the gas giant has rings")
+	var gate_view: Node2D = objects.view_of(scene_root.system.gate().id)
+	_check(gate_view.get_node("Ring").visible, "V9: an open gate shows its ring")
+	var gate_def: SystemObjectDef = scene_root.system.gate()
+	var was: String = gate_def.open_condition
+	gate_def.open_condition = "!test_gate_flag"
+	GameState.set_flag("test_gate_flag", 1)
+	_check(not gate_view.get_node("Ring").visible, "V9: a closed gate hides its ring (TR6)")
+	gate_def.open_condition = was
+	GameState.set_flag("test_gate_flag", 0)
+	_check(gate_view.get_node("Ring").visible, "...and shows it again when reopened")
+	var rock: Scenery = null
+	for sc: Node in scene_root.local_space.find_children("*", "Scenery", true, false):
+		if (sc as Scenery).def.id == "rock":
+			rock = sc
+			break
+	if rock != null:
+		var look: Node = rock.visual.get_child(0) if rock.visual.get_child_count() > 0 else null
+		_check(look is Sprite2D and (look as Sprite2D).texture is CanvasTexture, "V9: rocks use their lit sprites")
 	# V8: shots carry lights, capped.
 	var cap: int = int(DataRegistry.settings["lighting"]["max_lights"])
 	var shots: Array[Projectile] = []

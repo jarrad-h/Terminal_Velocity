@@ -10,7 +10,9 @@ var name: String
 var position: Vector2
 var radius: float
 var colour: Color
-var sprite: String
+## V9: art set drawn for it (assets/sprites/stellars, StellarArt); "" draws
+## the flat placeholder.
+var art: String
 var description: String
 var landable: bool
 var government: String
@@ -35,7 +37,14 @@ static func parse(r: DefReader) -> SystemObjectDef:
 	o.position = r.vec2("position", Vector2.ZERO, true)
 	o.radius = r.number("radius", 100.0, false, 1.0)
 	o.colour = r.colour("colour", Color(0.5, 0.6, 0.8))
-	o.sprite = r.string("sprite")
+	o.art = r.string("art")
+	if o.art != "":
+		var base: String = StellarArt.base_path(o.art)
+		var folder: String = {"star": "stars", "planet": "planets", "station": "stations", "gate": "gates"}[o.type]
+		if base == "":
+			r.error("art", "no art set '%s' in %s" % [o.art, StellarArt.ROOT])
+		elif base.get_base_dir().get_file() != folder:
+			r.error("art", "'%s' is %s art, not for a %s" % [o.art, base.get_base_dir().get_file(), o.type])
 	o.description = r.string("description")
 	o.landable = r.boolean("landable", false)
 	o.government = r.ref("government", "governments")

@@ -14,7 +14,8 @@
         0
       ],
       "radius": 1300,
-      "colour": "#ffd090"
+      "colour": "#ffd090",
+      "art": "star"
     },
     {
       "id": "outpost",
@@ -29,7 +30,8 @@
       "description": "The last authority-licensed port before the frontier; it doesn't ask much.",
       "landable": true,
       "government": "independent_traders",
-      "min_record": -60
+      "min_record": -60,
+      "art": "planet_desert"
     },
     {
       "id": "brink_watch",
@@ -44,7 +46,8 @@
       "description": "An authority picket guarding the chokepoint.",
       "landable": true,
       "government": "local_authority",
-      "min_record": -10
+      "min_record": -10,
+      "art": "station_authority_ring"
     }
   ],
   "traffic": [

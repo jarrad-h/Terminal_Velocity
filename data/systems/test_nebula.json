@@ -6,16 +6,16 @@
   "respawn_delay": [5, 15],
   "seed": 1001,
   "objects": [
-    {"id": "nebula_gate", "type": "gate", "name": "Vela Gate", "position": [3000, 7500], "radius": 300, "colour": "#d9a05a", "description": "A consortium-built hyperspace gate.", "government": "local_authority", "min_record": 0, "fee": 50},
-    {"id": "sol", "type": "star", "name": "Vela", "position": [0, -12000], "radius": 1600, "colour": "#fff0c0"},
+    {"id": "nebula_gate", "type": "gate", "name": "Vela Gate", "position": [3000, 7500], "radius": 300, "colour": "#d9a05a", "description": "A consortium-built hyperspace gate.", "government": "local_authority", "min_record": 0, "fee": 50, "art": "gate_halo"},
+    {"id": "sol", "type": "star", "name": "Vela", "position": [0, -12000], "radius": 1600, "colour": "#fff0c0", "art": "star"},
     {"id": "haven", "type": "planet", "name": "Haven", "position": [6000, 3000], "radius": 640, "colour": "#4a8a5a",
-     "description": "A temperate world with a busy orbital dock.", "landable": true, "government": "local_authority", "min_record": -20},
+     "description": "A temperate world with a busy orbital dock.", "landable": true, "government": "local_authority", "min_record": -20, "art": "planet_terran"},
     {"id": "cinder", "type": "planet", "name": "Cinder", "position": [-7000, 5000], "radius": 440, "colour": "#a05a3a",
-     "description": "A mining colony that asks few questions.", "landable": true, "government": "independent_traders", "min_record": -80},
+     "description": "A mining colony that asks few questions.", "landable": true, "government": "independent_traders", "min_record": -80, "art": "planet_volcanic"},
     {"id": "picket", "type": "station", "name": "Picket Station", "position": [1600, -2400], "radius": 240, "colour": "#a0a8b8",
-     "description": "Authority patrol base.", "landable": true, "government": "local_authority", "min_record": -10},
+     "description": "Authority patrol base.", "landable": true, "government": "local_authority", "min_record": -10, "art": "station_authority_ring"},
     {"id": "tethys", "type": "planet", "name": "Tethys", "position": [-3000, -8000], "radius": 1200, "colour": "#c0a070",
-     "description": "A gas giant.", "landable": false}
+     "description": "A gas giant.", "landable": false, "art": "planet_gas_giant"}
   ],
   "traffic": [
     {"pool": "trader_traffic", "count": 4},

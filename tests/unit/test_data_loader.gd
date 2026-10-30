@@ -245,6 +245,8 @@ func test_gate_errors() -> void:
 	_expect_error(set, ["twogates.json", "at most one gate"])
 	_expect_error(set, ["badgate.json", "objects[0].fee", "only gates"])
 	_expect_error(set, ["badgate.json", "objects[1].open_condition", "flag_name"])
+	_expect_error(set, ["badart.json", "objects[0].art", "no art set 'planet_nowhere'"])
+	_expect_error(set, ["badart.json", "objects[1].art", "gates art, not for a planet"])
 	var galaxy: GalaxyDef = _load([BASE]).get_def("galaxy", "tiny")
 	assert_true(galaxy.gate_links.is_empty(), "gate_links default to none")
 

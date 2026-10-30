@@ -14,7 +14,8 @@
         0
       ],
       "radius": 900,
-      "colour": "#ff9a70"
+      "colour": "#ff9a70",
+      "art": "star"
     }
   ],
   "traffic": [

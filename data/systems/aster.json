@@ -5,7 +5,22 @@
   "edge_radius": 12000,
   "jump_radius": 10000,
   "objects": [
-    {"id": "aster_gate", "type": "gate", "name": "Aster Gate", "position": [2000, 7000], "radius": 300, "colour": "#d9a05a", "description": "A consortium-built hyperspace gate.", "government": "local_authority", "min_record": 0, "fee": 40},
+    {
+      "id": "aster_gate",
+      "type": "gate",
+      "name": "Aster Gate",
+      "position": [
+        2000,
+        7000
+      ],
+      "radius": 300,
+      "colour": "#d9a05a",
+      "description": "A consortium-built hyperspace gate.",
+      "government": "local_authority",
+      "min_record": 0,
+      "fee": 40,
+      "art": "gate_halo"
+    },
     {
       "id": "aster",
       "type": "star",
@@ -15,7 +30,8 @@
         0
       ],
       "radius": 1400,
-      "colour": "#fff4d8"
+      "colour": "#fff4d8",
+      "art": "star"
     },
     {
       "id": "meridian",
@@ -30,7 +46,8 @@
       "description": "The authority's administrative capital; orderly docks and long queues.",
       "landable": true,
       "government": "local_authority",
-      "min_record": -20
+      "min_record": -20,
+      "art": "planet_ocean"
     },
     {
       "id": "aster_yard",
@@ -46,7 +63,8 @@
       "landable": true,
       "government": "local_authority",
       "min_record": -10,
-      "refuel_price": 2
+      "refuel_price": 2,
+      "art": "station_authority_ring"
     }
   ],
   "traffic": [

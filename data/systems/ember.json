@@ -14,7 +14,8 @@
         0
       ],
       "radius": 1600,
-      "colour": "#ff7040"
+      "colour": "#ff7040",
+      "art": "star"
     },
     {
       "id": "forge",
@@ -29,7 +30,8 @@
       "description": "Smelters and ore haulers; the air tastes of metal.",
       "landable": true,
       "government": "independent_traders",
-      "min_record": -80
+      "min_record": -80,
+      "art": "planet_volcanic"
     }
   ],
   "traffic": [
