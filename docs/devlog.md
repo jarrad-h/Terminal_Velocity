@@ -4,6 +4,112 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Phase 2 Milestone 2: Gates and lighting (30 Oct 2026)
+
+Playtest confirmed by Jarrad on 30 Oct 2026; merged to `main`. Branch `p2m2-gates-lighting`, built in a cloud session (Godot 4.7.2 headless; checked by unit tests and the scenario test, plus measurements and screenshots rendered under a virtual display). Scope widened on 30 Oct to fold in lit ships after the light maps landed (PR #4); first-pass stellar art (PR #5) merged into `main` and wired in here. Decisions: `docs/decisions.md`, 30 Oct entries on lighting and milestone 2.
+
+### Built
+
+- **TR5, TR6 gates:**
+  - **Data:** gates are a new stellar type, with `government`, `min_record`, `fee` and `open_condition` (`""`, `flag` or `!flag`; the milestone 7 condition grammar will read the same field).
+  - **Links:** gate links are `gate_links` in the galaxy file, two-way, with `days`.
+  - **Loader checks:**
+    - at most one gate per system;
+    - both ends of a link need a gate;
+    - a link is never slower than the start ship's hyperlane route, and is strictly faster when that route takes more than a day.
+  - **Docking:** **L** near a gate docks, using the same distance and speed rules as landing. It's refused when the gate is closed or your record is below its minimum.
+  - **Gate list:** it pauses the game and uses the shared theme. Each destination shows its days and the departure gate's fee; a closed or unaffordable destination is greyed out.
+  - **Travel:** going through charges the fee and advances the days. You arrive stopped at the destination gate's `jump_point`, with a flash, and a plotted route is replotted from the new system.
+  - **Flags:** a minimal flag store in GameState (saved with everything else) and a `flag <name> [n]` console command.
+  - **Test cluster:** one gate in each of the 4 core systems, all linked at 1 day each. Fees are 40–80. Graveyard's gate closes with `graveyard_gate_closed`; Lumen's gate needs record 15.
+- **TR7:** gate links are drawn dashed in amber on the map, dimmed while either gate is closed. The system view shows the art's 64 px icons, with the star's icon tinted.
+- **H5:** `assets/ui/theme.tres` is the shared theme (dark panel, amber border and accents). `Dialog.use_shared_theme()` applies it; the gate list is the first screen to use it.
+- **V6, V7 lit ships:**
+  - `LitSprite` draws hulls and turrets as albedo plus normal map, with emission as an additive, unshaded child.
+  - Sprites without maps (the pirate raider) use their baked image, drawn unshaded.
+  - `SystemLighting` adds a `DirectionalLight2D` aimed from the system's star towards the player each frame, and a `CanvasModulate` for the ambient level. Values are in `game.json` `lighting`, and any system can override them in its own `lighting` block.
+  - Things without maps (dust, shots, beams, flashes, engine glow, labels, placeholders) are unshaded, so they keep their brightness. The backdrop and HUD are on their own layers.
+- **V8:** point lights in the weapon's colour on shots and at a beam's far end; a fading light at impacts; one dim light at each ship's engines that follows thrust. Shot, beam and impact lights are capped (`lighting.max_lights`, 24) and are released with their owners.
+- **V9 stellars:**
+  - **Data:** each stellar names an `art` set, replacing the unused `sprite` field. The loader checks the set exists and suits the stellar's type. The art's manifest gives sizes and anchors, and scale is radius × 2 ÷ the art's disc or width.
+  - **Planets:** layers drawn in order (rings, surface, emission, clouds turning slowly, additive atmosphere). City lights are masked to the night side by `night_lights.gdshader` for the art sets in `stellars.night_only_emission`; lava glows everywhere.
+  - **Star, stations and gates:** the star is tinted emission. Stations and gates are lit. A closed gate hides its ring and field; the beacons stay on.
+  - **Scenery:** large asteroids, rocks, small debris and derelict hulls now use the PR #5 sprites, lit.
+  - **New stations:** a trader yard at Solace and a pirate rock at Redhaven, so all three station art sets appear in the cluster.
+- **D14:** console `light on|off`, `star angle <deg>|auto` and `star height <0-1>`, plus a Lighting section in the debug panel.
+
+### Stopped at / Next step
+
+Stopped at: P2M2 merged to `main` (30 Oct 2026). Next step: plan Phase 2 milestone 3 (persistence foundation, PS1–PS7, plus AI hyperspace travel and gate traffic from the M2 playtest) on `p2m3-<slug>`.
+
+### Checks
+
+- **Headings:** with the light forced from the right, the shuttle's right half is brighter at every heading, and flipping the light flips it (measured on rendered frames, 8 headings).
+- **Shot lights:** with starlight off, a hull parked beside the line of fire is about 50% brighter with shot lights on (13 → 19 mean brightness).
+- **Performance:** in a 10-ship fight under software rendering, average frame time is the same with lighting on and off (about 24 ms, 900 frames each, two runs). Your windowed run on a real GPU is the real check.
+- **Tests:**
+  - unit: gate rules, plus the loader's gate, gate-link and art errors;
+  - scenario: docking, every refusal, gate travel, flags, lit hulls and turrets, the raider fallback, star and ambient from data, every stellar drawn from its art with the right scale, planet layers, the night mask, gas giant rings, the closed-gate ring, lit rocks, the shot-light cap and release, and D14.
+
+### 2026-10-30 — Playtest notes (Jarrad)
+
+- **Bug (V8): laser fire made large highlights on planets.**
+  - Cause: shot lights lit everything with normal maps, including planets, which are huge and sit far below the action.
+  - Fix: light masks. Weapon and engine lights reach only hulls, stations, gates and scenery (`LitSprite.NEAR_LIGHT`); the star still lights everything.
+  - Checks: under a virtual display the planet's brightness under the line of fire is unchanged by firing; scenario checks the masks.
+- **Bug (V9): the nebula showed through the star.**
+  - Cause: the star art is additive emission, which brightens the backdrop without hiding it.
+  - Fix: an opaque disc just inside the limb sits under the glow (`stellars.star_disc_cover` 0.97, `star_disc_colour` black).
+  - Check: scenario checks the disc exists.
+- **Design changes, confirmed by Jarrad and built (V7, V9):**
+  - **Star colour:** starlight takes the star's own colour, tinted towards white (`lighting.star.tint` 0.6). Redhaven's red star gives pink-red light.
+  - **Distance:** starlight strength scales from `near_factor` 2.0 at the star's edge to `far_factor` 0.8 at 8 radii.
+  - **Glare:** from 2 radii in, the light turns overhead, the ambient rises to the light's colour and the direct light fades to 0.15. Inside the star the hull is lit evenly in its hue with no shadow side, and the change is gradual. A first try blended the ambient to white and blew hulls out to white; fixed before commit.
+  - **Gate light:** an open gate's field is a violet light (`stellars.gate_light`) that lights nearby ships and its ring, and goes out when closed.
+  - Checks: unit tests for `StarLight`; scenario checks for the colour, distance, glare and gate light; screenshots at four distances from Redhaven's star and beside Vela Gate.
+- **Moved to milestone 3:** AI ships flying the hyperspace sequence, and scheduled traffic through the gate network.
+- **Confirmed:** 1-day gate links equal to 1-day hyperlane routes are fine; the Solace and Redhaven stations stay.
+
+### Review (godot-reviewer) and fixes
+
+- **Fixed before handover:**
+  - `data/README.md` still listed the removed `sprite` field. `art` is now documented for every stellar.
+  - Unit tests added for the lighting and stellar settings, per-system lighting overrides, `SystemLighting.settings_for` and `GalaxyDef.gate_destinations`.
+  - Gate rings now refresh when flags are reset or loaded.
+  - Console `star height` no longer crashes outside a system.
+- **Recorded in `docs/decisions.md`:**
+  - engine lights sit outside the light cap;
+  - 1-day gate links may equal a 1-day hyperlane route (to confirm with Jarrad).
+- **Left for later:**
+  - The light is aimed at the player, so distant stellars are lit from the player's direction rather than their own. Check at playtest.
+  - An exported build must include the art manifests (`*.json` under `assets/`).
+  - Dialog title size and margins aren't in the theme yet.
+  - A few cosmetic numbers (placeholder gate ring, closed-link dimming, shader softness) are in code.
+  - Planet manifest layers aren't checked by the loader.
+  - `lighting.enabled` isn't re-read on a data reload.
+
+### Key values
+
+- **Lighting:**
+  - ambient `#4b5161`;
+  - star colour `#ffc890`, energy 1.2, height 0.3.
+- **Point lights (energy / radius / height):**
+  - shot: 2.5 / 150 / 20;
+  - beam: 3.0 / 180 / 20;
+  - impact: 4.0 / 220 / 24 over 0.3 s;
+  - engine: 1.5 / 90 / 12;
+  - cap: 24.
+- **Clouds:** turn at 0.6 degrees/s.
+
+### Known gaps and questions
+
+- AI ships don't use gates yet.
+- Stations show empty turret rings (station weapons are agreed for Phase 3).
+- The gate placeholder field colour in `system_objects.gd` is only used when a gate has no art.
+- How everything looks under a real GPU and at your screen size is for the playtest. All the lighting numbers are data.
+
+---
+
 ## Phase 2 Milestone 1: Galaxy, hyperlanes and the day clock (30 Oct 2026)
 
 Playtest confirmed by Jarrad on 30 Oct 2026; merged to `main`. Branch `p2m1-galaxy-hyperlanes`, built in a cloud session (Godot 4.7.2 headless; checked by unit tests, the scenario test, and screenshots rendered under a virtual display). Design agreed with Jarrad first: see `docs/decisions.md` "P2M1 scope" and the updated TR2, TR4, TR7, TR8 and TM2.

@@ -14,7 +14,8 @@
         0
       ],
       "radius": 1200,
-      "colour": "#ffe0b0"
+      "colour": "#ffe0b0",
+      "art": "star"
     },
     {
       "id": "homestead",
@@ -29,7 +30,8 @@
       "description": "Settler farms; fuel and water for anyone who pays.",
       "landable": true,
       "government": "independent_traders",
-      "min_record": -80
+      "min_record": -80,
+      "art": "planet_terran"
     },
     {
       "id": "verge",
@@ -44,7 +46,24 @@
       "description": "A gas giant.",
       "landable": false,
       "government": "",
-      "min_record": -1000
+      "min_record": -1000,
+      "art": "planet_gas_giant"
+    },
+    {
+      "id": "solace_yard",
+      "type": "station",
+      "name": "Solace Yard",
+      "position": [
+        4200,
+        3800
+      ],
+      "radius": 240,
+      "colour": "#b0a080",
+      "description": "Stacked containers and a cheerful lack of paperwork.",
+      "landable": true,
+      "government": "independent_traders",
+      "min_record": -80,
+      "art": "station_trader_yard"
     }
   ],
   "traffic": [

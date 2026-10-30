@@ -234,6 +234,57 @@ func test_travel_errors_name_file_and_field() -> void:
 	_expect_error(set, ["game.json", "hyperspace.arrival_speed_fraction", "at most 1"])
 
 
+## V7–V9: lighting and stellar settings, and per-system lighting overrides.
+func test_lighting_errors() -> void:
+	var set: DataSet = _load([BROKEN])
+	_expect_error(set, ["game.json", "lighting.ambient", "expected a colour"])
+	_expect_error(set, ["game.json", "lighting.star.height", "at most 1"])
+	_expect_error(set, ["game.json", "lighting.star.energy", "at least 0"])
+	_expect_error(set, ["game.json", "lighting.max_lights", "at least 0"])
+	_expect_error(set, ["game.json", "lighting.shot.radius", "at least 0"])
+	_expect_error(set, ["game.json", "stellars.cloud_spin", "expected a number"])
+	_expect_error(set, ["game.json", "stellars.night_only_emission[0]", "expected text"])
+	_expect_error(set, ["dim_lit.json", "lighting.ambient", "expected a colour"])
+	_expect_error(set, ["dim_lit.json", "lighting.star.energy", "at least 0"])
+	_expect_error(set, ["dim_lit.json", "lighting.star.height", "at most 1"])
+
+
+func test_system_lighting_overrides() -> void:
+	var set: DataSet = _load([BASE])
+	var defaults: Dictionary = set.settings["lighting"]
+	var lit: Dictionary = SystemLighting.settings_for(set.get_def("systems", "lit"), defaults)
+	assert_true(lit["ambient"].is_equal_approx(Color.html("#202020")), "V7: system ambient overrides the default")
+	assert_near(lit["star_height"], 0.7, "V7: system star height overrides")
+	assert_near(lit["star_energy"], float(defaults["star"]["energy"]), "unset keys keep the game.json default")
+	var plain: Dictionary = SystemLighting.settings_for(set.get_def("systems", "home"), defaults)
+	assert_true(plain["ambient"].is_equal_approx(Color.html(defaults["ambient"])), "no override: game.json ambient")
+
+
+func test_gate_destinations() -> void:
+	var galaxy: GalaxyDef = _load(["res://data"]).get_def("galaxy", "test_cluster")
+	var from_nebula: Array[Dictionary] = galaxy.gate_destinations("test_nebula")
+	assert_true(from_nebula.map(func(d: Dictionary) -> String: return d["system"]) == ["aster", "lumen", "test_graveyard"], "TR5: links both ways, sorted: %s" % [from_nebula])
+	assert_true(from_nebula.all(func(d: Dictionary) -> bool: return d["days"] == 1), "link days")
+	assert_true(galaxy.gate_destinations("drift").is_empty(), "no gate, no destinations")
+
+
+## TR5, TR6: gate fields, one gate per system, links between gates, and
+## gates faster than the hyperlane route.
+func test_gate_errors() -> void:
+	var set: DataSet = _load(["res://tests/fixtures/loader/gates"])
+	_expect_error(set, ["ring.json", "gate_links[0]", "'b' has no gate"])
+	_expect_error(set, ["ring.json", "gate_links[1].days", "no faster than the 2-day hyperlane route"])
+	_expect_error(set, ["ring.json", "gate_links[2]", "two different systems"])
+	_expect_error(set, ["zero.json", "gate_links[0].days", "at least 1"])
+	_expect_error(set, ["twogates.json", "at most one gate"])
+	_expect_error(set, ["badgate.json", "objects[0].fee", "only gates"])
+	_expect_error(set, ["badgate.json", "objects[1].open_condition", "flag_name"])
+	_expect_error(set, ["badart.json", "objects[0].art", "no art set 'planet_nowhere'"])
+	_expect_error(set, ["badart.json", "objects[1].art", "gates art, not for a planet"])
+	var galaxy: GalaxyDef = _load([BASE]).get_def("galaxy", "tiny")
+	assert_true(galaxy.gate_links.is_empty(), "gate_links default to none")
+
+
 func test_travel_defaults() -> void:
 	var set: DataSet = _load([BASE])
 	var ship: ShipDef = set.get_def("ships", "alpha")

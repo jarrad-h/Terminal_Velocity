@@ -17,6 +17,10 @@ static func spawn(parent: Node, at: Vector2, p_radius: float, p_colour: Color, p
 	parent.add_child(flash)
 
 
+func _init() -> void:
+	material = LitSprite.unshaded_material()  # V6: full brightness, not lit or darkened
+
+
 func _process(delta: float) -> void:
 	_age += delta
 	if _age >= duration:

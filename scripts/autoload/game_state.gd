@@ -12,10 +12,14 @@ signal message_posted(text: String, kind: String)
 ## TM3: one galaxy step per day passed (persistent entities, system memory,
 ## price events and deadlines connect here in later milestones).
 signal day_passed(day: int)
+## TR6: a flag changed (gates reopen or close).
+signal flags_changed
 
 var credits: int = 0
 var _records: Dictionary = {}
 var clock := DayClock.new()
+## TR6 and later missions (MS1): named flags, name -> int (0 = not set).
+var flags: Dictionary = {}
 var travel := TravelState.new()
 
 
@@ -26,6 +30,8 @@ func _ready() -> void:
 
 
 func _start_new() -> void:
+	flags.clear()
+	flags_changed.emit()
 	credits = int(DataRegistry.settings["player"]["credits"])
 	clock.day = 0
 	travel = TravelState.new()
@@ -34,6 +40,19 @@ func _start_new() -> void:
 	travel.mark_explored(galaxy.start_system)
 	var ship: ShipDef = DataRegistry.get_ship(DataRegistry.settings["player_ship"])
 	travel.fuel = ship.fuel
+
+
+func flag(name: String) -> int:
+	return int(flags.get(name, 0))
+
+
+## Sets a flag; 0 clears it.
+func set_flag(name: String, value: int) -> void:
+	if value == 0:
+		flags.erase(name)
+	else:
+		flags[name] = value
+	flags_changed.emit()
 
 
 ## TM2: actions advance the date; each day steps the galaxy in order (TM3).
@@ -102,7 +121,7 @@ func reset() -> void:
 
 ## SV1: everything above as plain values (the saves milestone stores this).
 func to_dict() -> Dictionary:
-	return {"credits": credits, "records": _records.duplicate(), "day": clock.day, "travel": travel.to_dict()}
+	return {"credits": credits, "records": _records.duplicate(), "day": clock.day, "travel": travel.to_dict(), "flags": flags.duplicate()}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -110,6 +129,8 @@ func from_dict(data: Dictionary) -> void:
 	_records = (data.get("records", {}) as Dictionary).duplicate()
 	clock.day = int(data.get("day", 0))
 	travel = TravelState.from_dict(data.get("travel", {}))
+	flags = (data.get("flags", {}) as Dictionary).duplicate()
+	flags_changed.emit()
 	credits_changed.emit(credits)
 
 

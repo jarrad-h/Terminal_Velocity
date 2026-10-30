@@ -34,7 +34,12 @@ static func fire(parent: Node, p_weapon: WeaponDef, at: Vector2, direction: Vect
 	shot._life = p_weapon.shot_lifetime()
 	parent.add_child(shot)
 	shot.reset_physics_interpolation()
+	DynamicLights.attach(shot, p_weapon.colour, "shot")  # V8
 	return shot
+
+
+func _init() -> void:
+	material = LitSprite.unshaded_material()  # V6: full brightness, not lit or darkened
 
 
 func _physics_process(delta: float) -> void:
@@ -51,6 +56,7 @@ func _physics_process(delta: float) -> void:
 		if scale > 0.0:
 			hit["target"].health.apply_damage(weapon.damage_shield * scale, weapon.damage_armor * scale, shooter if is_instance_valid(shooter) else null)
 		Flash.spawn(get_parent(), hit["position"], 6.0 if weapon.kind != "guided" else 18.0, weapon.colour, 0.25)
+		DynamicLights.impact(get_parent(), hit["position"], weapon.colour)  # V8
 		queue_free()
 		return
 	# C12: falloff follows the shot's own travel (speed × time), not world

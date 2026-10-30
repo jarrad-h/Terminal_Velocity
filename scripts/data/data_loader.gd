@@ -22,6 +22,12 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"mounts": {"arc": {"pivot": 30.0, "turret": 360.0}, "traverse": {"pivot": 180.0, "turret": 360.0},
 		"fire_tolerance": 5.0, "turret_sprites": {"small": "", "medium": "", "large": "", "point_defence": ""}},
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
+	"lighting": {"enabled": true, "ambient": "#4b5161", "star": {"colour": "", "tint": 0.6, "energy": 1.2, "height": 0.3,
+			"near_factor": 2.0, "far_factor": 0.8, "far_radii": 8.0, "glare_start_radii": 2.0, "glare_energy": 0.15},
+		"max_lights": 24, "shot": {"energy": 2.5, "radius": 150.0, "height": 20.0},
+		"beam": {"energy": 3.0, "radius": 180.0, "height": 20.0},
+		"impact": {"energy": 4.0, "radius": 220.0, "height": 24.0, "duration": 0.3},
+		"engine": {"energy": 1.5, "radius": 90.0, "height": 12.0}},
 	"player": {"credits": 0, "record": 0.0, "escape_pod": true, "insured": true, "uninsured_ship": "shuttle",
 		"rescue_fee_pct": 10.0, "rescue_days": [2.0, 5.0], "pod_speed": 600.0, "pod_time": 3.0},
 	"landing": {"max_speed": 60.0, "radius_fraction": 0.6, "repair_cost_per_point": 0.0},
@@ -38,8 +44,11 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
 		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
 	"engine_glow": {"idle": 0.25, "response": 6.0},
+	"stellars": {"cloud_spin": 0.6, "night_only_emission": ["planet_terran", "planet_ocean", "planet_rust"],
+		"star_disc_cover": 0.97, "star_disc_colour": "#000000",
+		"gate_light": {"colour": "#9a86ff", "energy": 1.6, "radius": 900.0, "height": 60.0}},
 	"galaxy_map": {"colours": {"background": "#050810", "lane": "#3a5070", "route": "#ffee40",
-		"current": "#ffffff", "selected": "#ffee40", "unexplored": "#6a7080", "label": "#d8e0f0", "jump_radius": "#5a7aa0"}},
+		"current": "#ffffff", "selected": "#ffee40", "unexplored": "#6a7080", "label": "#d8e0f0", "jump_radius": "#5a7aa0", "gate_link": "#d9a05a"}},
 	"messages": {"show_seconds": 4.0, "fade_seconds": 1.0, "max_lines": 3, "colours": {
 		"info": "#d8e0f0", "combat": "#ffb060", "standing": "#ff7a7a", "credits": "#ffe070"}},
 	"hud": {"colours": {"shield": "#59a0ff", "armor": "#e69a4d", "schematic_full": "#40e070",
@@ -73,7 +82,28 @@ static func load_roots(roots: Array[String]) -> DataSet:
 	for type: String in TYPES:
 		for def: Def in data_set.defs[type].values():
 			def.validate(data_set.defs, data_set.errors)
+	_check_gate_days(data_set)
 	return data_set
+
+
+## TR5: a gate link never takes more days than the fewest-days hyperlane route
+## for the start ship, and fewer whenever that route takes more than one day.
+static func _check_gate_days(data_set: DataSet) -> void:
+	var ship: ShipDef = data_set.get_def("ships", str(data_set.settings.get("player_ship", "")))
+	if ship == null:
+		return
+	for galaxy: GalaxyDef in data_set.defs["galaxy"].values():
+		for i: int in galaxy.gate_links.size():
+			var link: Dictionary = galaxy.gate_links[i]
+			if not galaxy.has_system(link["from"]) or not galaxy.has_system(link["to"]):
+				continue
+			var route: Array[String] = Hyperlanes.plot_route(galaxy, link["from"], link["to"], ship.jump_speed)
+			if route.is_empty():
+				continue
+			var lane_days: int = Hyperlanes.route_cost(galaxy, link["from"], route, ship.jump_speed, 0.0)["days"]
+			if link["days"] > lane_days or (lane_days > 1 and link["days"] >= lane_days):
+				data_set.errors.append("%s: field 'gate_links[%d].days': %d days is no faster than the %d-day hyperlane route for the %s; gates must be quicker" % [
+					galaxy.file, i, link["days"], lane_days, ship.name])
 
 
 static func _load_def(data_set: DataSet, type: String, path: String, refs: Array[Dictionary]) -> void:
@@ -159,6 +189,35 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		var problem: String = ShipDef.sprite_problem(sprites.string(key))
 		if problem != "":
 			sprites.error(key, problem)
+	var lighting: DefReader = reader.object("lighting")
+	lighting.boolean("enabled", true)
+	lighting.colour("ambient")
+	var star_light: DefReader = lighting.object("star")
+	if star_light.string("colour") != "":
+		star_light.colour("colour")
+	if star_light.number("tint", 0.0, false, 0.0) > 1.0:
+		star_light.error("tint", "must be at most 1")
+	for key: String in ["energy", "near_factor", "far_factor", "glare_energy"]:
+		star_light.number(key, 0.0, false, 0.0)
+	star_light.number("far_radii", 2.0, false, 1.001)
+	star_light.number("glare_start_radii", 2.0, false, 1.001)
+	if star_light.number("height", 0.0, false, 0.0) > 1.0:
+		star_light.error("height", "must be at most 1")
+	lighting.integer("max_lights", 0, false, 0)
+	for kind: String in ["shot", "beam", "impact", "engine"]:
+		var point: DefReader = lighting.object(kind)
+		for key: String in SETTINGS_DEFAULTS["lighting"][kind]:
+			point.number(key, 0.0, false, 0.0)
+	var stellars: DefReader = reader.object("stellars")
+	stellars.number("cloud_spin", 0.0)
+	stellars.string_array("night_only_emission")
+	if stellars.number("star_disc_cover", 0.0, false, 0.0) > 1.0:
+		stellars.error("star_disc_cover", "must be at most 1")
+	stellars.colour("star_disc_colour")
+	var gate_light: DefReader = stellars.object("gate_light")
+	gate_light.colour("colour")
+	for key: String in ["energy", "radius", "height"]:
+		gate_light.number(key, 0.0, false, 0.0)
 	var glow: DefReader = reader.object("engine_glow")
 	if glow.number("idle", 0.0, false, 0.0) > 1.0:
 		glow.error("idle", "must be at most 1")

@@ -6,15 +6,16 @@
   "respawn_delay": [5, 15],
   "seed": 2002,
   "objects": [
-    {"id": "dim", "type": "star", "name": "Dim", "position": [0, 0], "radius": 1200, "colour": "#ffb080"},
+    {"id": "graveyard_gate", "type": "gate", "name": "Graveyard Gate", "position": [6000, -6000], "radius": 300, "colour": "#d9a05a", "description": "A consortium-built hyperspace gate.", "government": "local_authority", "min_record": 0, "fee": 60, "open_condition": "!graveyard_gate_closed", "art": "gate_halo"},
+    {"id": "dim", "type": "star", "name": "Dim", "position": [0, 0], "radius": 1200, "colour": "#ffb080", "art": "star"},
     {"id": "bastion", "type": "planet", "name": "Bastion", "position": [9000, 0], "radius": 560, "colour": "#6080a0",
-     "description": "A fortress world watching the old battlefield.", "landable": true, "government": "local_authority", "min_record": -20},
+     "description": "A fortress world watching the old battlefield.", "landable": true, "government": "local_authority", "min_record": -20, "art": "planet_terran"},
     {"id": "scrapyard", "type": "planet", "name": "Scrapyard", "position": [-8400, 3600], "radius": 400, "colour": "#806050",
-     "description": "Salvagers strip the wrecks for parts.", "landable": true, "government": "independent_traders", "min_record": -80},
+     "description": "Salvagers strip the wrecks for parts.", "landable": true, "government": "independent_traders", "min_record": -80, "art": "planet_rust"},
     {"id": "watch", "type": "station", "name": "Graveyard Watch", "position": [0, 8400], "radius": 240, "colour": "#a0a8b8",
-     "description": "A listening post.", "landable": true, "government": "local_authority", "min_record": -10},
+     "description": "A listening post.", "landable": true, "government": "local_authority", "min_record": -10, "art": "station_authority_ring"},
     {"id": "titan", "type": "planet", "name": "Titan", "position": [-4000, -9600], "radius": 1120, "colour": "#b09060",
-     "description": "A gas giant.", "landable": false}
+     "description": "A gas giant.", "landable": false, "art": "planet_gas_giant"}
   ],
   "traffic": [
     {"pool": "trader_traffic", "count": 2},

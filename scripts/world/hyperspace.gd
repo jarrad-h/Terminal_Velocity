@@ -158,6 +158,20 @@ func plot_to(system_id: String) -> bool:
 	return true
 
 
+## TR5: arrives through `system_id`'s gate (stopped at its jump point). A
+## plotted route is replotted from here to its end, or cleared.
+func arrive_at_gate(system_id: String) -> void:
+	var travel: TravelState = GameState.travel
+	var goal: String = travel.route[-1] if not travel.route.is_empty() else ""
+	travel.current_system = system_id
+	travel.mark_explored(system_id)
+	travel.route.clear()
+	var gate: SystemObjectDef = DataRegistry.get_system(system_id).gate()
+	scene.enter_system_at(system_id, gate.position + StellarArt.jump_point(gate))
+	if goal != "" and goal != system_id:
+		plot_to(goal)
+
+
 ## Display name of a system, or its id if it has no definition.
 static func system_name(system_id: String) -> String:
 	var def: SystemDef = DataRegistry.get_system(system_id)

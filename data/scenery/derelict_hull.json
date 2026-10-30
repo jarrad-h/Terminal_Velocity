@@ -1,6 +1,7 @@
 {
   "id": "derelict_hull",
   "name": "Derelict Hull",
+  "sprites": ["stellars/scenery/wreck_sow_bow.png", "stellars/scenery/wreck_sow_mid.png", "stellars/scenery/wreck_sow_aft.png", "stellars/scenery/wreck_sow_split.png"],
   "size": [50, 110],
   "spin": [-5, 5],
   "drift": [0, 3],

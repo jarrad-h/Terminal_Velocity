@@ -7,8 +7,14 @@ var points: Array[Vector2] = []
 var colour: Color = Color.WHITE
 var size: float = 6.0
 var _strength: float = 0.0
+## V8: one dim light at the engines' centre, following the glow's strength.
+var _light: PointLight2D = null
 
 @onready var ship: Ship = owner_ship()
+
+
+func _init() -> void:
+	material = LitSprite.unshaded_material()  # V6: full brightness, not lit or darkened
 
 
 func owner_ship() -> Ship:
@@ -25,7 +31,23 @@ func _process(delta: float) -> void:
 	var settings: Dictionary = DataRegistry.settings["engine_glow"]
 	var goal: float = 1.0 if thrusting else (float(settings["idle"]) if ship.can_act() else 0.0)
 	_strength = move_toward(_strength, goal, delta * float(settings["response"]))
+	_update_light()
 	queue_redraw()
+
+
+func _update_light() -> void:
+	if points.is_empty():
+		return
+	var lighting: Dictionary = DataRegistry.settings["lighting"]
+	if _light == null:
+		_light = DynamicLights.make(colour, lighting["engine"])
+		var centre := Vector2.ZERO
+		for p: Vector2 in points:
+			centre += p
+		_light.position = centre / points.size() + Vector2(0.0, size)
+		_light.enabled = DynamicLights.lighting_on(get_tree())
+		add_child(_light)
+	_light.energy = float(lighting["engine"]["energy"]) * _strength
 
 
 func _draw() -> void:

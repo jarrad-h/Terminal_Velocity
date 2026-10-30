@@ -1,0 +1,1 @@
+{"name": "Bad", "objects": [{"id": "p", "type": "planet", "name": "P", "position": [0, 0], "fee": 5}, {"id": "g", "type": "gate", "name": "G", "position": [9, 9], "open_condition": "Not Valid"}]}

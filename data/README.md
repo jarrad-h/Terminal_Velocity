@@ -46,6 +46,15 @@ Fields marked **required** have no default.
 | `boarding.assist_armor_pct` | C9 Assist: patched-up ships get back to this % of max armour, up to 100 (keep it above ships' `disable_armor_pct`) | `50` |
 | `combat.disabled_drag` | C7: a disabled ship (any ship, the player's too) loses this much speed per second until it stops, px/s²; 0 = drifts forever | `30` |
 | `combat.friendly_fire_pct` | % damage AI shots do to their own and allied governments' ships (C11); 0 = off. Player shots always do full damage | `100` |
+| `lighting.enabled` | V7: live lighting on (star, ambient, lit sprites); off draws everything flat | `true` |
+| `lighting.ambient` | V7: colour the unlit side of lit things is darkened to (a `CanvasModulate`); things without light maps, the backdrop and the HUD aren't darkened. A system's `lighting.ambient` overrides it | `"#4b5161"` |
+| `lighting.star.colour`, `.energy`, `.height` | V7: the star light: colour (`""` = the star stellar's own colour, see `tint`), strength, and height (0 = skimming the plane, strong side light; 1 = straight down, flat). It comes from the system's star towards the player. A system's `lighting.star` overrides colour, energy and height | `""`, `1.2`, `0.3` |
+| `lighting.star.tint` | V7: with no colour set, how much of the star's own colour the light takes (0 = white, 1 = the star's colour) | `0.6` |
+| `lighting.star.near_factor`, `.far_factor`, `.far_radii` | V7: energy multiplier at the star's edge (and inside), and from `far_radii` star radii out (more than 1); linear between | `2.0`, `0.8`, `8` |
+| `lighting.star.glare_start_radii`, `.glare_energy` | V7: from `glare_start_radii` star radii in (more than 1), the light turns gradually overhead, the ambient rises to the star light's colour and the directional light fades to `glare_energy` × its strength, so inside the star the hull is lit evenly in the star's hue with no shadow side | `2`, `0.15` |
+| `lighting.max_lights` | V8: most shot, beam and impact lights burning at once; more fire goes unlit (keeps performance flat) | `24` |
+| `lighting.shot`, `.beam`, `.impact` | V8: point lights in the weapon's colour on shots, at a beam's far end, and at impacts: `energy`, `radius` (px), `height` (px above the plane; low = side light on hulls); `impact.duration` is its fade time, s | see `game.json` |
+| `lighting.engine` | V8: one dim light at a ship's engines in its engine glow colour, following thrust (`energy` at full thrust, `radius`, `height`) | `1.5`, `90`, `12` |
 | `camera.zoom` | Camera zoom; above 1 zooms in (data: `0.75` for the 1:1 ship art) | `1.0` |
 | `camera.smoothing_speed` | How fast the camera catches up; `0` locks it to the ship | `0` |
 | `local_space.chunk_size` | Side of one local-space chunk in px | `1024` |
@@ -67,8 +76,12 @@ Fields marked **required** have no default.
 | `ai.arrival_speed_fraction` | Ships jumping in at the edge start at this fraction of their top speed | `0.5` |
 | `ai.spawn_keep_away_factor` | Traffic placed at system load starts beyond sensor range × this from the player | `1.2` |
 | `ai.inside_spawn_band` | …and between these fractions of the edge radius `[min, max]` | `[0.15, 0.7]` |
+| `stellars.cloud_spin` | V9: how fast planet cloud layers turn, degrees/s (negative turns the other way) | `0.6` |
+| `stellars.star_disc_cover`, `stellars.star_disc_colour` | V9: the star's emission is additive, so an opaque disc this fraction of its radius (0–1), in this colour, sits under it to hide the backdrop | `0.97`, `"#000000"` |
+| `stellars.gate_light` | V9: an open gate's field lights nearby ships and its own ring: `colour`, `energy`, `radius` (px), `height` (px); off while the gate is closed | `"#9a86ff"`, `1.6`, `900`, `60` |
+| `stellars.night_only_emission` | V9: planet art sets whose emission (city lights) shows only on the night side; others (lava) glow everywhere | `["planet_terran", "planet_ocean", "planet_rust"]` |
 | `engine_glow.idle`, `engine_glow.response` | V5: glow strength at idle (0–1, share of full thrust) and how fast it changes (strength per second) | `0.25`, `6` |
-| `galaxy_map.colours` | TR7: galaxy map (M) colours: `background`, `lane` (hyperlanes), `route` (plotted route), `current` (ring round your system), `selected` (ring round the picked system), `unexplored` (unvisited systems), `label` (text), `jump_radius` (the dashed ring in the system view). Explored systems use their government's colour | see `game.json` |
+| `galaxy_map.colours` | TR7: galaxy map (M) colours: `background`, `lane` (hyperlanes), `route` (plotted route), `current` (ring round your system), `selected` (ring round the picked system), `unexplored` (unvisited systems), `label` (text), `jump_radius` (the dashed ring in the system view), `gate_link` (dashed gate links, TR5, and gate markers). Explored systems use their government's colour | see `game.json` |
 | `messages.show_seconds`, `messages.fade_seconds`, `messages.max_lines` | H4: how long a message shows before fading, the fade time, and how many lines show at once (at least 1) | `4`, `1`, `3` |
 | `messages.colours` | H4: text colour by kind: `info` (hints, refusals), `combat` (disabled, destroyed, scuttled), `standing` (turns hostile, crime threshold crossed), `credits` | see `game.json` |
 | `hud.colours` | H1, H3: `shield` and `armor` bar colours; the target schematic's fill at full, half and empty armour (`schematic_full`, `schematic_half`, `schematic_empty`, blended between) and when disabled (`schematic_disabled`); `warning` colours your DISABLED warning. The schematic's shield outline uses `shield` | see `game.json` |
@@ -211,6 +224,7 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `start_system` | System the player starts in; must be listed and not `hidden` | **required** |
 | `systems` | `[{"system": <system ID>, "position": [x, y], "map_state": …}]`, each system once. `position` is in map units (+y is down, as in space); `map_state` is how it starts on the map: `explored` (name, government and system view shown), `unexplored` (shown as "Unexplored" until visited) or `hidden` (not drawn or routable, nor its lanes, until revealed) | **required**; `map_state` `"unexplored"` |
 | `hyperlanes` | `[{"from": <system ID>, "to": <system ID>}]`; two-way, each pair once, both ends listed in `systems` | `[]` |
+| `gate_links` | TR5: `[{"from": <system ID>, "to": <system ID>, "days": n}]` between two systems' gates; two-way, each pair once, both systems must have a gate. `days` (at least 1, default 1) must not exceed the fewest-days hyperlane route for the start ship (`player_ship`'s `jump_speed`), and must be fewer whenever that route takes more than a day | `[]` |
 
 ## `systems/`
 
@@ -224,9 +238,10 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `local_space` | `[{"scenery": <scenery ID>, "density": d, "region": {…}}]` | `[]` |
 | `edge_radius` | Traffic arrives and leaves this far from the system centre, px (A6) | `6000` |
 | `respawn_delay` | Seconds before replacing a ship that left or died `[min, max]` | `[5, 15]` |
+| `lighting` | V7: `{"ambient": "#rrggbb", "star": {"colour": "#rrggbb", "energy": n, "height": 0–1}}`, any key optional; overrides `game.json` `lighting` for this system | `{}` |
 | `jump_radius` | TR2: hyperlane jumps need the ship at least this far from the centre, px; TR4: arrivals appear at this distance | `8000` |
 
-**`objects[]`:** `id` (**required**, unique in the system), `type` (`star`, `planet`, `station`; **required**), `name` (**required**), `position` (**required**), `radius` (`100`), `colour` (`"#7f99cc"`), `sprite` (`""`), `description` (`""`), `landable` (`false`), `government` (government ID, `""`), `min_record` (`-1000`), `sells_fuel` (TR8, landable objects only; `true`), `refuel_price` (TR8: credits per unit of fuel; `2`), `landing_days` (TM2: days that pass on landing; `1`), `takeoff_days` (TM2: days that pass on taking off; `0`). Landed activities (trade, missions) will carry their own day costs when they exist.
+**`objects[]`:** `id` (**required**, unique in the system), `type` (`star`, `planet`, `station`, `gate`; **required**; at most one gate per system), `name` (**required**), `position` (**required**), `radius` (`100`), `colour` (`"#7f99cc"`, the placeholder's and the star's tint), `art` (V9: art set under `assets/sprites/stellars/`, matching the type: `star`; `planet_terran`, `planet_ocean`, `planet_desert`, `planet_ice`, `planet_volcanic`, `planet_barren`, `planet_rust`, `planet_gas_giant`; `station_authority_ring`, `station_trader_yard`, `station_pirate_rock`; `gate_halo`. Scaled so its disc matches `radius` × 2; `""` draws a flat placeholder; `""`), `description` (`""`), `landable` (`false`), `government` (government ID, `""`), `min_record` (`-1000`), `sells_fuel` (TR8, landable objects only; `true`), `refuel_price` (TR8: credits per unit of fuel; `2`), `landing_days` (TM2: days that pass on landing; `1`), `takeoff_days` (TM2: days that pass on taking off; `0`). Landed activities (trade, missions) will carry their own day costs when they exist. Gates only (TR5, TR6): L docks with a gate (same distance and speed rules as landing) and lists the gates it links to; `min_record` refuses docking below it; `fee` (credits charged to leave through this gate; `0`) and `open_condition` (`""` always open, `"flag_name"` open while that flag is set, `"!flag_name"` open while it isn't; `""`). Gates don't use `landable`, `sells_fuel` or the day fields.
 
 **`local_space[]`:** `density` (**required**) is objects per 1,000,000 px² (a 1000 × 1000 px area) inside the region. `region.shape` is `whole` (default, everywhere), `circle` (`centre`, `radius`) or `ring` (`centre`, `inner_radius`, `radius` = outer). `centre` defaults to `[0, 0]`.
 

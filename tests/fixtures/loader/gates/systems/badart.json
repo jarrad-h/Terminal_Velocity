@@ -1,0 +1,1 @@
+{"name": "Bad Art", "objects": [{"id": "p", "type": "planet", "name": "P", "position": [0, 0], "art": "planet_nowhere"}, {"id": "q", "type": "planet", "name": "Q", "position": [9, 9], "art": "gate_halo"}]}

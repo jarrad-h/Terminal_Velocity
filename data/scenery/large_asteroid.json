@@ -1,6 +1,7 @@
 {
   "id": "large_asteroid",
   "name": "Large Asteroid",
+  "sprites": ["stellars/scenery/asteroid_large_rock_1.png", "stellars/scenery/asteroid_large_rock_2.png", "stellars/scenery/asteroid_large_rock_3.png", "stellars/scenery/asteroid_large_rock_4.png"],
   "size": [90, 180],
   "spin": [-6, 6],
   "solid": true,

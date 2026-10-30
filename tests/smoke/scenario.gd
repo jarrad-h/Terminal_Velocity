@@ -573,6 +573,9 @@ func _run() -> void:
 	_debug.set_traffic_enabled(false)
 	_debug.clear_ships()
 	await _hyperspace_checks(player, scene_root)
+	await _gate_checks(player, scene_root)
+	await _frames(2)
+	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
 
 	# System switch (D11 goto).
@@ -629,6 +632,170 @@ func _run() -> void:
 
 func actions_of(scene_root: Node) -> PlayerActions:
 	return scene_root.actions
+
+
+## P2M2: docking with gates, the destination list and gate travel (TR5, TR6).
+func _gate_checks(player: Ship, scene_root: Node) -> void:
+	var actions: PlayerActions = scene_root.actions
+	var travel: TravelState = GameState.travel
+	_check(_debug.switch_system("test_nebula"), "back to the start system")
+	GameState.set_credits(1000)
+	GameState.set_record("local_authority", 0.0)
+	var gate: SystemObjectDef = scene_root.system.gate()
+	_check(gate != null, "TR5: the start system has a gate")
+	player.place(gate.position + Vector2(gate.radius * 3.0, 0.0), 0.0)
+	await _frames(2)
+	_check(actions.try_land() == "far", "too far to dock")
+	player.place(gate.position, 0.0)
+	await _frames(2)
+	_check(actions.try_land() == "" and actions.dialog != null and get_tree().paused, "TR5: L docks with the gate and lists destinations")
+	_check(actions.dialog.has_choice("aster") and actions.dialog.has_choice("lumen") and actions.dialog.has_choice("test_graveyard"), "every linked gate is listed")
+	actions.dialog.choose("leave")
+	await _frames(2)
+	_debug.set_flag("graveyard_gate_closed", 1)
+	actions.try_land()
+	_check(actions.dialog != null and not actions.dialog.has_choice("test_graveyard"), "TR6: a closed destination can't be picked")
+	var day_before: int = GameState.clock.day
+	actions.dialog.choose("aster")
+	await _frames(3)
+	_check(travel.current_system == "aster" and scene_root.system.id == "aster", "TR5: through the gate to Aster")
+	_check(GameState.credits == 1000 - gate.fee, "TR6: paid the departure gate's fee (%d)" % GameState.credits)
+	_check(GameState.clock.day == day_before + 1, "TR5: the link's days passed")
+	var aster_gate: SystemObjectDef = scene_root.system.gate()
+	_check(player.global_position.distance_to(aster_gate.position) < 1.0 and player.get_velocity().is_zero_approx(), "arrives stopped at the gate")
+	_check(not get_tree().paused and actions.dialog == null, "unpaused after gate travel")
+	_check(travel.map_state(DataRegistry.galaxy(), "aster") == "explored", "gate arrival explores")
+	GameState.set_credits(5)
+	actions.try_land()
+	_check(actions.dialog != null and not actions.dialog.has_choice("test_nebula"), "TR6: can't pick a gate you can't pay for")
+	GameState.set_credits(1000)
+	actions.dialog.choose("leave")
+	await _frames(2)
+	_check(_debug.switch_system("lumen"), "go to lumen")
+	var lumen_gate: SystemObjectDef = scene_root.system.gate()
+	player.place(lumen_gate.position, 0.0)
+	await _frames(2)
+	_check(actions.try_land() == "refused", "TR6: record below the gate's minimum is refused")
+	GameState.set_record("local_authority", lumen_gate.min_record)
+	_check(actions.try_land() == "", "docks once the record is high enough")
+	actions.dialog.choose("leave")
+	await _frames(2)
+	_check(_debug.switch_system("test_graveyard"), "go to the graveyard")
+	player.place(scene_root.system.gate().position, 0.0)
+	await _frames(2)
+	_check(actions.try_land() == "closed", "TR6: a flag closes the gate")
+	_check(_debug.run_command("flag graveyard_gate_closed 0").contains("= 0"), "flag via console")
+	_check(actions.try_land() == "", "reopened")
+	actions.dialog.choose("leave")
+	await _frames(2)
+	GameState.set_record("local_authority", 0.0)
+	_check(_debug.switch_system("test_nebula"), "back to the start")
+
+
+## P2M2: lit hulls and turrets (V6), star and ambient light from data (V7).
+func _lighting_checks(player: Ship, scene_root: Node) -> void:
+	var lighting: SystemLighting = scene_root.lighting
+	_check(lighting != null and lighting.star_light.enabled, "V7: the star light is on")
+	var expected: Dictionary = SystemLighting.settings_for(scene_root.system, DataRegistry.settings["lighting"])
+	_check(lighting.ambient.color.is_equal_approx(expected["ambient"]), "V7: ambient from data")
+	_check(is_equal_approx(lighting.star_light.height, expected["star_height"]), "V7: star height from data")
+	var hull: Sprite2D = player.visual.get_child(player.visual.get_child_count() - 1)
+	_check(hull.texture is CanvasTexture and (hull.texture as CanvasTexture).normal_texture != null, "V6: the shuttle hull is lit from its normal map")
+	_check(hull.get_node_or_null("Emission") != null, "V6: emission layer on the hull")
+	var armed: Ship = _debug.spawn_ships("shuttle", 1, "", player.global_position + Vector2(-600.0, 0.0))[0]
+	var turret: Sprite2D = armed.weapons.find_child("TurretSprite", true, false)
+	_check(turret != null and turret.texture is CanvasTexture, "V6: turrets are lit too")
+	armed.remove_from_group(&"ships")
+	armed.queue_free()
+	var raider: Ship = _debug.spawn_ships("pirate_raider", 1, "", player.global_position + Vector2(600.0, 0.0))[0]
+	var raider_hull: Sprite2D = raider.visual.get_child(raider.visual.get_child_count() - 1)
+	_check(not raider_hull.texture is CanvasTexture and raider_hull.material == LitSprite.unshaded_material(), "V6: no maps, so the raider falls back to its baked sprite")
+	raider.remove_from_group(&"ships")
+	raider.queue_free()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var down: Vector2 = Vector2.DOWN.rotated(lighting.star_light.rotation)
+	_check(down.dot(lighting.light_direction()) > 0.99, "V7: the light travels from the star towards the player")
+	# V9: stellars drawn from their art sets.
+	var objects: SystemObjects = scene_root.system_objects
+	for o: SystemObjectDef in scene_root.system.objects:
+		var view: Node2D = objects.view_of(o.id)
+		_check(view != null, "V9: %s is drawn from its art" % o.name)
+		if view != null:
+			_check(is_equal_approx(view.scale.x, o.radius * 2.0 / StellarArt.diameter_px(o.art)), "V9: %s scaled from its radius" % o.name)
+	var haven: Node2D = objects.view_of("haven")
+	_check(haven != null and haven.has_node("Surface") and haven.has_node("Clouds") and haven.has_node("Atmosphere"), "V9: planet layers")
+	_check(haven != null and haven.get_node("Emission").material is ShaderMaterial, "V9: city lights masked to the night side")
+	_check(objects.view_of("cinder").get_node("Emission").material == LitSprite.emissive_material(), "V9: lava glows everywhere")
+	_check(objects.view_of("tethys").has_node("Rings"), "V9: the gas giant has rings")
+	_check(objects.view_of("sol").has_node("Disc"), "V9: the star hides the backdrop behind it")
+	_check(haven.get_node("Surface").light_mask & LitSprite.NEAR_LIGHT == 0, "V8: weapon and engine light doesn't reach planets")
+	_check(hull.light_mask & LitSprite.NEAR_LIGHT != 0, "V8: ...but does reach hulls")
+	var gate_view: Node2D = objects.view_of(scene_root.system.gate().id)
+	_check(gate_view.get_node("Ring").visible, "V9: an open gate shows its ring")
+	_check(gate_view.get_node("Light") is PointLight2D and gate_view.get_node("Light").visible, "V9: an open gate is a light source")
+	var gate_def: SystemObjectDef = scene_root.system.gate()
+	var was: String = gate_def.open_condition
+	gate_def.open_condition = "!test_gate_flag"
+	GameState.set_flag("test_gate_flag", 1)
+	_check(not gate_view.get_node("Ring").visible, "V9: a closed gate hides its ring (TR6)")
+	_check(not gate_view.get_node("Light").visible, "V9: ...and its light goes out")
+	gate_def.open_condition = was
+	GameState.set_flag("test_gate_flag", 0)
+	_check(gate_view.get_node("Ring").visible, "...and shows it again when reopened")
+	var rock: Scenery = null
+	for sc: Node in scene_root.local_space.find_children("*", "Scenery", true, false):
+		if (sc as Scenery).def.id == "rock":
+			rock = sc
+			break
+	if rock != null:
+		var look: Node = rock.visual.get_child(0) if rock.visual.get_child_count() > 0 else null
+		_check(look is Sprite2D and (look as Sprite2D).texture is CanvasTexture, "V9: rocks use their lit sprites")
+	# V8: shots carry lights, capped.
+	var cap: int = int(DataRegistry.settings["lighting"]["max_lights"])
+	var shots: Array[Projectile] = []
+	for i: int in cap + 10:
+		shots.append(Projectile.fire(scene_root.get_node("World/Shots"), DataRegistry.get_weapon("laser_small"),
+			player.global_position + Vector2(0.0, -400.0 - i * 4.0), Vector2.UP, Vector2.ZERO, null, []))
+	_check(DynamicLights.active_count() == cap, "V8: shot lights stop at the cap (%d of %d)" % [DynamicLights.active_count(), cap])
+	_check(shots[0].get_child_count() > 0 and shots[0].get_child(0) is PointLight2D, "V8: a shot carries a point light")
+	for shot: Projectile in shots:
+		shot.queue_free()
+	await _frames(2)
+	_check(DynamicLights.active_count() == 0, "V8: lights are released with their shots")
+	# V7: starlight in the star's colour, stronger and flatter near the star.
+	var sol: SystemObjectDef = null
+	for o: SystemObjectDef in scene_root.system.objects:
+		if o.type == "star":
+			sol = o
+	var star_cfg: Dictionary = DataRegistry.settings["lighting"]["star"]
+	if String(star_cfg["colour"]) == "" and not scene_root.system.lighting.get("star", {}).has("colour"):
+		_check(lighting.star_light.color.is_equal_approx(StarLight.tinted(sol.colour, float(star_cfg["tint"]))), "V7: light in the star's colour")
+	player.place(sol.position + Vector2(sol.radius * 20.0, 0.0), 0.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var far_energy: float = lighting.star_light.energy
+	_check(lighting.glare_now() == 0.0 and lighting.ambient.color.is_equal_approx(expected["ambient"]), "V7: shadows far from the star")
+	player.place(sol.position + Vector2(sol.radius * 2.5, 0.0), 0.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_check(lighting.star_light.energy > far_energy, "V7: stronger near the star (%.2f > %.2f)" % [lighting.star_light.energy, far_energy])
+	player.place(sol.position + Vector2(sol.radius * 0.5, 0.0), 0.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_check(is_equal_approx(lighting.star_light.height, 1.0) and lighting.ambient.color.is_equal_approx(lighting.star_light.color), "V7: inside the star, lit evenly in its hue, no shadow side")
+	player.place(Vector2(3000.0, 0.0), 0.0)
+	await get_tree().process_frame
+	_check(_debug.run_command("star angle 0") != "" and lighting.light_direction().is_equal_approx(Vector2.LEFT), "D14: star angle override (light from the right travels left)")
+	_check(_debug.run_command("star height 0.8").contains("0.80") and is_equal_approx(lighting.star_light.height, 0.8), "D14: star height")
+	_check(_debug.run_command("star angle auto").contains("follows") and lighting.angle_override == null, "D14: back to the star")
+	_debug.set_star_height(float(DataRegistry.settings["lighting"]["star"]["height"]))
+	_check(_debug.run_command("light off") == "Lighting off" and not _debug.is_lighting_on(), "D14: lighting off via console")
+	_debug.set_lighting(true)
+	lighting.set_enabled(false)
+	_check(not lighting.star_light.enabled and lighting.ambient.color == Color.WHITE, "lighting off")
+	_check(Projectile.fire(scene_root.get_node("World/Shots"), DataRegistry.get_weapon("laser_small"), player.global_position + Vector2(0, -400), Vector2.UP, Vector2.ZERO, null, []).get_child_count() == 0, "no new lights while lighting is off")
+	lighting.set_enabled(true)
 
 
 ## Sends a key press as an action event and waits until it has been handled

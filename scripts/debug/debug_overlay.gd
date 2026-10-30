@@ -16,6 +16,10 @@ const LABEL_FONT_SIZE: int = 12
 const LABEL_WIDTH: float = 320.0
 
 
+func _init() -> void:
+	material = LitSprite.unshaded_material()  # V6: full brightness, not lit or darkened
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	z_index = RenderingServer.CANVAS_ITEM_Z_MAX

@@ -170,6 +170,7 @@ Why: Jarrad wants player stations and ship manufacturing late game; these choice
 Ships stay painted pixel sprites at 1:1, but every sprite and part also exports an albedo, a normal map and an emission map from the same generator scripts, so the game lights them live: the system's star is the key light, weapon fire and engines are point lights, glass and lamps glow on their own. The UI direction is Amber Glass (dark scene, translucent HUD panels floating over it, amber accents). Baked sprites stay in the repo as the unlit fallback until the lighting is wired in.
 Why: with light baked into the sprite, the lit side turns with the ship; with normal maps the lit flank stays on the star side at every heading, and the parts kit keeps one image set per part. Compared on the concept canvas against pre-rendered 3D frames and real-time 3D.
 Rejected for now: pre-rendered rotation frames (light fixed to the screen, a re-render per variant); real-time 3D (largest change to the rendering layer; still the natural upgrade path later).
+
 ## 2026-10-30 — P2M1 scope: the jump flies itself; separate day costs; three map states (TR2, TR4, TR7, TR8, TM2)
 - **Jump sequence (TR2):** pressing J with a valid destination locks the controls and the ship flies the jump with its own turn rate and thrust: stop (turn and burn against velocity), turn to the destination's galaxy-map bearing, then the countdown (only once stopped and facing), then a hard acceleration past the speed cap to the hyperdrive speed, where it leaves. Overdrive acceleration and hyperdrive speed are data. Fire or J cancels until the hyperdrive engages; disabled cancels; hits don't.
 - **Arrival (TR4):** at the destination's jump radius, on the side facing the origin, moving inward at a data fraction of top speed.
@@ -185,3 +186,28 @@ Why: Jarrad's direction, 30 Oct 2026 (normal ship movement into the jump reads a
 - **Arrival (TR4):** arrivals appear `hyperspace.arrival_grace_seconds` (2) of inward travel outside the jump radius, so J works at once for the next leg; the jump sequence then stops the ship outside the radius anyway. Rejected: a fixed distance margin of 1500 px (Jarrad: only needs two seconds; seconds scale with each ship's arrival speed).
 - **Disabled drag (C7):** a disabled ship loses `combat.disabled_drag` (30 px/s²) of speed until it stops, for every ship including the player's. A raider disabled at full speed stops in about 11 s. The one exception to "no drag" (F2); normal flight is unchanged.
 Why: Jarrad's playtest — a disabled raider at top speed was impossible to catch and board.
+
+## 2026-10-30 — Lit ships join milestone 2; light maps for every sprite; shared UI theme (V6–V9, H5, D14, OF7)
+Milestone 2 becomes "Gates and lighting": gates already touch stellar and system data, and lighting needs both (the star stellar is the key light, ambient is per system). New IDs V6–V9 (lit hulls and turrets, star and ambient light from data, weapon and engine lights, lit stellars), H5 (new screens use one shared `Theme`) and D14 (lighting debug). Every sprite in the art pipeline ships albedo, normal and emission maps; the OF7 hull manifest lists them. Gate, station and planet art is made in parallel on an `art/*` branch and does not block the milestone. The Amber Glass HUD restyle and the pirate raider's light maps go on the review list.
+Why: Jarrad's direction, 30 Oct 2026, after the light maps landed (PR #4).
+
+## 2026-10-30 — Milestone 2 art wiring; station weapons in Phase 3; cast shadows on the review list (V6, V9, OF7)
+- **Stellar art in data:** each stellar names an art set (`art`); the set's manifest beside the sprites gives sizes, layers and anchors, and the game derives scale from the stellar's radius. Station looks are chosen per station, not by government. PR #5's first-pass art is merged.
+- **Lighting:** things with maps are shaded; things without (dust, shots, beams, flashes) keep their brightness. Planet city lights are masked to the night side (a small shader, in V9).
+- **Not now:** cast shadows go on the review list as a visual uplift if cheap; station weapons are agreed for Phase 3 (the art already carries mounts); named anchors and compound stellar hit shapes join OF7 and the hardpoint editor in milestone 6; a large turret sprite and pirate turrets go on the review list.
+Why: Jarrad's answers to the art session's questions, 30 Oct 2026.
+
+## 2026-10-30 — Milestone 2 review: engine lights outside the light cap; 1-day gate links (V8, TR5)
+- **Engine lights (V8):** each ship carries one engine light that is not counted against `lighting.max_lights`; the cap covers shots, beams and impacts, the part that grows with fire. Engine lights grow only with ship count (system traffic is a handful of ships), and a 10-ship fight measured the same frame time with lighting on and off. Revisit with a separate cap if systems get crowded.
+- **1-day routes (TR5):** days are whole numbers with a minimum of 1, so a gate link between systems one 1-day jump apart can't be faster; the loader allows it to equal the lane route there and requires it to be strictly fewer days on any longer route. To confirm with Jarrad at playtest.
+Why: found by the godot-reviewer at the milestone 2 handover.
+
+## 2026-10-30 — Milestone 2 playtest: star-coloured, distance-scaled starlight; gates give light; AI jumps and gate traffic in milestone 3 (V7, V9)
+- **Starlight colour:** taken from the star stellar's colour, blended towards white (`lighting.star.tint`), unless a system sets `lighting.star.colour`.
+- **Distance:** starlight energy scales from `near_factor` at the star's edge to `far_factor` at `far_radii` star radii (linear, clamped).
+- **Glare:** from `glare_start_radii` star radii inwards the light turns gradually overhead and the ambient brightens to white, so inside the star's radius ships are lit all over with no shadow, with no pop.
+- **Gate light:** an open gate's field is a point light (violet, the field's colour; `stellars.gate_light`), off when closed; outside the shot-light cap like engine lights.
+- **Moved to milestone 3:** AI ships flying the hyperspace sequence (PS3), and scheduled traffic through the gate network at hub systems.
+- 1-day gate links equal to 1-day hyperlane routes are confirmed fine; the Solace trader yard and Redhaven pirate rock stay.
+Why: Jarrad's playtest of milestone 2, 30 Oct 2026.
+- (Same day, while building it) **Glare without blowout:** in the glare the ambient rises to the star light's colour, not white, and the directional light fades to `lighting.star.glare_energy` (0.15), so a ship inside the star is lit evenly in the star's hue with its detail intact; white ambient plus doubled starlight blew hulls out to white.

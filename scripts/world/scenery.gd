@@ -66,8 +66,7 @@ static func build_visual(p_def: SceneryDef, size: float, look_seed: int) -> Node
 	if not p_def.sprites.is_empty():
 		var path: String = SPRITE_DIR.path_join(p_def.sprites[rng.randi() % p_def.sprites.size()])
 		if ResourceLoader.exists(path):
-			var sprite := Sprite2D.new()
-			sprite.texture = load(path)
+			var sprite: Sprite2D = LitSprite.build(path)  # V9: lit when the art has maps
 			var tex_size: float = maxf(sprite.texture.get_width(), sprite.texture.get_height())
 			sprite.scale = Vector2.ONE * (size / tex_size)
 			return sprite
@@ -81,4 +80,5 @@ static func build_visual(p_def: SceneryDef, size: float, look_seed: int) -> Node
 	polygon.polygon = points
 	var shade: float = rng.randf_range(0.85, 1.1)
 	polygon.color = Color(p_def.colour.r * shade, p_def.colour.g * shade, p_def.colour.b * shade, p_def.colour.a)
+	polygon.material = LitSprite.unshaded_material()
 	return polygon

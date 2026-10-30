@@ -154,3 +154,19 @@ func test_map_pick_nearest_within_radius() -> void:
 	var points: Array[Vector2] = [Vector2(0, 0), Vector2(30, 0)]
 	assert_true(MapLayout.pick(points, Vector2(20, 2), 14.0) == 1, "nearest")
 	assert_true(MapLayout.pick(points, Vector2(15, 40), 14.0) == -1, "nothing close enough")
+
+
+func test_starlight_colour_distance_and_glare() -> void:
+	var red := Color(1.0, 0.2, 0.1)
+	assert_true(StarLight.tinted(red, 0.0).is_equal_approx(Color.WHITE), "V7: tint 0 is white light")
+	assert_true(StarLight.tinted(red, 1.0).is_equal_approx(red), "tint 1 is the star's colour")
+	assert_near(StarLight.tinted(red, 0.5).g, 0.6, "half way")
+	assert_near(StarLight.energy_factor(1000.0, 1000.0, 2.0, 0.8, 8.0), 2.0, "V7: strongest at the star's edge")
+	assert_near(StarLight.energy_factor(500.0, 1000.0, 2.0, 0.8, 8.0), 2.0, "...and inside it")
+	assert_near(StarLight.energy_factor(8000.0, 1000.0, 2.0, 0.8, 8.0), 0.8, "weakest from far_radii out")
+	assert_near(StarLight.energy_factor(4500.0, 1000.0, 2.0, 0.8, 8.0), 1.4, "linear between")
+	assert_near(StarLight.glare(3000.0, 1000.0, 2.0), 0.0, "V7: no glare far out")
+	assert_near(StarLight.glare(1000.0, 1000.0, 2.0), 1.0, "full glare at the edge")
+	assert_near(StarLight.glare(200.0, 1000.0, 2.0), 1.0, "inside the star: lit all over")
+	var mid: float = StarLight.glare(1500.0, 1000.0, 2.0)
+	assert_true(mid > 0.2 and mid < 0.8, "gradual in between (%f)" % mid)

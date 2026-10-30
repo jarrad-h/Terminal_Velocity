@@ -5,6 +5,10 @@ extends Node2D
 const COLOUR := Color(1.0, 0.95, 0.3, 0.9)
 
 
+func _init() -> void:
+	material = LitSprite.unshaded_material()  # V6: full brightness, not lit or darkened
+
+
 func _ready() -> void:
 	z_index = 50
 

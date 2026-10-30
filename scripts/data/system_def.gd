@@ -16,6 +16,9 @@ var respawn_delay: Vector2
 ## TR2: a hyperlane jump needs the ship at least this far from the centre;
 ## TR4: arrivals appear at this distance, px.
 var jump_radius: float
+## V7: overrides of game.json lighting: {"ambient": "#rrggbb", "star":
+## {"colour": "#rrggbb", "energy": n, "height": 0–1}}, any key optional.
+var lighting: Dictionary = {}
 
 
 static func parse(r: DefReader) -> SystemDef:
@@ -32,7 +35,34 @@ static func parse(r: DefReader) -> SystemDef:
 	d.edge_radius = r.number("edge_radius", 6000.0, false, 100.0)
 	d.respawn_delay = r.range2("respawn_delay", Vector2(5.0, 15.0), 0.0)
 	d.jump_radius = r.number("jump_radius", 8000.0, false, 100.0)
+	if r.has("lighting"):
+		var light: DefReader = r.object("lighting")
+		if light.has("ambient"):
+			light.colour("ambient")
+			d.lighting["ambient"] = light.data["ambient"]
+		var star: DefReader = light.object("star")
+		var star_over: Dictionary = {}
+		if star.has("colour"):
+			star.colour("colour")
+			star_over["colour"] = star.data["colour"]
+		if star.has("energy"):
+			star_over["energy"] = star.number("energy", 1.0, false, 0.0)
+		if star.has("height"):
+			var height: float = star.number("height", 0.3, false, 0.0)
+			if height > 1.0:
+				star.error("height", "must be at most 1")
+			star_over["height"] = height
+		if not star_over.is_empty():
+			d.lighting["star"] = star_over
 	return d
+
+
+## TR5: the system's gate, or null (at most one per system).
+func gate() -> SystemObjectDef:
+	for o: SystemObjectDef in objects:
+		if o.type == "gate":
+			return o
+	return null
 
 
 ## TR7: the government shown for the system on the map: the first landable
@@ -53,6 +83,8 @@ func validate(_defs: Dictionary, errors: Array[String]) -> void:
 		if seen.has(o.id):
 			errors.append("%s: field 'objects': object id '%s' is used twice" % [file, o.id])
 		seen[o.id] = true
+	if objects.filter(func(o: SystemObjectDef) -> bool: return o.type == "gate").size() > 1:
+		errors.append("%s: field 'objects': a system has at most one gate" % file)
 	var pools: Dictionary = {}
 	for i: int in traffic.size():
 		var pool_id: String = traffic[i]["pool"]

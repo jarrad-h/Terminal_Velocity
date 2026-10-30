@@ -162,6 +162,45 @@ func refuel() -> void:
 		GameState.set_fuel(player.def.fuel, player.def.fuel)
 
 
+func _lighting() -> SystemLighting:
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	return scene.lighting if scene != null else null
+
+
+## D14: live lighting (star, ambient, lit sprites, point lights) on or off.
+func set_lighting(enabled: bool) -> void:
+	var lighting: SystemLighting = _lighting()
+	if OS.is_debug_build() and lighting != null:
+		lighting.set_enabled(enabled)
+		toggles_changed.emit()
+
+
+func is_lighting_on() -> bool:
+	var lighting: SystemLighting = _lighting()
+	return lighting != null and lighting.enabled
+
+
+## D14: the star light comes from `degrees` on screen (0 = from the right,
+## 90 = from below), or from the star again with null.
+func set_star_angle(degrees: Variant) -> void:
+	var lighting: SystemLighting = _lighting()
+	if OS.is_debug_build() and lighting != null:
+		lighting.angle_override = deg_to_rad(float(degrees)) if degrees != null else null
+
+
+## D14: star light height, 0 (skimming, strong side light) to 1 (overhead).
+func set_star_height(height: float) -> void:
+	var lighting: SystemLighting = _lighting()
+	if OS.is_debug_build() and lighting != null:
+		lighting.set_height(height)
+
+
+## TR6: sets a named flag (0 clears it), e.g. to close a gate.
+func set_flag(name: String, value: int) -> void:
+	if OS.is_debug_build():
+		GameState.set_flag(name, value)
+
+
 ## TR7 from the console: plots a route to `system_id`.
 func plot_route(system_id: String) -> bool:
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
@@ -340,7 +379,7 @@ func run_command(line: String) -> String:
 	var gov_arg: Callable = func(index: int) -> String: return w[index] if w.size() > index else ""
 	match w[0]:
 		"help":
-			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | reload | " \
+			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | flag <name> [n] | light on|off | star angle <deg>|auto | star height <0-1> | reload | " \
 				+ "time <scale> | pause | resume | step | invuln on|off | ai on|off | traffic on|off | radar all|range | " \
 				+ "kill | disable | clear | credits <n> | record <gov> <n> | overlay <name> on|off | ids <type> | pos"
 		"spawn", "pool":
@@ -364,6 +403,28 @@ func run_command(line: String) -> String:
 			return "Route: %s" % " > ".join(GameState.travel.route) if w.size() > 1 and plot_route(w[1]) else "Usage: route <reachable system id>"
 		"reveal":
 			return "Revealed %s" % w[1] if w.size() > 1 and reveal_system(w[1]) else "Usage: reveal <hidden system id>"
+		"flag":
+			if w.size() < 2 or not GateRules.is_valid_condition(w[1]) or w[1].begins_with("!") or (w.size() > 2 and not ConsoleParser.is_int(w[2])):
+				return "Usage: flag <name> [value, default 1; 0 clears]"
+			set_flag(w[1], w[2].to_int() if w.size() > 2 else 1)
+			return "Flag %s = %d" % [w[1], GameState.flag(w[1])]
+		"light":
+			var on: int = ConsoleParser.parse_switch(w[1]) if w.size() > 1 else -1
+			if on == -1:
+				return "Usage: light on|off"
+			set_lighting(on == 1)
+			return "Lighting %s" % ("on" if on == 1 else "off")
+		"star":
+			if w.size() == 3 and w[1] == "angle" and w[2] == "auto":
+				set_star_angle(null)
+				return "Star light follows the star"
+			if w.size() == 3 and w[1] == "angle" and ConsoleParser.is_number(w[2]):
+				set_star_angle(w[2].to_float())
+				return "Star light from %s°" % w[2]
+			if w.size() == 3 and w[1] == "height" and ConsoleParser.is_number(w[2]) and _lighting() != null:
+				set_star_height(w[2].to_float())
+				return "Star height %.2f" % _lighting().star_light.height
+			return "Usage: star angle <degrees>|auto | star height <0-1>"
 		"fuel":
 			refuel()
 			return "Fuel %.0f" % GameState.travel.fuel

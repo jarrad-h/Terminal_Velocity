@@ -14,7 +14,8 @@
         0
       ],
       "radius": 1500,
-      "colour": "#ff5050"
+      "colour": "#ff5050",
+      "art": "star"
     },
     {
       "id": "den",
@@ -30,7 +31,25 @@
       "landable": true,
       "government": "pirates",
       "min_record": 10,
-      "refuel_price": 4
+      "refuel_price": 4,
+      "art": "planet_rust"
+    },
+    {
+      "id": "the_rock",
+      "type": "station",
+      "name": "The Rock",
+      "position": [
+        5200,
+        3000
+      ],
+      "radius": 240,
+      "colour": "#806050",
+      "description": "A hollowed asteroid bristling with salvaged guns.",
+      "landable": true,
+      "government": "pirates",
+      "min_record": 10,
+      "refuel_price": 4,
+      "art": "station_pirate_rock"
     }
   ],
   "traffic": [
