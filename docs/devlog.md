@@ -4,6 +4,65 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Phase 2 Milestone 1: Galaxy, hyperlanes and the day clock (30 Oct 2026)
+
+Branch `p2m1-galaxy-hyperlanes`, built in a cloud session (Godot 4.7.2 headless; checked by unit tests, the scenario test, and screenshots rendered under a virtual display). Not yet playtested. Design agreed with Jarrad first: see `docs/decisions.md` "P2M1 scope" and the updated TR2, TR4, TR7, TR8 and TM2.
+
+### Built
+
+- **TR1 galaxy:** new `galaxy` data type (`data/galaxy/test_cluster.json`): systems with map positions and a starting map state, two-way hyperlanes, a start system. `game.json` `galaxy` replaces `system`.
+- **Test cluster (10 systems):**
+  - Lawful core loop: Test Nebula (start), Test Graveyard, Lumen, Aster.
+  - Chokepoint: Aster → Drift (empty transit) → Brink.
+  - Frontier: Brink, Solace, Ember (independent traders).
+  - Pirate haven: Redhaven, reached via Ember, or via Hollow, an empty transit system that starts **hidden**.
+  - Every system with a planet sells fuel; both transit systems are one jump from fuel.
+- **TR2 jump sequence:**
+  - J with a destination checks the jump radius and fuel, then locks the controls.
+  - The ship flies the jump itself with its own turn rate and thrust (`JumpSequence`): stop, turn to the destination's map bearing, countdown, then overdrive past the speed cap until the hyperdrive speed.
+  - J or firing cancels; so does being disabled. Hits don't cancel.
+  - Ship data: `jump_countdown`. `game.json` `hyperspace`: stop speed, align tolerance, thrust angle, overdrive ×6 acceleration, engage at ×4 top speed.
+- **TR4 arrival:** at the destination's `jump_radius`, on the side facing the origin, moving inward at 0.5 × top speed, with a flash. Every arrival is a fresh visit until persistence (P2M3).
+- **TR7 galaxy map (M, pauses):**
+  - Shows systems and lanes. Explored systems are drawn in their government's colour; unexplored ones are labelled "Unexplored"; hidden ones and their lanes aren't drawn or routable.
+  - Shows your system and the plotted route with its jumps, days and fuel, plus a warning when the fuel won't cover the route.
+  - Click a system to plot the fewest-days route. Each arrival selects the next leg.
+  - Side panel: a stylised system view drawn from the system data (star, planets, stations, landable rings, the dashed jump radius), for explored systems only.
+- **TR8 fuel:**
+  - Ships have `fuel` and `jump_fuel`: flat per jump for now, with the rule in one function (`Hyperlanes.jump_fuel`).
+  - Refuel on the landed screen buys as much as you can afford, at the port's `refuel_price`.
+  - Starting credits are 1000, so the first refuels are possible.
+- **TM1–TM3 day clock:**
+  - The date comes from a day count from `calendar.start_date` (3200-01-01), shown "3 Jan 3200" on the HUD and the landed screen.
+  - Days pass on jumps (lane length ÷ ship `jump_speed`, rounded up, at least 1), on landing (`landing_days` 1), on take-off (`takeoff_days` 0) and for days adrift after an escape-pod rescue.
+  - `DayClock` steps one day at a time and `GameState.day_passed` fires for each day. Nothing listens yet (TM3).
+- **HUD:** date, fuel, the destination ("Jump to Aster +1 more (J)") and the jump status ("Hyperspace in 2.7").
+- **D11 debug:**
+  - console: `goto <system>` (no fuel or days), `days <n>`, `route <system>`, `reveal <system>` and `fuel`;
+  - panel: Go to system, Reveal, Refuel, +1/+7/+30 days.
+- **Saves groundwork:** `TravelState` (current system, fuel, route, map changes) and `GameState.to_dict` / `from_dict` hold everything new as plain values.
+- **Tests:**
+  - unit: loader rules for galaxy, ship, system, stellar and settings fields; `Hyperlanes`, `JumpSequence`, `Calendar`, `DayClock`, `TravelState` round trip, `MapLayout` and `PortRules.refuel`;
+  - scenario: map open and close, route plotting, every jump refusal and cancel, a full jump (phases, days, fuel, arrival point and speed, next leg), landing days, refuel, rescue days and D11;
+  - smoke: visits all 10 systems.
+
+### Key values
+
+- **Shuttle:** fuel 300, 100 per jump (3 jumps), countdown 3 s, jump speed 150.
+- **Other ships:** courier 400 / 2 s / 200; freighter 500 / 5 s / 100.
+- **Lanes:** 130–162 map units, so the shuttle takes 1–2 days per jump. Test Nebula to Redhaven is 5 jumps and 7 days.
+- **Systems:** jump radius 10000 in most systems (6000 in the transit systems, 11000 in Graveyard).
+- **Fuel price:** refuel price 2 (the pirate port 4), so a full shuttle tank is 600 cr.
+
+### Known gaps and questions
+
+- No windowed run on a PC yet: screenshots under a virtual display showed the map, the countdown and the arrival, but feel needs Jarrad's playtest.
+- Gates on the map (TR7 "gate links") come with P2M2.
+- Reveal sources (map purchases, intel, found gates, missions) come in later milestones; until then `reveal` is debug-only.
+- Hold-to-aim (F5) and the other carried-over items are unchanged.
+
+---
+
 ### 2026-10-30 — session wrap-up (cloud session)
 Branch: main (M6 `m6-art` and M7 `m7-hud-tuning` both merged after confirmed playtests; Jarrad's Phase 2 spec and hardpoint editor, PRs #2 and #3, merged in)
 Done:
