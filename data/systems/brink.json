@@ -1,0 +1,101 @@
+{
+  "id": "brink",
+  "name": "Brink",
+  "seed": 3006,
+  "edge_radius": 12000,
+  "jump_radius": 10000,
+  "objects": [
+    {
+      "id": "brink",
+      "type": "star",
+      "name": "Brink",
+      "position": [
+        0,
+        0
+      ],
+      "radius": 1300,
+      "colour": "#ffd090"
+    },
+    {
+      "id": "outpost",
+      "type": "planet",
+      "name": "Outpost",
+      "position": [
+        6000,
+        3000
+      ],
+      "radius": 480,
+      "colour": "#90a060",
+      "description": "The last authority-licensed port before the frontier; it doesn't ask much.",
+      "landable": true,
+      "government": "independent_traders",
+      "min_record": -60
+    },
+    {
+      "id": "brink_watch",
+      "type": "station",
+      "name": "Brink Watch",
+      "position": [
+        -4000,
+        -4000
+      ],
+      "radius": 240,
+      "colour": "#a0a8b8",
+      "description": "An authority picket guarding the chokepoint.",
+      "landable": true,
+      "government": "local_authority",
+      "min_record": -10
+    }
+  ],
+  "traffic": [
+    {
+      "pool": "trader_traffic",
+      "count": 2
+    },
+    {
+      "pool": "authority_patrol",
+      "count": 1
+    },
+    {
+      "pool": "pirate_raid",
+      "count": 1
+    }
+  ],
+  "backdrop": {
+    "parallax": 0.02,
+    "base_colour": "#04050a",
+    "stars": {
+      "density": 0.05,
+      "brightness": 0.8,
+      "size": 1.2,
+      "spacing": 16
+    },
+    "nebula": {
+      "coverage": 0.4,
+      "intensity": 0.6,
+      "softness": 0.4,
+      "gradient": [
+        "#08060a",
+        "#2a1a20",
+        "#70403a"
+      ]
+    },
+    "noise": {
+      "seed": 44,
+      "frequency": 0.005,
+      "octaves": 5,
+      "texture_size": 1024,
+      "scale": 2
+    }
+  },
+  "local_space": [
+    {
+      "scenery": "dust",
+      "density": 30
+    },
+    {
+      "scenery": "rock",
+      "density": 0.6
+    }
+  ]
+}

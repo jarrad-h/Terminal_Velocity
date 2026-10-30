@@ -1,0 +1,98 @@
+{
+  "id": "aster",
+  "name": "Aster",
+  "seed": 3003,
+  "edge_radius": 12000,
+  "jump_radius": 10000,
+  "objects": [
+    {
+      "id": "aster",
+      "type": "star",
+      "name": "Aster",
+      "position": [
+        0,
+        0
+      ],
+      "radius": 1400,
+      "colour": "#fff4d8"
+    },
+    {
+      "id": "meridian",
+      "type": "planet",
+      "name": "Meridian",
+      "position": [
+        7000,
+        -2000
+      ],
+      "radius": 600,
+      "colour": "#5a90c0",
+      "description": "The authority's administrative capital; orderly docks and long queues.",
+      "landable": true,
+      "government": "local_authority",
+      "min_record": -20
+    },
+    {
+      "id": "aster_yard",
+      "type": "station",
+      "name": "Aster Yards",
+      "position": [
+        -5200,
+        4800
+      ],
+      "radius": 240,
+      "colour": "#b0b8c8",
+      "description": "Repair slips and refuelling for the core lanes.",
+      "landable": true,
+      "government": "local_authority",
+      "min_record": -10,
+      "refuel_price": 2
+    }
+  ],
+  "traffic": [
+    {
+      "pool": "trader_traffic",
+      "count": 3
+    },
+    {
+      "pool": "authority_patrol",
+      "count": 2
+    }
+  ],
+  "backdrop": {
+    "parallax": 0.02,
+    "base_colour": "#04050a",
+    "stars": {
+      "density": 0.05,
+      "brightness": 0.8,
+      "size": 1.2,
+      "spacing": 16
+    },
+    "nebula": {
+      "coverage": 0.35,
+      "intensity": 0.5,
+      "softness": 0.4,
+      "gradient": [
+        "#060814",
+        "#142a50",
+        "#3a5a90"
+      ]
+    },
+    "noise": {
+      "seed": 41,
+      "frequency": 0.005,
+      "octaves": 5,
+      "texture_size": 1024,
+      "scale": 2
+    }
+  },
+  "local_space": [
+    {
+      "scenery": "dust",
+      "density": 30
+    },
+    {
+      "scenery": "small_debris",
+      "density": 0.5
+    }
+  ]
+}

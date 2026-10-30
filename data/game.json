@@ -1,6 +1,15 @@
 {
   "player_ship": "shuttle",
-  "system": "test_nebula",
+  "galaxy": "test_cluster",
+  "calendar": {"start_date": "3200-01-01"},
+  "hyperspace": {
+    "stop_speed": 2,
+    "align_tolerance": 1,
+    "thrust_angle": 20,
+    "overdrive_accel_factor": 6,
+    "engage_speed_factor": 4,
+    "arrival_speed_fraction": 0.5
+  },
   "art_scale": 1.0,
   "mounts": {
     "arc": {"pivot": 30, "turret": 360},
@@ -14,7 +23,7 @@
     }
   },
   "player": {
-    "credits": 0,
+    "credits": 1000,
     "record": 0,
     "escape_pod": true,
     "insured": true,

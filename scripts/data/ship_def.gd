@@ -31,6 +31,14 @@ var loadout: Array[LoadoutEntry] = []
 var engines: Array[Vector2] = []
 var engine_colour: Color
 var engine_size: float
+## TR8: fuel capacity, and the fuel one hyperlane jump costs (flat for now;
+## Hyperlanes.jump_fuel is the one place the rule lives).
+var fuel: float
+var jump_fuel: float
+## TR2: hyperspace countdown, seconds (outfits will shorten it, OF3).
+var jump_countdown: float
+## TM2: galaxy-map units covered per day of hyperlane travel.
+var jump_speed: float
 
 
 static func parse(r: DefReader) -> ShipDef:
@@ -75,6 +83,13 @@ static func parse(r: DefReader) -> ShipDef:
 	var glow: DefReader = r.object("engine_glow")
 	d.engine_colour = glow.colour("colour", Color.html("#a8d8ff"))
 	d.engine_size = glow.number("size", 6.0, false, 0.0)
+	d.fuel = r.number("fuel", 300.0, false, 0.0)
+	d.jump_fuel = r.number("jump_fuel", 100.0, false, 0.0)
+	d.jump_countdown = r.number("jump_countdown", 3.0, false, 0.0)
+	d.jump_speed = r.number("jump_speed", 150.0, false, 0.0)
+	if r.has("jump_speed") and d.jump_speed <= 0.0:
+		r.error("jump_speed", "must be more than 0")
+		d.jump_speed = 150.0
 	return d
 
 

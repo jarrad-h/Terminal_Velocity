@@ -15,7 +15,14 @@ Fields marked **required** have no default.
 | Field | Meaning | Default |
 | --- | --- | --- |
 | `player_ship` | Ship ID the player starts in | `"shuttle"` |
-| `system` | System ID loaded at start | `"test_nebula"` |
+| `galaxy` | TR1: galaxy ID (from `galaxy/`); the player starts in its `start_system` | `"test_cluster"` |
+| `calendar.start_date` | TM1: the date of day 0, `"YYYY-MM-DD"` (placeholder until the setting decides) | `"3200-01-01"` |
+| `hyperspace.stop_speed` | TR2: during the jump sequence the ship counts as stopped below this speed (px/s) and is held still | `2` |
+| `hyperspace.align_tolerance` | TR2: degrees from the destination bearing at which the ship counts as facing it | `1` |
+| `hyperspace.thrust_angle` | TR2: while stopping, the ship burns once within this many degrees of facing against its velocity | `20` |
+| `hyperspace.overdrive_accel_factor` | TR2: after the countdown the ship accelerates at its `accel` × this, past its speed cap | `6` |
+| `hyperspace.engage_speed_factor` | TR2: the hyperdrive engages at the ship's `top_speed` × this (more than 1) | `4` |
+| `hyperspace.arrival_speed_fraction` | TR4: arrivals enter at this fraction of top speed (0–1) | `0.5` |
 | `art_scale` | V1: one scale for all ship art: sprites, hitboxes, hardpoints and engine exits (all written in art px) are multiplied by it. More than 0 | `1.0` |
 | `mounts.arc.pivot`, `mounts.arc.turret` | V3: default total arc in degrees (0–360) for pivot and turret hardpoints, centred on the heading; a hardpoint's `arc` overrides it. Fixed mounts have no arc | `30`, `360` |
 | `mounts.traverse.pivot`, `mounts.traverse.turret` | V4: how fast a pivot or turret barrel swings, degrees/s; a hardpoint's `traverse` overrides it | `180`, `360` |
@@ -90,6 +97,10 @@ Fields marked **required** have no default.
 | `loadout` | V3: installed weapons, `[{"hardpoint": <id>, "weapon": <weapon ID>, "mount": <mount type>}]`, at most one per hardpoint. `mount` is the mount the item was built for. The weapon's `size` must equal the hardpoint's, the item's `mount` must equal the hardpoint's, and the weapon must come in that mount; otherwise the game won't start | `[]` |
 | `engines` | V5: engine exits `[[x, y], …]` in art px (from `hardpoints.json`), where the glow is drawn | `[]` |
 | `engine_glow` | V5: `{"colour": "#rrggbb", "size": px}`; brightens with thrust | `{"colour": "#a8d8ff", "size": 6}` |
+| `fuel` | TR8: fuel capacity, units | `300` |
+| `jump_fuel` | TR8: fuel one hyperlane jump costs (flat per jump for now; the rule lives in `Hyperlanes.jump_fuel`) | `100` |
+| `jump_countdown` | TR2: seconds of hyperspace countdown once stopped and facing the destination | `3` |
+| `jump_speed` | TM2: galaxy-map units travelled per day; a jump takes lane length ÷ this days, rounded up, at least 1 (more than 0) | `150` |
 
 ## `weapons/`
 
@@ -189,6 +200,15 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `placeholder.roughness` | 0 = regular, 1 = very jagged | `0.3` |
 | `placeholder.aspect` | Width ÷ height; above 1 for long shapes like hulls | `1` |
 
+## `galaxy/` — the map (TR1, TR7)
+
+| Field | Meaning | Default |
+| --- | --- | --- |
+| `name` | Display name | **required** |
+| `start_system` | System the player starts in; must be listed and not `hidden` | **required** |
+| `systems` | `[{"system": <system ID>, "position": [x, y], "map_state": …}]`, each system once. `position` is in map units (+y is down, as in space); `map_state` is how it starts on the map: `explored` (name, government and system view shown), `unexplored` (shown as "Unexplored" until visited) or `hidden` (not drawn or routable, nor its lanes, until revealed) | **required**; `map_state` `"unexplored"` |
+| `hyperlanes` | `[{"from": <system ID>, "to": <system ID>}]`; two-way, each pair once, both ends listed in `systems` | `[]` |
+
 ## `systems/`
 
 | Field | Meaning | Default |
@@ -201,8 +221,9 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `local_space` | `[{"scenery": <scenery ID>, "density": d, "region": {…}}]` | `[]` |
 | `edge_radius` | Traffic arrives and leaves this far from the system centre, px (A6) | `6000` |
 | `respawn_delay` | Seconds before replacing a ship that left or died `[min, max]` | `[5, 15]` |
+| `jump_radius` | TR2: hyperlane jumps need the ship at least this far from the centre, px; TR4: arrivals appear at this distance | `8000` |
 
-**`objects[]`:** `id` (**required**, unique in the system), `type` (`star`, `planet`, `station`; **required**), `name` (**required**), `position` (**required**), `radius` (`100`), `colour` (`"#7f99cc"`), `sprite` (`""`), `description` (`""`), `landable` (`false`), `government` (government ID, `""`), `min_record` (`-1000`).
+**`objects[]`:** `id` (**required**, unique in the system), `type` (`star`, `planet`, `station`; **required**), `name` (**required**), `position` (**required**), `radius` (`100`), `colour` (`"#7f99cc"`), `sprite` (`""`), `description` (`""`), `landable` (`false`), `government` (government ID, `""`), `min_record` (`-1000`), `sells_fuel` (TR8, landable objects only; `true`), `refuel_price` (TR8: credits per unit of fuel; `2`), `landing_days` (TM2: days that pass on landing; `1`), `takeoff_days` (TM2: days that pass on taking off; `0`). Landed activities (trade, missions) will carry their own day costs when they exist.
 
 **`local_space[]`:** `density` (**required**) is objects per 1,000,000 px² (a 1000 × 1000 px area) inside the region. `region.shape` is `whole` (default, everywhere), `circle` (`centre`, `radius`) or `ring` (`centre`, `inner_radius`, `radius` = outer). `centre` defaults to `[0, 0]`.
 

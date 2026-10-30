@@ -32,7 +32,7 @@ func _ready() -> void:
 	actions.scene = self
 	add_child(actions)
 	camera.configure(settings["camera"])
-	load_system(settings["system"])
+	load_system(DataRegistry.galaxy().start_system)
 
 	var player: Ship = spawn_ship(settings["player_ship"], Vector2.ZERO)
 	if player != null:
@@ -104,4 +104,4 @@ func spawn_ship(ship_id: String, at: Vector2, government: String = "") -> Ship:
 func _on_data_reloaded() -> void:
 	camera.configure(DataRegistry.settings["camera"])
 	if not load_system(system.id):
-		load_system(DataRegistry.settings["system"])
+		load_system(DataRegistry.galaxy().start_system)

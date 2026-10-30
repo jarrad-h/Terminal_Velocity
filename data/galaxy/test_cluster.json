@@ -1,0 +1,31 @@
+{
+  "id": "test_cluster",
+  "name": "Test Cluster",
+  "start_system": "test_nebula",
+  "systems": [
+    {"system": "test_nebula", "position": [0, 0], "map_state": "explored"},
+    {"system": "test_graveyard", "position": [130, -70]},
+    {"system": "lumen", "position": [230, 20]},
+    {"system": "aster", "position": [110, 110]},
+    {"system": "drift", "position": [170, 230]},
+    {"system": "brink", "position": [240, 340]},
+    {"system": "solace", "position": [380, 320]},
+    {"system": "ember", "position": [300, 460]},
+    {"system": "hollow", "position": [500, 400], "map_state": "hidden"},
+    {"system": "redhaven", "position": [450, 520]}
+  ],
+  "hyperlanes": [
+    {"from": "test_nebula", "to": "test_graveyard"},
+    {"from": "test_graveyard", "to": "lumen"},
+    {"from": "lumen", "to": "aster"},
+    {"from": "aster", "to": "test_nebula"},
+    {"from": "aster", "to": "drift"},
+    {"from": "drift", "to": "brink"},
+    {"from": "brink", "to": "solace"},
+    {"from": "brink", "to": "ember"},
+    {"from": "solace", "to": "ember"},
+    {"from": "ember", "to": "redhaven"},
+    {"from": "solace", "to": "hollow"},
+    {"from": "hollow", "to": "redhaven"}
+  ]
+}

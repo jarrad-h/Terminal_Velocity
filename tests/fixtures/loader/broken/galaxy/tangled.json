@@ -1,0 +1,4 @@
+{"name": "Tangled", "start_system": "tiny",
+ "systems": [{"system": "tiny", "position": [0, 0], "map_state": "hidden"}, {"system": "sys", "position": [10, 0]},
+             {"system": "nowhere", "position": [9, 9]}],
+ "hyperlanes": [{"from": "tiny", "to": "sys"}, {"from": "sys", "to": "tiny"}, {"from": "sys", "to": "sys"}, {"from": "tiny", "to": "elsewhere"}]}

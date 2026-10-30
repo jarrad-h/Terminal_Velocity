@@ -1,0 +1,3 @@
+{"name": "Tiny", "start_system": "home",
+ "systems": [{"system": "home", "position": [0, 0], "map_state": "explored"}, {"system": "away", "position": [100, 0]}],
+ "hyperlanes": [{"from": "home", "to": "away"}]}

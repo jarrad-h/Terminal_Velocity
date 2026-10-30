@@ -6,15 +6,18 @@ extends RefCounted
 ## collected as errors naming the file and field, never thrown.
 
 ## Definition type folders, in load order.
-const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery", "personalities"]
+const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery", "personalities", "galaxy"]
 
 const SETTINGS_FILE: String = "game.json"
 
 ## Global settings defaults; documented in data/README.md.
 const SETTINGS_DEFAULTS: Dictionary = {
 	"player_ship": "shuttle",
-	"system": "test_nebula",
+	"galaxy": "test_cluster",
 	"art_scale": 1.0,
+	"calendar": {"start_date": "3200-01-01"},
+	"hyperspace": {"stop_speed": 2.0, "align_tolerance": 1.0, "thrust_angle": 20.0,
+		"overdrive_accel_factor": 6.0, "engage_speed_factor": 4.0, "arrival_speed_fraction": 0.5},
 	"mounts": {"arc": {"pivot": 30.0, "turret": 360.0}, "traverse": {"pivot": 180.0, "turret": 360.0},
 		"fire_tolerance": 5.0, "turret_sprites": {"small": "", "medium": "", "large": "", "point_defence": ""}},
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
@@ -115,6 +118,8 @@ static func _parse(type: String, reader: DefReader) -> Def:
 			return SceneryDef.parse(reader)
 		"personalities":
 			return PersonalityDef.parse(reader)
+		"galaxy":
+			return GalaxyDef.parse(reader)
 	assert(false, "unknown definition type " + type)
 	return null
 
@@ -123,7 +128,17 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var errors: Array[String] = []
 	var reader := DefReader.new(data_set.settings, SETTINGS_FILE, errors)
 	reader.ref("player_ship", "ships")
-	reader.ref("system", "systems")
+	reader.ref("galaxy", "galaxy")
+	var calendar: DefReader = reader.object("calendar")
+	if not Calendar.is_valid_date(calendar.string("start_date")):
+		calendar.error("start_date", "expected a date like \"3200-01-01\"")
+	var hyperspace: DefReader = reader.object("hyperspace")
+	for key: String in SETTINGS_DEFAULTS["hyperspace"]:
+		hyperspace.number(key, 0.0, false, 0.0)
+	if hyperspace.number("arrival_speed_fraction", 0.0, false, 0.0) > 1.0:
+		hyperspace.error("arrival_speed_fraction", "must be at most 1")
+	if hyperspace.has("engage_speed_factor") and float(hyperspace.data["engage_speed_factor"]) <= 1.0:
+		hyperspace.error("engage_speed_factor", "must be more than 1 (the hyperdrive engages beyond top speed)")
 	if reader.number("art_scale", 1.0, false, 0.0) <= 0.0:
 		reader.error("art_scale", "must be more than 0")
 	var mounts: DefReader = reader.object("mounts")
@@ -233,4 +248,4 @@ static func _merged(base: Dictionary, over: Dictionary) -> Dictionary:
 static func _singular(type: String) -> String:
 	return {"ships": "ship", "weapons": "weapon", "governments": "government",
 		"ai_pools": "AI pool", "systems": "system", "scenery": "scenery",
-		"personalities": "personality"}[type]
+		"personalities": "personality", "galaxy": "galaxy"}[type]

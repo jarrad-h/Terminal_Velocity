@@ -1,0 +1,97 @@
+{
+  "id": "lumen",
+  "name": "Lumen",
+  "seed": 3004,
+  "edge_radius": 12000,
+  "jump_radius": 10000,
+  "objects": [
+    {
+      "id": "lumen",
+      "type": "star",
+      "name": "Lumen",
+      "position": [
+        0,
+        0
+      ],
+      "radius": 1800,
+      "colour": "#ffffff"
+    },
+    {
+      "id": "glassway",
+      "type": "planet",
+      "name": "Glassway",
+      "position": [
+        -6400,
+        -3600
+      ],
+      "radius": 520,
+      "colour": "#80c0b0",
+      "description": "Orbital mirrors keep this cold world farmed.",
+      "landable": true,
+      "government": "local_authority",
+      "min_record": -20
+    },
+    {
+      "id": "lantern",
+      "type": "planet",
+      "name": "Lantern",
+      "position": [
+        5600,
+        5600
+      ],
+      "radius": 360,
+      "colour": "#d0b070",
+      "description": "A trading moon under authority licence.",
+      "landable": true,
+      "government": "independent_traders",
+      "min_record": -60
+    }
+  ],
+  "traffic": [
+    {
+      "pool": "trader_traffic",
+      "count": 3
+    },
+    {
+      "pool": "authority_patrol",
+      "count": 1
+    }
+  ],
+  "backdrop": {
+    "parallax": 0.02,
+    "base_colour": "#04050a",
+    "stars": {
+      "density": 0.07,
+      "brightness": 1.0,
+      "size": 1.2,
+      "spacing": 16
+    },
+    "nebula": {
+      "coverage": 0.25,
+      "intensity": 0.4,
+      "softness": 0.4,
+      "gradient": [
+        "#080810",
+        "#30304a",
+        "#9090b0"
+      ]
+    },
+    "noise": {
+      "seed": 42,
+      "frequency": 0.005,
+      "octaves": 5,
+      "texture_size": 1024,
+      "scale": 2
+    }
+  },
+  "local_space": [
+    {
+      "scenery": "dust",
+      "density": 30
+    },
+    {
+      "scenery": "rock",
+      "density": 0.4
+    }
+  ]
+}
