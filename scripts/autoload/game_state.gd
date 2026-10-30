@@ -31,6 +31,7 @@ func _ready() -> void:
 
 func _start_new() -> void:
 	flags.clear()
+	flags_changed.emit()
 	credits = int(DataRegistry.settings["player"]["credits"])
 	clock.day = 0
 	travel = TravelState.new()
@@ -129,6 +130,7 @@ func from_dict(data: Dictionary) -> void:
 	clock.day = int(data.get("day", 0))
 	travel = TravelState.from_dict(data.get("travel", {}))
 	flags = (data.get("flags", {}) as Dictionary).duplicate()
+	flags_changed.emit()
 	credits_changed.emit(credits)
 
 

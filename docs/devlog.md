@@ -47,6 +47,24 @@ Branch `p2m2-gates-lighting`, built in a cloud session (Godot 4.7.2 headless; ch
   - unit: gate rules, plus the loader's gate, gate-link and art errors;
   - scenario: docking, every refusal, gate travel, flags, lit hulls and turrets, the raider fallback, star and ambient from data, every stellar drawn from its art with the right scale, planet layers, the night mask, gas giant rings, the closed-gate ring, lit rocks, the shot-light cap and release, and D14.
 
+### Review (godot-reviewer) and fixes
+
+- **Fixed before handover:**
+  - `data/README.md` still listed the removed `sprite` field. `art` is now documented for every stellar.
+  - Unit tests added for the lighting and stellar settings, per-system lighting overrides, `SystemLighting.settings_for` and `GalaxyDef.gate_destinations`.
+  - Gate rings now refresh when flags are reset or loaded.
+  - Console `star height` no longer crashes outside a system.
+- **Recorded in `docs/decisions.md`:**
+  - engine lights sit outside the light cap;
+  - 1-day gate links may equal a 1-day hyperlane route (to confirm with Jarrad).
+- **Left for later:**
+  - The light is aimed at the player, so distant stellars are lit from the player's direction rather than their own. Check at playtest.
+  - An exported build must include the art manifests (`*.json` under `assets/`).
+  - Dialog title size and margins aren't in the theme yet.
+  - A few cosmetic numbers (placeholder gate ring, closed-link dimming, shader softness) are in code.
+  - Planet manifest layers aren't checked by the loader.
+  - `lighting.enabled` isn't re-read on a data reload.
+
 ### Key values
 
 - **Lighting:**

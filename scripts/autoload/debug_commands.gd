@@ -421,7 +421,7 @@ func run_command(line: String) -> String:
 			if w.size() == 3 and w[1] == "angle" and ConsoleParser.is_number(w[2]):
 				set_star_angle(w[2].to_float())
 				return "Star light from %s°" % w[2]
-			if w.size() == 3 and w[1] == "height" and ConsoleParser.is_number(w[2]):
+			if w.size() == 3 and w[1] == "height" and ConsoleParser.is_number(w[2]) and _lighting() != null:
 				set_star_height(w[2].to_float())
 				return "Star height %.2f" % _lighting().star_light.height
 			return "Usage: star angle <degrees>|auto | star height <0-1>"

@@ -196,3 +196,8 @@ Why: Jarrad's direction, 30 Oct 2026, after the light maps landed (PR #4).
 - **Lighting:** things with maps are shaded; things without (dust, shots, beams, flashes) keep their brightness. Planet city lights are masked to the night side (a small shader, in V9).
 - **Not now:** cast shadows go on the review list as a visual uplift if cheap; station weapons are agreed for Phase 3 (the art already carries mounts); named anchors and compound stellar hit shapes join OF7 and the hardpoint editor in milestone 6; a large turret sprite and pirate turrets go on the review list.
 Why: Jarrad's answers to the art session's questions, 30 Oct 2026.
+
+## 2026-10-30 — Milestone 2 review: engine lights outside the light cap; 1-day gate links (V8, TR5)
+- **Engine lights (V8):** each ship carries one engine light that is not counted against `lighting.max_lights`; the cap covers shots, beams and impacts, the part that grows with fire. Engine lights grow only with ship count (system traffic is a handful of ships), and a 10-ship fight measured the same frame time with lighting on and off. Revisit with a separate cap if systems get crowded.
+- **1-day routes (TR5):** days are whole numbers with a minimum of 1, so a gate link between systems one 1-day jump apart can't be faster; the loader allows it to equal the lane route there and requires it to be strictly fewer days on any longer route. To confirm with Jarrad at playtest.
+Why: found by the godot-reviewer at the milestone 2 handover.
