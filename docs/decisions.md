@@ -131,3 +131,37 @@ Why: Jarrad's direction, 2026-10-29.
 - The target schematic shows the shield as a translucent bubble round the hull, not an outline.
 - Disabled ships show on the radar as a pale version of their standing colour (`radar.disabled_pale`).
 Why: Jarrad's playtest, 2026-10-29. Supersedes the 20–30 s target in the M7 scope entry.
+
+## 2026-10-30 — Phase 2 is "the loop"; spec in docs/phase2-spec.md
+Phase 2 turns the prototype into an hour of play: galaxy and travel, a day calendar, persistence, saves, economy, shipyard and outfitter, a mission engine, progression and one short arc, in that milestone order.
+Why: the prototype proved combat; it has no reason to keep playing. Persistence comes before saves so the save format is designed around it.
+Rejected: building more combat depth first (AI finishing ships, point defence, escorts); kept on the review list.
+
+## 2026-10-30 — Travel: hyperlanes and gates now; jump drive and currents in Phase 3 (TR)
+Hyperlane jumps go to adjacent systems only, need the ship beyond the jump radius, and stop the ship for a countdown, so jumping is not an instant escape. Gates are owned by whoever controls the system, link to other gates regardless of adjacency, charge a fee and check the record, and can be closed by a flag. A player-earned jump drive and another faction's one-way "currents" are agreed for Phase 3.
+Why: Jarrad's design; two clear trade-offs first, exotic travel once the faction that owns it exists. Rejected for now: leviathan travel (revisit with fauna).
+
+## 2026-10-30 — Time is a day calendar advanced only by actions (TM)
+Landing and taking off, jumps, gate travel and some missions cost days; nothing ticks in real time. Days are the smallest grain.
+Why: Jarrad's direction; gives deadlines, fleet arrivals and price events meaning without a real-time clock.
+
+## 2026-10-30 — Persistence at three levels of detail (PS)
+The current system is fully simulated; persistent entities (named characters, fleets, ships the player marked) are tracked galaxy-wide in summary and materialise when the player is present; every system has a memory (alert, pirate presence, wrecks) that recovers over days. Phase 2 builds the foundation and three test entities; the war front is Phase 3.
+Why: Jarrad wants characters and fleets that can be followed between systems and no free reset by jumping out and back. Rejected: everything resets on leaving (exploitable); full simulation of every system (cost).
+
+## 2026-10-30 — Economy: fixed price tiers plus price events (EC)
+Nova-style low/medium/high tiers per stellar, with data-driven temporary events. Dynamic supply and demand goes on the review list.
+Why: predictable to balance first. Rejected for now: dynamic supply and demand.
+
+## 2026-10-30 — Ironman pilots; full trader playstyle; broad progression (SV, OF6, PR)
+Ironman is chosen at pilot creation and locks the pilot to one save. A pure trader must be viable, with escape (afterburner, hyperspace tuning, sensors, cargo decoys) as the trader's answer to danger. Progression is money, faction standing and ranks, combat and trade ratings, and data-defined achievements.
+Why: Jarrad's direction.
+
+## 2026-10-30 — Hull manifests replace documented hardpoints; editor in the repo (OF7–OF9)
+Each hull's geometry lives in one `hull.json`; ship data names the hull and a loadout by hardpoint ID, and nothing is copied by hand. Readable summaries and spec sheets are generated for review only. The manifest gains compound hit shapes (wide hulls), sprite layers, size class and displacement, and the parts a generated hull was built from. Shipyards cap the hull size they sell (OF8); hull base stats go through the outfit modifier system (OF9). `tools/hardpoint-editor/index.html` writes the manifest and changes with its format. Built in Phase 2 milestone 6.
+Why: the art-to-data hand-off via written summaries drifted (three ships disagreed with their art); the capsule rule (width at most length) can't fit wide hulls.
+Rejected: keeping prose hardpoint documentation as the contract.
+
+## 2026-10-30 — Prepare for player-built ships; art phase before Phase 3
+Every ship is saved as a design plus instance state (SV1), and art is kept as individual part assets with their own manifests (category, attachment points, paint mask, cosmetic flag), so a late-game ship designer and player shipyards stay possible without rework. An art phase between Phase 2 and Phase 3 builds the expanded asset library.
+Why: Jarrad wants player stations and ship manufacturing late game; these choices are cheap now and expensive to retrofit.

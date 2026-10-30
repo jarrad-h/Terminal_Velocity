@@ -1,0 +1,1117 @@
+<title>Hardpoint Editor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
+<style>
+/* Layout: a drafting bench. Sprite canvas on the left fills the screen, a narrow inspector rail on the right; stacks on phones. */
+:root {
+  --bg: #eef0f2;
+  --panel: #f8f9fa;
+  --panel-2: #e4e7eb;
+  --line: #ccd2d9;
+  --ink: #1b2129;
+  --ink-2: #56606c;
+  --accent: #c2650f;
+  --accent-ink: #ffffff;
+  --bench: #d9dde2;
+  --check-a: #cfd4da;
+  --check-b: #c4c9d0;
+  --good: #2f7d4f;
+  --warn: #a86a00;
+  --bad: #b3261e;
+  --m-fixed: #d97a00;
+  --m-pivot: #8a6dd6;
+  --m-turret: #0f8fb3;
+  --m-launcher: #4a5562;
+  --m-engine: #e04b1a;
+  --m-hit: #c2257a;
+  --font-ui: "IBM Plex Sans Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161b; --panel: #181d23; --panel-2: #20262e; --line: #2d353f; --ink: #e3e7ec; --ink-2: #93a0ae;
+    --accent: #f0913a; --accent-ink: #1a1206; --bench: #0c0f13; --check-a: #171c22; --check-b: #1d232a;
+    --good: #5cc28a; --warn: #e3a93c; --bad: #ff7a70;
+    --m-fixed: #ffb040; --m-pivot: #b49bff; --m-turret: #5fd8ff; --m-launcher: #e6eaee; --m-engine: #ff7a45; --m-hit: #ff6fb8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161b; --panel: #181d23; --panel-2: #20262e; --line: #2d353f; --ink: #e3e7ec; --ink-2: #93a0ae;
+  --accent: #f0913a; --accent-ink: #1a1206; --bench: #0c0f13; --check-a: #171c22; --check-b: #1d232a;
+  --good: #5cc28a; --warn: #e3a93c; --bad: #ff7a70;
+  --m-fixed: #ffb040; --m-pivot: #b49bff; --m-turret: #5fd8ff; --m-launcher: #e6eaee; --m-engine: #ff7a45; --m-hit: #ff6fb8;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.4 var(--font-ui); }
+* { box-sizing: border-box; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr; grid-template-columns: minmax(0, 1fr); }
+header.bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  border-bottom: 1px solid var(--line); background: var(--panel);
+}
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; min-width: 0; flex: 1 1 200px; }
+.brand h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: 0.02em; }
+.brand .hull { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 4px;
+  border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap;
+}
+.btn:hover { border-color: var(--ink-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn:focus-visible, .seg button:focus-visible, input:focus-visible, select:focus-visible, .row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+main.work { display: grid; grid-template-columns: minmax(0, 1fr) 360px; min-height: 0; }
+.stage { position: relative; min-width: 0; min-height: 320px; background: var(--bench); overflow: hidden; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
+.toolbar {
+  position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  max-width: calc(100% - 24px);
+}
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: transparent; padding: 6px 10px; cursor: pointer; font-size: 13px; border-right: 1px solid var(--line); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg select { border: 0; background: transparent; padding: 6px 8px; font-size: 13px; border-right: 1px solid var(--line); }
+.seg select:last-child { border-right: 0; }
+.kbd { font-family: var(--font-mono); font-size: 10.5px; opacity: 0.7; }
+.readout {
+  position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: 12px; display: flex; gap: 14px; flex-wrap: wrap;
+  font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); background: var(--panel); border: 1px solid var(--line);
+  padding: 5px 10px; border-radius: 4px; font-variant-numeric: tabular-nums;
+}
+.zoomctl { position: absolute; right: 12px; bottom: 12px; }
+.legend {
+  position: absolute; right: 12px; top: 12px; display: grid; gap: 3px; font-size: 12px; color: var(--ink-2);
+  background: var(--panel); border: 1px solid var(--line); padding: 7px 10px; border-radius: 4px;
+}
+.legend span { display: flex; align-items: center; gap: 7px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.drop { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--bench) 80%, transparent); border: 2px dashed var(--accent); font-size: 18px; font-weight: 600; pointer-events: none; }
+aside.inspector { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; min-width: 0; }
+section.blk { padding: 14px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+section.blk h2 { margin: 0; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); display: flex; justify-content: space-between; align-items: center; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 10px; }
+.span2 { grid-column: span 2; }
+label.f { display: grid; gap: 3px; font-size: 12px; color: var(--ink-2); min-width: 0; }
+label.f input, label.f select {
+  width: 100%; min-width: 0; padding: 5px 7px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg);
+  font-family: var(--font-mono); font-size: 12.5px; color: var(--ink);
+}
+label.f select { font-family: var(--font-ui); font-size: 13px; }
+label.f input:disabled { opacity: 0.5; }
+.note { font-size: 12px; color: var(--ink-2); margin: 0; }
+.list { display: grid; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.row {
+  display: grid; grid-template-columns: 46px 12px 1fr auto; gap: 8px; align-items: center; padding: 5px 9px; cursor: pointer;
+  border-bottom: 1px solid var(--line); font-size: 12.5px; background: var(--bg);
+}
+.row:last-child { border-bottom: 0; }
+.row.sel { background: color-mix(in srgb, var(--accent) 16%, var(--bg)); }
+.row .id { font-family: var(--font-mono); font-weight: 500; }
+.row .pos { font-family: var(--font-mono); color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+.row.eng { grid-template-columns: 46px 12px 1fr auto; }
+.empty { padding: 10px; font-size: 12.5px; color: var(--ink-2); background: var(--bg); }
+.checks { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.checks li { display: grid; grid-template-columns: 16px 1fr; gap: 6px; font-size: 12.5px; cursor: default; }
+.checks li[data-target] { cursor: pointer; }
+.checks li .ic { font-weight: 700; }
+.checks .e .ic { color: var(--bad); }
+.checks .w .ic { color: var(--warn); }
+.checks .ok .ic { color: var(--good); }
+.pill { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; }
+.pill.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+.pill.warn { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.pill.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+pre.json {
+  margin: 0; max-height: 260px; overflow: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
+  padding: 8px 10px; font: 11.5px/1.45 var(--font-mono); white-space: pre; user-select: all;
+}
+.btnrow { display: flex; flex-wrap: wrap; gap: 6px; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 4px; font-size: 13px; z-index: 30; max-width: 90vw;
+}
+.modal { position: fixed; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--bench) 70%, transparent); z-index: 25; padding: 16px; }
+.modal .card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px; width: min(420px, 100%); display: grid; gap: 12px; }
+.modal h3 { margin: 0; font-size: 16px; }
+@media (max-width: 860px) {
+  .app { height: auto; }
+  main.work { grid-template-columns: minmax(0, 1fr); }
+  .stage { height: 62vh; }
+  aside.inspector { border-left: 0; border-top: 1px solid var(--line); }
+  .legend { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand"><h1>Hardpoint Editor</h1><span class="hull" id="hullTag"></span></div>
+    <div class="actions">
+      <button class="btn" id="bNew" type="button">New</button>
+      <button class="btn" id="bOpenPng" type="button">Open sprite (PNG)</button>
+      <button class="btn" id="bOpenJson" type="button">Open JSON</button>
+      <button class="btn" id="bUndo" type="button" title="Undo (Ctrl+Z)">Undo</button>
+      <button class="btn" id="bSheet" type="button">Save spec sheet</button>
+      <button class="btn primary" id="bSave" type="button">Save hull.json</button>
+    </div>
+    <input type="file" id="fPng" accept="image/png,image/webp,image/gif" hidden>
+    <input type="file" id="fJson" accept=".json,application/json" hidden>
+  </header>
+
+  <main class="work">
+    <div class="stage" id="stage">
+      <canvas id="cv" aria-label="Hull sprite with hardpoints. Click to place, drag to move."></canvas>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Tool">
+          <button type="button" data-tool="select" aria-pressed="true">Select <span class="kbd">V</span></button>
+          <button type="button" data-tool="hardpoint" aria-pressed="false">Hardpoint <span class="kbd">H</span></button>
+          <button type="button" data-tool="engine" aria-pressed="false">Engine <span class="kbd">E</span></button>
+        </div>
+        <div class="seg" aria-label="New hardpoint">
+          <select id="tMount" aria-label="Mount for new hardpoints">
+            <option value="fixed">Fixed</option><option value="pivot">Pivot</option><option value="turret" selected>Turret</option><option value="launcher">Launcher</option>
+          </select>
+          <select id="tSize" aria-label="Size for new hardpoints">
+            <option value="small" selected>Small</option><option value="medium">Medium</option><option value="large">Large</option>
+          </select>
+        </div>
+        <div class="seg">
+          <button type="button" id="tMirror" aria-pressed="true" title="Mirror across the centreline (M)">Mirror <span class="kbd">M</span></button>
+          <select id="tSnap" aria-label="Snap">
+            <option value="0.5" selected>Snap 0.5 px</option><option value="1">Snap 1 px</option><option value="0">No snap</option>
+          </select>
+        </div>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <span><i class="sw" style="background:var(--m-fixed)"></i>Fixed</span>
+        <span><i class="sw" style="background:var(--m-pivot)"></i>Pivot</span>
+        <span><i class="sw" style="background:var(--m-turret)"></i>Turret</span>
+        <span><i class="sw" style="background:var(--m-launcher)"></i>Launcher</span>
+        <span><i class="sw" style="background:var(--m-engine)"></i>Engine</span>
+        <span><i class="sw" style="background:var(--m-hit)"></i>Hit capsule</span>
+      </div>
+      <div class="readout"><span id="rCursor">x –  y –</span><span id="rZoom">zoom –</span></div>
+      <div class="seg zoomctl">
+        <button type="button" id="zOut" aria-label="Zoom out">−</button>
+        <button type="button" id="zFit">Fit</button>
+        <button type="button" id="zIn" aria-label="Zoom in">+</button>
+      </div>
+      <div class="drop" id="drop" hidden>Drop a PNG or JSON</div>
+    </div>
+
+    <aside class="inspector">
+      <section class="blk">
+        <h2>Hull</h2>
+        <div class="grid2">
+          <label class="f">ID <input id="hId" spellcheck="false" placeholder="sow_p_b_patrol"></label>
+          <label class="f">Scale (world px per art px) <input id="hScale" type="number" step="0.05" min="0.05"></label>
+          <label class="f span2">Name <input id="hName" placeholder="SOW P-B Patrol corvette"></label>
+          <label class="f">Sprite file <input id="hSprite" spellcheck="false"></label>
+          <label class="f">Size (art px) <input id="hSizePx" disabled></label>
+        </div>
+        <div class="grid2">
+          <label class="f">Hit width <input id="hW" type="number" step="0.5" min="1"></label>
+          <label class="f">Hit length <input id="hL" type="number" step="0.5" min="1"></label>
+          <label class="f">Hit offset x <input id="hOx" type="number" step="0.5"></label>
+          <label class="f">Hit offset y <input id="hOy" type="number" step="0.5"></label>
+        </div>
+        <div class="btnrow"><button class="btn" type="button" id="bFit">Fit hit capsule to sprite</button></div>
+      </section>
+
+      <section class="blk" id="selBlk">
+        <h2><span id="selTitle">Selection</span><button class="btn" type="button" id="bDel" hidden>Delete</button></h2>
+        <p class="note" id="selNone">Click a marker to edit it. In Hardpoint or Engine mode, click the hull to place one. Positions are art pixels from the sprite centre; +y is towards the stern.</p>
+        <div id="selHp" hidden>
+          <div class="grid3">
+            <label class="f">ID <input id="sId" spellcheck="false"></label>
+            <label class="f">Mount <select id="sMount"><option value="fixed">Fixed</option><option value="pivot">Pivot</option><option value="turret">Turret</option><option value="launcher">Launcher</option></select></label>
+            <label class="f">Size <select id="sSize"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></label>
+            <label class="f">x <input id="sX" type="number" step="0.5"></label>
+            <label class="f">y <input id="sY" type="number" step="0.5"></label>
+            <label class="f">Facing ° <input id="sFacing" type="number" step="1"></label>
+            <label class="f">Arc ° <input id="sArc" type="number" step="1" min="1" max="360"></label>
+            <label class="f">Traverse °/s <input id="sTrav" type="number" step="1" min="1"></label>
+            <label class="f">Cells <input id="sCells" type="number" step="1" min="1"></label>
+            <label class="f">Role <select id="sRole"><option value="">Standard</option><option value="point_defence">Point defence</option></select></label>
+            <label class="f span2">Part sprite (optional) <input id="sPart" spellcheck="false" placeholder="default turret for size"></label>
+          </div>
+          <p class="note" id="sHint"></p>
+          <div class="btnrow"><button class="btn" type="button" id="bMirrorCopy">Add mirrored copy</button></div>
+        </div>
+        <div id="selEng" hidden>
+          <div class="grid2">
+            <label class="f">x <input id="eX" type="number" step="0.5"></label>
+            <label class="f">y <input id="eY" type="number" step="0.5"></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="blk">
+        <h2>Hardpoints <span id="hpCount" class="pill good">0</span></h2>
+        <div class="list" id="hpList"></div>
+        <h2>Engines <span id="engCount" class="pill good">0</span></h2>
+        <div class="list" id="engList"></div>
+      </section>
+
+      <section class="blk">
+        <h2>Checks <span id="chkPill" class="pill good">OK</span></h2>
+        <ul class="checks" id="checks"></ul>
+      </section>
+
+      <section class="blk">
+        <h2>hull.json</h2>
+        <pre class="json" id="json" tabindex="0"></pre>
+        <div class="btnrow"><button class="btn" type="button" id="bCopy">Copy JSON</button></div>
+        <p class="note">Commit the sprite and this file side by side on an <span style="font-family:var(--font-mono)">art/*</span> branch. The game reads geometry from it; ship data only names the hull and its loadout.</p>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<div class="modal" id="pickModal" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+    <h3 id="pickTitle">Choose a hull</h3>
+    <p class="note" id="pickNote">This file holds several hulls. Pick one to edit.</p>
+    <label class="f">Hull <select id="pickSel"></select></label>
+    <div class="btnrow"><button class="btn primary" type="button" id="pickOk">Open</button><button class="btn" type="button" id="pickCancel">Cancel</button></div>
+  </div>
+</div>
+<div class="modal" id="confirmModal" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle">Start a new hull?</h3>
+    <p class="note">This clears the sprite, hardpoints and engines. Undo can bring them back.</p>
+    <div class="btnrow"><button class="btn primary" type="button" id="confirmOk">Start new</button><button class="btn" type="button" id="confirmCancel">Cancel</button></div>
+  </div>
+</div>
+<div class="modal" id="sheetModal" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" style="width:min(720px,100%)">
+    <h3 id="sheetTitle">Spec sheet</h3>
+    <p class="note" id="sheetNote">Saving isn't available here. Right-click the image to save it.</p>
+    <div style="overflow:auto;max-height:60vh"><img id="sheetImg" alt="Spec sheet" style="max-width:none"></div>
+    <div class="btnrow"><button class="btn" type="button" id="sheetClose">Close</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+'use strict';
+const SAMPLE_PNG = 'data:image/png;base64,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';
+const SAMPLE = {
+  schema: 1, id: 'sow_p_b_patrol', name: 'SOW P-B Patrol corvette (example)', sprite: 'sow_p_b_patrol.png', size_px: [48, 159], scale: 1,
+  hit: { size: [46, 159], offset: [0, 0] },
+  hardpoints: [
+    { id: 'T1', size: 'small', mount: 'turret', pos: [0, -24] },
+    { id: 'M1', size: 'small', mount: 'launcher', pos: [0, 5.2], cells: 6 },
+    { id: 'T2', size: 'small', mount: 'turret', pos: [0, 36.2] }
+  ],
+  engines: [[-13.6, 79.4], [-4.5, 79.4], [4.5, 79.4], [13.6, 79.4]]
+};
+// Mount defaults mirror data/game.json "mounts".
+const ARC_DEFAULT = { fixed: 0, pivot: 30, turret: 360, launcher: 360 };
+const TRAV_DEFAULT = { pivot: 180, turret: 360 };
+const PREFIX = { fixed: 'G', pivot: 'P', turret: 'T', launcher: 'M' };
+const MOUNTS = ['fixed', 'pivot', 'turret', 'launcher'];
+const SIZES = ['small', 'medium', 'large'];
+const STORE_KEY = 'tv-hardpoint-editor-v1';
+
+const $ = id => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d');
+let state = null;            // the manifest being edited
+let img = null;              // HTMLImageElement of the sprite
+let imgData = null;          // pixel data for alpha checks
+let spriteUrl = null;        // data URL (persisted when small enough)
+let sel = null;              // {type:'hp'|'eng', i}
+let tool = 'select';
+let view = { zoom: 3, panX: 0, panY: 0 };
+let history = [], future = [];
+let drag = null;
+let cursor = null;
+
+// ---------- helpers ----------
+const round = v => Math.round(v * 100) / 100;
+const snapStep = () => parseFloat($('tSnap').value) || 0;
+const snap = v => { const s = snapStep(); return s ? Math.round(v / s) * s : round(v); };
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const mountColour = m => css('--m-' + m);
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, 2600);
+}
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function blank() {
+  return { schema: 1, id: '', name: '', sprite: '', size_px: [0, 0], scale: 1, hit: { size: [16, 16], offset: [0, 0] }, hardpoints: [], engines: [] };
+}
+
+// ---------- history ----------
+function commit() {
+  history.push(JSON.stringify({ s: state, u: spriteUrl }));
+  if (history.length > 200) history.shift();
+  future = [];
+  $('bUndo').disabled = false;
+}
+function undo() {
+  if (!history.length) return;
+  future.push(JSON.stringify({ s: state, u: spriteUrl }));
+  const prev = JSON.parse(history.pop());
+  const urlChanged = prev.u !== spriteUrl;
+  state = prev.s; sel = null;
+  if (urlChanged) loadSprite(prev.u, false); else refresh();
+  $('bUndo').disabled = !history.length;
+}
+function redo() {
+  if (!future.length) return;
+  history.push(JSON.stringify({ s: state, u: spriteUrl }));
+  const next = JSON.parse(future.pop());
+  const urlChanged = next.u !== spriteUrl;
+  state = next.s; sel = null;
+  if (urlChanged) loadSprite(next.u, false); else refresh();
+}
+
+// ---------- persistence (per-viewer draft) ----------
+function persist() {
+  try {
+    const payload = { s: state, u: spriteUrl && spriteUrl.length < 3_000_000 ? spriteUrl : null };
+    localStorage.setItem(STORE_KEY, JSON.stringify(payload));
+  } catch (e) { /* storage unavailable: the editor still works */ }
+}
+function restore() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return false;
+    const p = JSON.parse(raw);
+    if (!p || !p.s) return false;
+    state = normalise(p.s);
+    if (p.u) loadSprite(p.u, false); else { img = null; imgData = null; spriteUrl = null; }
+    return true;
+  } catch (e) { return false; }
+}
+
+// ---------- sprite ----------
+function loadSprite(url, fit = true) {
+  const im = new Image();
+  im.onload = () => {
+    img = im; spriteUrl = url;
+    const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+    const cx = c.getContext('2d'); cx.drawImage(im, 0, 0);
+    try { imgData = cx.getImageData(0, 0, im.width, im.height); } catch (e) { imgData = null; }
+    state.size_px = [im.width, im.height];
+    if (fit) fitView();
+    refresh();
+  };
+  im.onerror = () => toast('That image could not be read.');
+  im.src = url;
+}
+function alphaAt(x, y) {
+  if (!imgData) return 255;
+  const px = Math.floor(x + imgData.width / 2), py = Math.floor(y + imgData.height / 2);
+  if (px < 0 || py < 0 || px >= imgData.width || py >= imgData.height) return 0;
+  return imgData.data[(py * imgData.width + px) * 4 + 3];
+}
+function inBounds(x, y) {
+  const [w, h] = state.size_px;
+  return x >= -w / 2 && x <= w / 2 && y >= -h / 2 && y <= h / 2;
+}
+function fitHit() {
+  if (!imgData) { toast('Open a sprite first.'); return; }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const { width: w, height: h, data } = imgData;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (data[(y * w + x) * 4 + 3] > 24) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+  }
+  if (minX === Infinity) { toast('The sprite is fully transparent.'); return; }
+  commit();
+  const bw = maxX - minX + 1, bh = maxY - minY + 1;
+  const width = Math.min(bw, bh), length = Math.max(bw, bh);
+  state.hit.size = [round(width), round(length)];
+  state.hit.offset = [round(minX + bw / 2 - w / 2), round(minY + bh / 2 - h / 2)];
+  refresh();
+  toast('Hit capsule fitted to the visible hull. Trim it if ornaments stick out.');
+}
+
+// ---------- import ----------
+function normaliseMount(m, kind) {
+  if (!m) return kind === 'turret' ? 'turret' : kind === 'guided' ? 'launcher' : 'fixed';
+  m = String(m).toLowerCase();
+  if (m.includes('turret')) return 'turret';
+  if (m.includes('launch')) return 'launcher';
+  if (m.includes('pivot')) return 'pivot';
+  return MOUNTS.includes(m) ? m : 'fixed';
+}
+function normalise(src) {
+  const s = blank();
+  s.id = src.id || ''; s.name = src.name || ''; s.sprite = src.sprite ? String(src.sprite).split('/').pop() : '';
+  s.size_px = src.size_px || [0, 0]; s.scale = src.scale || 1;
+  if (src.hit) { s.hit.size = src.hit.size || [16, 16]; s.hit.offset = src.hit.offset || [0, 0]; }
+  else if (src.hit_size) { s.hit.size = src.hit_size; s.hit.offset = src.hit_offset || [0, 0]; }
+  else if (src.size_px) { s.hit.size = [Math.min(...src.size_px), Math.max(...src.size_px)]; }
+  s.hardpoints = (src.hardpoints || []).map(h => {
+    const mount = normaliseMount(h.mount, h.kind);
+    const o = { id: h.id || '', size: SIZES.includes(h.size) ? h.size : 'small', mount, pos: [round(h.pos[0]), round(h.pos[1])] };
+    if (h.facing) o.facing = h.facing;
+    if (h.arc != null && (mount === 'pivot' || mount === 'turret') && h.arc !== ARC_DEFAULT[mount]) o.arc = h.arc;
+    if (h.traverse != null && (mount === 'pivot' || mount === 'turret')) o.traverse = h.traverse;
+    if (h.role === 'point_defence' || (typeof h.role === 'string' && h.role.includes('point'))) o.role = 'point_defence';
+    if (h.part) o.part = h.part;
+    if (h.cells && mount === 'launcher') o.cells = h.cells;
+    return o;
+  });
+  s.engines = (src.engines || []).map(e => [round(e[0]), round(e[1])]);
+  return s;
+}
+let pendingMulti = null;
+function importJson(text, filename) {
+  let data;
+  try { data = JSON.parse(text); } catch (e) { toast('That file isn\'t valid JSON.'); return; }
+  if (data && (data.hardpoints || data.hit || data.hit_size || data.schema)) { applyImport(data, filename); return; }
+  const keys = data && typeof data === 'object' ? Object.keys(data).filter(k => data[k] && data[k].hardpoints) : [];
+  if (!keys.length) { toast('No hull found in that file.'); return; }
+  if (keys.length === 1) { applyImport(Object.assign({ id: keys[0] }, data[keys[0]]), filename); return; }
+  pendingMulti = data;
+  const ps = $('pickSel'); ps.innerHTML = '';
+  keys.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = (data[k].name ? data[k].name + ' — ' : '') + k; ps.appendChild(o); });
+  $('pickModal').hidden = false; ps.focus();
+}
+function applyImport(src, filename) {
+  commit();
+  const prevSprite = state.sprite;
+  state = normalise(src);
+  if (!state.id && filename && /^hull/i.test(filename) === false) state.id = filename.replace(/\.json$/i, '');
+  sel = null;
+  const spriteMatches = img && prevSprite && state.sprite && prevSprite === state.sprite;
+  if (!spriteMatches && state.sprite) {
+    img = null; imgData = null; spriteUrl = null;
+    toast('Loaded ' + (state.id || 'hull') + '. Now open its sprite: ' + state.sprite);
+  } else if (img) { state.size_px = [img.width, img.height]; toast('Loaded ' + (state.id || 'hull') + '.'); }
+  fitView(); refresh();
+}
+
+// ---------- view ----------
+function resize() {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  cv.width = Math.max(1, Math.round(r.width * d)); cv.height = Math.max(1, Math.round(r.height * d));
+  draw();
+}
+function fitView() {
+  const r = cv.getBoundingClientRect();
+  const [w, h] = state.size_px[0] ? state.size_px : [64, 64];
+  view.zoom = Math.max(0.5, Math.min(24, Math.min((r.width - 120) / w, (r.height - 140) / h)));
+  view.panX = 0; view.panY = 10;
+  draw();
+}
+function toScreen(x, y) {
+  const r = cv.getBoundingClientRect();
+  return [r.width / 2 + view.panX + x * view.zoom, r.height / 2 + view.panY + y * view.zoom];
+}
+function toArt(sx, sy) {
+  const r = cv.getBoundingClientRect();
+  return [(sx - r.width / 2 - view.panX) / view.zoom, (sy - r.height / 2 - view.panY) / view.zoom];
+}
+function zoomAt(f, sx, sy) {
+  const [ax, ay] = toArt(sx, sy);
+  view.zoom = Math.max(0.5, Math.min(40, view.zoom * f));
+  const [nx, ny] = toScreen(ax, ay);
+  view.panX += sx - nx; view.panY += sy - ny;
+  draw();
+}
+
+// ---------- drawing ----------
+const SIZE_R = { small: 5, medium: 7, large: 9 };
+function drawMarker(c, hp, sx, sy, z, selected, forSheet) {
+  const col = mountColour(hp.mount), r = SIZE_R[hp.size] * (forSheet ? 1.4 : 1);
+  const face = ((hp.facing || 0) - 90) * Math.PI / 180;
+  // arc wedge
+  const arc = hp.arc != null ? hp.arc : ARC_DEFAULT[hp.mount];
+  if (hp.mount === 'pivot' || (hp.mount === 'turret' && arc < 360)) {
+    const R = Math.max(26, r * 5);
+    const a = arc * Math.PI / 180;
+    c.beginPath(); c.moveTo(sx, sy); c.arc(sx, sy, R, face - a / 2, face + a / 2); c.closePath();
+    c.globalAlpha = 0.18; c.fillStyle = col; c.fill(); c.globalAlpha = 0.7; c.strokeStyle = col; c.lineWidth = 1; c.stroke(); c.globalAlpha = 1;
+  } else if (hp.mount === 'turret') {
+    c.beginPath(); c.arc(sx, sy, Math.max(16, r * 3), 0, Math.PI * 2);
+    c.globalAlpha = 0.45; c.setLineDash([3, 3]); c.strokeStyle = col; c.lineWidth = 1; c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
+  }
+  // facing line for fixed
+  if (hp.mount === 'fixed') {
+    c.beginPath(); c.moveTo(sx, sy); c.lineTo(sx + Math.cos(face) * 30, sy + Math.sin(face) * 30);
+    c.strokeStyle = col; c.lineWidth = 1.5; c.globalAlpha = 0.85; c.stroke(); c.globalAlpha = 1;
+  }
+  // marker shape
+  c.beginPath();
+  if (hp.mount === 'fixed') {
+    c.moveTo(sx + Math.cos(face) * r * 1.3, sy + Math.sin(face) * r * 1.3);
+    c.lineTo(sx + Math.cos(face + 2.4) * r, sy + Math.sin(face + 2.4) * r);
+    c.lineTo(sx + Math.cos(face - 2.4) * r, sy + Math.sin(face - 2.4) * r);
+    c.closePath();
+  } else if (hp.mount === 'pivot') {
+    c.moveTo(sx, sy - r * 1.2); c.lineTo(sx + r * 1.2, sy); c.lineTo(sx, sy + r * 1.2); c.lineTo(sx - r * 1.2, sy); c.closePath();
+  } else if (hp.mount === 'turret') {
+    c.arc(sx, sy, r, 0, Math.PI * 2);
+  } else {
+    c.rect(sx - r, sy - r, r * 2, r * 2);
+  }
+  c.fillStyle = col; c.fill();
+  c.lineWidth = selected ? 2.5 : 1.25; c.strokeStyle = selected ? css('--ink') : css('--bench'); c.stroke();
+  if (hp.role === 'point_defence') {
+    c.beginPath(); c.arc(sx, sy, r * 0.4, 0, Math.PI * 2); c.fillStyle = css('--bench'); c.fill();
+  }
+  // label
+  c.font = `600 ${forSheet ? 15 : 12}px ${css('--font-mono')}`;
+  c.textAlign = 'left'; c.textBaseline = 'middle';
+  const lx = sx + r + 6, ly = sy - r - 4;
+  c.lineWidth = 3; c.strokeStyle = css('--bench'); c.strokeText(hp.id || '?', lx, ly);
+  c.fillStyle = selected ? css('--ink') : col; c.fillText(hp.id || '?', lx, ly);
+}
+function drawEngine(c, e, sx, sy, selected, scale = 1) {
+  const col = mountColour('engine');
+  c.beginPath(); c.moveTo(sx - 4 * scale, sy - 3 * scale); c.lineTo(sx + 4 * scale, sy - 3 * scale); c.lineTo(sx, sy + 9 * scale); c.closePath();
+  c.fillStyle = col; c.fill(); c.lineWidth = selected ? 2.5 : 1; c.strokeStyle = selected ? css('--ink') : css('--bench'); c.stroke();
+}
+function capsulePath(c, cx, cy, wpx, lpx) {
+  const r = wpx / 2, half = Math.max(0, lpx / 2 - r);
+  c.beginPath();
+  c.arc(cx, cy - half, r, Math.PI, 0); c.lineTo(cx + r, cy + half);
+  c.arc(cx, cy + half, r, 0, Math.PI); c.closePath();
+}
+function draw() {
+  const d = window.devicePixelRatio || 1;
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+  const r = cv.getBoundingClientRect();
+  ctx.clearRect(0, 0, r.width, r.height);
+  ctx.fillStyle = css('--bench'); ctx.fillRect(0, 0, r.width, r.height);
+  const z = view.zoom;
+  const [w, h] = state.size_px;
+  const [x0, y0] = toScreen(-w / 2, -h / 2);
+  // checker under sprite bounds
+  if (w && h) {
+    const cell = Math.max(4, z * 4);
+    ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, w * z, h * z); ctx.clip();
+    ctx.fillStyle = css('--check-a'); ctx.fillRect(x0, y0, w * z, h * z);
+    ctx.fillStyle = css('--check-b');
+    for (let yy = 0; yy * cell < h * z; yy++) for (let xx = 0; xx * cell < w * z; xx++) if ((xx + yy) % 2) ctx.fillRect(x0 + xx * cell, y0 + yy * cell, cell, cell);
+    ctx.restore();
+  }
+  // pixel grid at high zoom
+  if (img && z >= 10) {
+    ctx.save(); ctx.globalAlpha = 0.12; ctx.strokeStyle = css('--ink'); ctx.lineWidth = 1; ctx.beginPath();
+    for (let i = 0; i <= w; i++) { const X = Math.round(x0 + i * z) + 0.5; ctx.moveTo(X, y0); ctx.lineTo(X, y0 + h * z); }
+    for (let j = 0; j <= h; j++) { const Y = Math.round(y0 + j * z) + 0.5; ctx.moveTo(x0, Y); ctx.lineTo(x0 + w * z, Y); }
+    ctx.stroke(); ctx.restore();
+  }
+  if (img) { ctx.imageSmoothingEnabled = false; ctx.drawImage(img, x0, y0, w * z, h * z); }
+  else {
+    ctx.fillStyle = css('--ink-2'); ctx.font = `500 15px ${css('--font-ui')}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(state.sprite ? `Open ${state.sprite} to see the hull` : 'Open or drop a sprite PNG to start', r.width / 2 + view.panX, r.height / 2 + view.panY);
+  }
+  // bounds + centre axes
+  if (w && h) {
+    ctx.strokeStyle = css('--ink-2'); ctx.globalAlpha = 0.5; ctx.lineWidth = 1; ctx.strokeRect(x0 - 0.5, y0 - 0.5, w * z + 1, h * z + 1);
+    const [cx, cy] = toScreen(0, 0);
+    ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(cx, y0 - 14); ctx.lineTo(cx, y0 + h * z + 14); ctx.moveTo(x0 - 14, cy); ctx.lineTo(x0 + w * z + 14, cy); ctx.stroke(); ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = css('--ink-2'); ctx.font = `500 11px ${css('--font-ui')}`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('BOW ▲', cx, y0 - 16);
+  }
+  // hit capsule
+  const [hw, hl] = state.hit.size, [ox, oy] = state.hit.offset;
+  if (hw && hl) {
+    const [hx, hy] = toScreen(ox, oy);
+    capsulePath(ctx, hx, hy, hw * z, hl * z);
+    ctx.setLineDash([6, 4]); ctx.strokeStyle = mountColour('hit'); ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]);
+  }
+  state.engines.forEach((e, i) => { const [sx, sy] = toScreen(e[0], e[1]); drawEngine(ctx, e, sx, sy, sel && sel.type === 'eng' && sel.i === i); });
+  state.hardpoints.forEach((hp, i) => { const [sx, sy] = toScreen(hp.pos[0], hp.pos[1]); drawMarker(ctx, hp, sx, sy, z, sel && sel.type === 'hp' && sel.i === i, false); });
+  // placement ghost
+  if (cursor && tool !== 'select' && !drag) {
+    const [ax, ay] = cursor.art, sxy = toScreen(snap(ax), snap(ay));
+    ctx.globalAlpha = 0.45;
+    if (tool === 'hardpoint') drawMarker(ctx, { id: '', mount: $('tMount').value, size: $('tSize').value, pos: [0, 0] }, sxy[0], sxy[1], z, false, false);
+    else drawEngine(ctx, null, sxy[0], sxy[1], false);
+    if ($('tMirror').getAttribute('aria-pressed') === 'true' && Math.abs(snap(ax)) > 0.01) {
+      const m = toScreen(-snap(ax), snap(ay));
+      if (tool === 'hardpoint') drawMarker(ctx, { id: '', mount: $('tMount').value, size: $('tSize').value, pos: [0, 0] }, m[0], m[1], z, false, false);
+      else drawEngine(ctx, null, m[0], m[1], false);
+    }
+    ctx.globalAlpha = 1;
+  }
+  $('rZoom').textContent = `zoom ${view.zoom.toFixed(1)}×`;
+}
+
+// ---------- ids ----------
+function nextId(mount, taken = new Set(state.hardpoints.map(h => h.id))) {
+  const p = PREFIX[mount]; let n = 1;
+  while (taken.has(p + n)) n++;
+  return p + n;
+}
+function partnerOf(i) {
+  const a = state.hardpoints[i];
+  return state.hardpoints.findIndex((b, j) => j !== i && Math.abs(b.pos[0] + a.pos[0]) < 0.3 && Math.abs(b.pos[1] - a.pos[1]) < 0.3 && b.mount === a.mount && b.size === a.size && Math.abs(a.pos[0]) > 0.01);
+}
+function enginePartner(i) {
+  const a = state.engines[i];
+  return state.engines.findIndex((b, j) => j !== i && Math.abs(b[0] + a[0]) < 0.3 && Math.abs(b[1] - a[1]) < 0.3 && Math.abs(a[0]) > 0.01);
+}
+
+// ---------- hit testing ----------
+function pick(sx, sy) {
+  let best = null, bd = 14;
+  state.hardpoints.forEach((hp, i) => { const [x, y] = toScreen(hp.pos[0], hp.pos[1]); const dd = Math.hypot(x - sx, y - sy); if (dd < bd) { bd = dd; best = { type: 'hp', i }; } });
+  state.engines.forEach((e, i) => { const [x, y] = toScreen(e[0], e[1] + 2 / view.zoom); const dd = Math.hypot(x - sx, y - sy); if (dd < bd) { bd = dd; best = { type: 'eng', i }; } });
+  return best;
+}
+
+// ---------- pointer ----------
+const pointers = new Map();
+cv.addEventListener('pointerdown', ev => {
+  cv.setPointerCapture(ev.pointerId);
+  pointers.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+  if (pointers.size === 2) { drag = { kind: 'pinch', d0: pinchDist(), z0: view.zoom }; return; }
+  const sx = ev.offsetX, sy = ev.offsetY;
+  const panning = ev.button === 1 || ev.button === 2 || spaceDown;
+  if (panning) { drag = { kind: 'pan', sx, sy, px: view.panX, py: view.panY }; return; }
+  const hit = pick(sx, sy);
+  if (tool === 'select' || hit) {
+    if (hit) {
+      sel = hit;
+      const partner = hit.type === 'hp' ? partnerOf(hit.i) : enginePartner(hit.i);
+      drag = { kind: 'move', target: hit, partner: mirrorOn() ? partner : -1, sx, sy, moved: false, snapshot: JSON.stringify({ s: state, u: spriteUrl }) };
+      refresh(); return;
+    }
+    sel = null; drag = { kind: 'pan', sx, sy, px: view.panX, py: view.panY }; refresh(); return;
+  }
+  // placing
+  const [ax, ay] = toArt(sx, sy), x = snap(ax), y = snap(ay);
+  commit();
+  if (tool === 'hardpoint') {
+    const mount = $('tMount').value, size = $('tSize').value;
+    const id = nextId(mount);
+    const hp = { id, size, mount, pos: [x, y] };
+    if (mount === 'launcher') hp.cells = 4;
+    state.hardpoints.push(hp);
+    sel = { type: 'hp', i: state.hardpoints.length - 1 };
+    if (mirrorOn() && Math.abs(x) > 0.01) {
+      const twin = clone(hp); twin.id = nextId(mount); twin.pos = [-x, y]; if (hp.facing) twin.facing = -hp.facing;
+      state.hardpoints.push(twin);
+    }
+  } else {
+    state.engines.push([x, y]);
+    sel = { type: 'eng', i: state.engines.length - 1 };
+    if (mirrorOn() && Math.abs(x) > 0.01) state.engines.push([-x, y]);
+  }
+  refresh();
+});
+cv.addEventListener('pointermove', ev => {
+  if (pointers.has(ev.pointerId)) pointers.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+  const sx = ev.offsetX, sy = ev.offsetY;
+  cursor = { art: toArt(sx, sy) };
+  const [ax, ay] = cursor.art;
+  $('rCursor').textContent = `x ${snap(ax).toFixed(1)}  y ${snap(ay).toFixed(1)}`;
+  if (!drag) { draw(); return; }
+  if (drag.kind === 'pinch' && pointers.size === 2) { view.zoom = Math.max(0.5, Math.min(40, drag.z0 * pinchDist() / drag.d0)); draw(); return; }
+  if (drag.kind === 'pan') { view.panX = drag.px + sx - drag.sx; view.panY = drag.py + sy - drag.sy; draw(); return; }
+  if (drag.kind === 'move') {
+    if (!drag.moved && Math.hypot(sx - drag.sx, sy - drag.sy) < 3) return;
+    if (!drag.moved) { history.push(drag.snapshot); future = []; $('bUndo').disabled = false; drag.moved = true; }
+    const x = snap(ax), y = snap(ay);
+    if (drag.target.type === 'hp') {
+      state.hardpoints[drag.target.i].pos = [x, y];
+      if (drag.partner >= 0) state.hardpoints[drag.partner].pos = [-x, y];
+    } else {
+      state.engines[drag.target.i] = [x, y];
+      if (drag.partner >= 0) state.engines[drag.partner] = [-x, y];
+    }
+    refresh(false);
+  }
+});
+function endPointer(ev) {
+  pointers.delete(ev.pointerId);
+  if (drag && drag.kind === 'move' && drag.moved) refresh();
+  if (pointers.size === 0) drag = null;
+}
+cv.addEventListener('pointerup', endPointer);
+cv.addEventListener('pointercancel', endPointer);
+cv.addEventListener('pointerleave', () => { cursor = null; if (!drag) draw(); });
+cv.addEventListener('contextmenu', ev => ev.preventDefault());
+cv.addEventListener('wheel', ev => { ev.preventDefault(); zoomAt(Math.exp(-ev.deltaY * 0.0015), ev.offsetX, ev.offsetY); }, { passive: false });
+function pinchDist() { const p = [...pointers.values()]; return Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1; }
+const mirrorOn = () => $('tMirror').getAttribute('aria-pressed') === 'true';
+
+// ---------- keyboard ----------
+let spaceDown = false;
+function typing() { const t = document.activeElement; return t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA'); }
+window.addEventListener('keydown', ev => {
+  const mod = ev.ctrlKey || ev.metaKey;
+  if (mod && ev.key.toLowerCase() === 'z') { if (typing()) return; ev.preventDefault(); ev.shiftKey ? redo() : undo(); return; }
+  if (mod && ev.key.toLowerCase() === 'y') { if (typing()) return; ev.preventDefault(); redo(); return; }
+  if (typing() || mod) return;
+  if (ev.key === ' ') { spaceDown = true; ev.preventDefault(); return; }
+  const k = ev.key.toLowerCase();
+  if (k === 'v') setTool('select');
+  else if (k === 'h') setTool('hardpoint');
+  else if (k === 'e') setTool('engine');
+  else if (k === 'm') toggleMirror();
+  else if (k === 'escape') { sel = null; refresh(); }
+  else if ((k === 'delete' || k === 'backspace') && sel) { ev.preventDefault(); deleteSel(); }
+  else if (sel && ev.key.startsWith('Arrow')) {
+    ev.preventDefault();
+    const step = (snapStep() || 0.5) * (ev.shiftKey ? 10 : 1);
+    const dx = ev.key === 'ArrowLeft' ? -step : ev.key === 'ArrowRight' ? step : 0;
+    const dy = ev.key === 'ArrowUp' ? -step : ev.key === 'ArrowDown' ? step : 0;
+    commit();
+    if (sel.type === 'hp') {
+      const hp = state.hardpoints[sel.i], p = mirrorOn() ? partnerOf(sel.i) : -1;
+      hp.pos = [round(hp.pos[0] + dx), round(hp.pos[1] + dy)];
+      if (p >= 0) state.hardpoints[p].pos = [-hp.pos[0], hp.pos[1]];
+    } else {
+      const e = state.engines[sel.i], p = mirrorOn() ? enginePartner(sel.i) : -1;
+      state.engines[sel.i] = [round(e[0] + dx), round(e[1] + dy)];
+      if (p >= 0) state.engines[p] = [-state.engines[sel.i][0], state.engines[sel.i][1]];
+    }
+    refresh();
+  }
+});
+window.addEventListener('keyup', ev => { if (ev.key === ' ') spaceDown = false; });
+
+function setTool(t) {
+  tool = t;
+  document.querySelectorAll('[data-tool]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tool === t)));
+  cv.style.cursor = t === 'select' ? 'default' : 'crosshair';
+  draw();
+}
+function toggleMirror() { const b = $('tMirror'); b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); draw(); }
+function deleteSel() {
+  if (!sel) return;
+  commit();
+  if (sel.type === 'hp') state.hardpoints.splice(sel.i, 1); else state.engines.splice(sel.i, 1);
+  sel = null; refresh();
+}
+
+// ---------- inspector ----------
+function syncHullFields() {
+  const set = (id, v) => { const el = $(id); if (document.activeElement !== el) el.value = v; };
+  set('hId', state.id); set('hName', state.name); set('hScale', state.scale); set('hSprite', state.sprite);
+  $('hSizePx').value = state.size_px[0] ? `${state.size_px[0]} × ${state.size_px[1]}` : '—';
+  set('hW', state.hit.size[0]); set('hL', state.hit.size[1]); set('hOx', state.hit.offset[0]); set('hOy', state.hit.offset[1]);
+  $('hullTag').textContent = state.id ? `${state.id}${state.name ? ' · ' + state.name : ''}` : 'unsaved hull';
+}
+function syncSelection() {
+  const set = (id, v) => { const el = $(id); if (document.activeElement !== el) el.value = v; };
+  $('selHp').hidden = !(sel && sel.type === 'hp');
+  $('selEng').hidden = !(sel && sel.type === 'eng');
+  $('selNone').hidden = !!sel;
+  $('bDel').hidden = !sel;
+  if (sel && sel.type === 'hp') {
+    const hp = state.hardpoints[sel.i];
+    $('selTitle').textContent = `Hardpoint ${hp.id || ''}`;
+    set('sId', hp.id); set('sMount', hp.mount); set('sSize', hp.size);
+    set('sX', hp.pos[0]); set('sY', hp.pos[1]); set('sFacing', hp.facing || 0);
+    const aims = hp.mount === 'pivot' || hp.mount === 'turret';
+    $('sArc').disabled = !aims; $('sTrav').disabled = !aims;
+    $('sArc').placeholder = aims ? String(ARC_DEFAULT[hp.mount]) : 'n/a';
+    $('sTrav').placeholder = aims ? String(TRAV_DEFAULT[hp.mount]) : 'n/a';
+    set('sArc', hp.arc != null ? hp.arc : ''); set('sTrav', hp.traverse != null ? hp.traverse : '');
+    $('sCells').disabled = hp.mount !== 'launcher'; set('sCells', hp.cells != null ? hp.cells : '');
+    set('sRole', hp.role || ''); set('sPart', hp.part || '');
+    const hints = {
+      fixed: 'Fires along the facing. Fixed mounts take no arc or traverse.',
+      pivot: 'Tracks the target within a narrow arc centred on the facing.',
+      turret: 'Rotates within its arc. The turret sprite pivots on this point; blank part uses the default for its size.',
+      launcher: 'Missiles launch here and turn onto any bearing.'
+    };
+    $('sHint').textContent = hints[hp.mount];
+  } else if (sel && sel.type === 'eng') {
+    const e = state.engines[sel.i];
+    $('selTitle').textContent = `Engine ${sel.i + 1}`;
+    set('eX', e[0]); set('eY', e[1]);
+  } else $('selTitle').textContent = 'Selection';
+}
+function renderLists() {
+  const hl = $('hpList'); hl.innerHTML = '';
+  if (!state.hardpoints.length) hl.innerHTML = '<div class="empty">No hardpoints yet. Choose Hardpoint and click the hull.</div>';
+  state.hardpoints.forEach((hp, i) => {
+    const r = document.createElement('div');
+    r.className = 'row' + (sel && sel.type === 'hp' && sel.i === i ? ' sel' : ''); r.tabIndex = 0;
+    r.innerHTML = `<span class="id"></span><i class="sw" style="background:var(--m-${hp.mount})"></i><span></span><span class="pos"></span>`;
+    r.children[0].textContent = hp.id || '?';
+    r.children[2].textContent = `${hp.size} ${hp.role === 'point_defence' ? 'PD ' : ''}${hp.mount}`;
+    r.children[3].textContent = `${hp.pos[0].toFixed(1)}, ${hp.pos[1].toFixed(1)}`;
+    r.onclick = () => { sel = { type: 'hp', i }; refresh(); };
+    r.onkeydown = ev => { if (ev.key === 'Enter') r.onclick(); };
+    hl.appendChild(r);
+  });
+  const el = $('engList'); el.innerHTML = '';
+  if (!state.engines.length) el.innerHTML = '<div class="empty">No engines. Choose Engine and click each exhaust.</div>';
+  state.engines.forEach((e, i) => {
+    const r = document.createElement('div');
+    r.className = 'row eng' + (sel && sel.type === 'eng' && sel.i === i ? ' sel' : ''); r.tabIndex = 0;
+    r.innerHTML = `<span class="id"></span><i class="sw" style="background:var(--m-engine)"></i><span>exhaust</span><span class="pos"></span>`;
+    r.children[0].textContent = 'E' + (i + 1);
+    r.children[3].textContent = `${e[0].toFixed(1)}, ${e[1].toFixed(1)}`;
+    r.onclick = () => { sel = { type: 'eng', i }; refresh(); };
+    r.onkeydown = ev => { if (ev.key === 'Enter') r.onclick(); };
+    el.appendChild(r);
+  });
+  $('hpCount').textContent = state.hardpoints.length;
+  $('engCount').textContent = state.engines.length;
+}
+
+// ---------- validation ----------
+function validate() {
+  const out = [];
+  const E = (msg, target) => out.push({ lvl: 'e', msg, target });
+  const W = (msg, target) => out.push({ lvl: 'w', msg, target });
+  if (!state.id) E('Hull ID is empty.');
+  else if (!/^[a-z0-9_]+$/.test(state.id)) E('Hull ID must be lowercase snake_case (letters, digits, underscores).');
+  if (!state.name) W('Hull has no display name.');
+  if (!img) E(state.sprite ? `Sprite ${state.sprite} isn't open, so positions can't be checked.` : 'No sprite open.');
+  if (!(state.scale > 0)) E('Scale must be above 0.');
+  const [hw, hl] = state.hit.size;
+  if (!(hw > 0 && hl > 0)) E('Hit capsule needs a width and length above 0.');
+  else if (hw > hl) E('Hit capsule width must not exceed its length (the capsule runs along the hull).');
+  const seen = new Map();
+  state.hardpoints.forEach((hp, i) => {
+    const t = { type: 'hp', i }, name = hp.id || `#${i + 1}`;
+    if (!hp.id) E(`Hardpoint #${i + 1} has no ID.`, t);
+    else if (!/^[A-Za-z0-9_]+$/.test(hp.id)) E(`${name}: IDs use letters, digits and underscores only.`, t);
+    if (hp.id) { if (seen.has(hp.id)) E(`${name} is used twice.`, t); seen.set(hp.id, i); }
+    if (img && !inBounds(hp.pos[0], hp.pos[1])) E(`${name} sits outside the sprite.`, t);
+    else if (img && alphaAt(hp.pos[0], hp.pos[1]) < 16) W(`${name} sits on a transparent pixel. Is it on the hull?`, t);
+    if ((hp.mount === 'fixed' || hp.mount === 'launcher') && (hp.arc != null || hp.traverse != null)) E(`${name}: ${hp.mount} mounts can't override arc or traverse (the game refuses it).`, t);
+    if (hp.arc != null && !(hp.arc > 0 && hp.arc <= 360)) E(`${name}: arc must be between 1 and 360.`, t);
+    if (hp.cells != null && hp.mount !== 'launcher') W(`${name}: cells only apply to launchers.`, t);
+    if (hp.role === 'point_defence' && hp.mount !== 'turret') W(`${name}: point defence is meant for turret mounts.`, t);
+  });
+  state.engines.forEach((e, i) => { if (img && !inBounds(e[0], e[1] - 0.01)) W(`Engine E${i + 1} sits outside the sprite.`, { type: 'eng', i }); });
+  if (!state.engines.length) W('No engine exhausts placed (no engine glow).');
+  if (!state.hardpoints.length) W('No hardpoints: this is an unarmed hull.');
+  return out;
+}
+function renderChecks() {
+  const list = validate(), ul = $('checks'); ul.innerHTML = '';
+  const errs = list.filter(x => x.lvl === 'e').length, warns = list.length - errs;
+  if (!list.length) ul.innerHTML = '<li class="ok"><span class="ic">✓</span><span>Ready to commit.</span></li>';
+  list.forEach(c => {
+    const li = document.createElement('li'); li.className = c.lvl;
+    li.innerHTML = `<span class="ic">${c.lvl === 'e' ? '✕' : '!'}</span><span></span>`;
+    li.children[1].textContent = c.msg;
+    if (c.target) { li.dataset.target = '1'; li.onclick = () => { sel = c.target; refresh(); }; }
+    ul.appendChild(li);
+  });
+  const p = $('chkPill');
+  p.className = 'pill ' + (errs ? 'bad' : warns ? 'warn' : 'good');
+  p.textContent = errs ? `${errs} error${errs > 1 ? 's' : ''}` : warns ? `${warns} warning${warns > 1 ? 's' : ''}` : 'OK';
+  return errs;
+}
+
+// ---------- output ----------
+function manifest() {
+  const m = {
+    schema: 1, id: state.id, name: state.name, sprite: state.sprite, size_px: state.size_px, scale: state.scale,
+    hit: { size: state.hit.size, offset: state.hit.offset },
+    hardpoints: state.hardpoints.map(h => {
+      const o = { id: h.id, size: h.size, mount: h.mount, pos: h.pos };
+      if (h.facing) o.facing = h.facing;
+      if (h.arc != null) o.arc = h.arc;
+      if (h.traverse != null) o.traverse = h.traverse;
+      if (h.role) o.role = h.role;
+      if (h.part) o.part = h.part;
+      if (h.cells != null && h.mount === 'launcher') o.cells = h.cells;
+      return o;
+    }),
+    engines: state.engines
+  };
+  return m;
+}
+function manifestText() {
+  // Compact arrays of numbers onto one line for readable diffs.
+  return JSON.stringify(manifest(), null, 2).replace(/\[\s+(-?[\d.]+),\s+(-?[\d.]+)\s+\]/g, '[$1, $2]');
+}
+function refresh(full = true) {
+  if (sel && ((sel.type === 'hp' && !state.hardpoints[sel.i]) || (sel.type === 'eng' && !state.engines[sel.i]))) sel = null;
+  draw();
+  syncHullFields(); syncSelection(); renderLists();
+  if (full) { renderChecks(); $('json').textContent = manifestText(); persist(); }
+  else { $('json').textContent = manifestText(); }
+}
+
+async function saveFile(filename, data) {
+  try {
+    const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
+    if (!dl) {
+      // Opened as a local file (e.g. tools/hardpoint-editor in the repo): a normal browser download works there.
+      if (location.protocol !== 'file:') return false;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type: 'application/json' }));
+      a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      toast(`Saved ${filename}.`);
+      return true;
+    }
+    await dl.save({ filename, data });
+    toast(`Saved ${filename}.`);
+    return true;
+  } catch (e) {
+    if (e && e.code === 'declined') { toast('Save cancelled.'); return true; }
+    return false;
+  }
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); toast('Copied hull.json to the clipboard.'); }
+  catch (e) {
+    const r = document.createRange(); r.selectNodeContents($('json'));
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    toast('Copy blocked here. The JSON is selected; press Ctrl+C.');
+  }
+}
+
+// spec sheet
+function specSheet() {
+  const S = Math.max(2, Math.min(6, Math.floor(520 / Math.max(state.size_px[1] || 1, 1))));
+  const [w, h] = state.size_px;
+  const panelW = 420, pad = 60;
+  const W = Math.max(w * S + pad * 2, 260) + panelW, H = Math.max(h * S + pad * 2 + 30, 120 + state.hardpoints.length * 26 + state.engines.length * 0 + 160);
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  g.fillStyle = css('--bench'); g.fillRect(0, 0, W, H);
+  const ox = pad + (Math.max(w * S, 260 - pad * 2) - w * S) / 2, oy = pad + 20;
+  if (img) { g.imageSmoothingEnabled = false; g.drawImage(img, ox, oy, w * S, h * S); }
+  const scr = (x, y) => [ox + (x + w / 2) * S, oy + (y + h / 2) * S];
+  const [hw, hl] = state.hit.size, [hx, hy] = scr(state.hit.offset[0], state.hit.offset[1]);
+  capsulePath(g, hx, hy, hw * S, hl * S); g.setLineDash([6, 4]); g.strokeStyle = mountColour('hit'); g.lineWidth = 1.5; g.stroke(); g.setLineDash([]);
+  state.engines.forEach(e => { const [sx, sy] = scr(e[0], e[1]); drawEngine(g, e, sx, sy, false, 1.3); });
+  state.hardpoints.forEach(hp => { const [sx, sy] = scr(hp.pos[0], hp.pos[1]); drawMarker(g, hp, sx, sy, S, false, true); });
+  // panel
+  const px = W - panelW + 10;
+  g.fillStyle = css('--ink'); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  g.font = `600 22px ${css('--font-ui')}`; g.fillText(state.name || state.id || 'Unnamed hull', px, 50);
+  g.font = `400 14px ${css('--font-mono')}`; g.fillStyle = css('--ink-2');
+  g.fillText(`${state.id}  ·  ${w} × ${h} px  ·  scale ${state.scale}`, px, 74);
+  g.fillText(`hit capsule ${hw} × ${hl} at (${state.hit.offset[0]}, ${state.hit.offset[1]})`, px, 94);
+  let y = 132;
+  g.font = `600 13px ${css('--font-ui')}`; g.fillStyle = css('--ink-2'); g.fillText('HARDPOINTS', px, y); y += 22;
+  g.font = `400 14px ${css('--font-mono')}`;
+  if (!state.hardpoints.length) { g.fillStyle = css('--ink'); g.fillText('none (unarmed)', px, y); y += 24; }
+  state.hardpoints.forEach(hp => {
+    g.fillStyle = mountColour(hp.mount); g.fillRect(px, y - 11, 10, 10);
+    g.fillStyle = css('--ink');
+    const extra = [hp.role === 'point_defence' ? 'PD' : '', hp.arc != null ? `arc ${hp.arc}°` : '', hp.cells ? `${hp.cells} cells` : '', hp.facing ? `facing ${hp.facing}°` : ''].filter(Boolean).join(', ');
+    g.fillText(`${hp.id.padEnd(4)} ${hp.size.padEnd(6)} ${hp.mount.padEnd(8)} (${hp.pos[0]}, ${hp.pos[1]})${extra ? '  ' + extra : ''}`, px + 18, y);
+    y += 24;
+  });
+  y += 12; g.font = `600 13px ${css('--font-ui')}`; g.fillStyle = css('--ink-2'); g.fillText('ENGINES', px, y); y += 22;
+  g.font = `400 14px ${css('--font-mono')}`; g.fillStyle = css('--ink');
+  g.fillText(state.engines.length ? state.engines.map(e => `(${e[0]}, ${e[1]})`).join('  ') : 'none', px, y);
+  return c;
+}
+
+// ---------- wiring ----------
+function bindNum(id, fn) { $(id).addEventListener('change', () => { const v = $(id).value; commit(); fn(v === '' ? null : parseFloat(v)); refresh(); }); }
+function bindText(id, fn) { $(id).addEventListener('change', () => { commit(); fn($(id).value.trim()); refresh(); }); }
+bindText('hId', v => state.id = v);
+bindText('hName', v => state.name = v);
+bindText('hSprite', v => state.sprite = v);
+bindNum('hScale', v => state.scale = v || 1);
+bindNum('hW', v => state.hit.size[0] = v || 0);
+bindNum('hL', v => state.hit.size[1] = v || 0);
+bindNum('hOx', v => state.hit.offset[0] = v || 0);
+bindNum('hOy', v => state.hit.offset[1] = v || 0);
+const hpSel = () => state.hardpoints[sel.i];
+bindText('sId', v => hpSel().id = v);
+$('sMount').addEventListener('change', () => {
+  commit(); const hp = hpSel(); const old = hp.mount; hp.mount = $('sMount').value;
+  if (new RegExp('^' + PREFIX[old] + '\\d+$').test(hp.id)) { const taken = new Set(state.hardpoints.filter(h => h !== hp).map(h => h.id)); hp.id = nextId(hp.mount, taken); }
+  if (hp.mount === 'fixed' || hp.mount === 'launcher') { delete hp.arc; delete hp.traverse; }
+  if (hp.mount !== 'launcher') delete hp.cells; else if (hp.cells == null) hp.cells = 4;
+  refresh();
+});
+$('sSize').addEventListener('change', () => { commit(); hpSel().size = $('sSize').value; refresh(); });
+$('sRole').addEventListener('change', () => { commit(); const v = $('sRole').value; if (v) hpSel().role = v; else delete hpSel().role; refresh(); });
+bindNum('sX', v => hpSel().pos[0] = round(v || 0));
+bindNum('sY', v => hpSel().pos[1] = round(v || 0));
+bindNum('sFacing', v => { if (v) hpSel().facing = v; else delete hpSel().facing; });
+bindNum('sArc', v => { if (v == null) delete hpSel().arc; else hpSel().arc = v; });
+bindNum('sTrav', v => { if (v == null) delete hpSel().traverse; else hpSel().traverse = v; });
+bindNum('sCells', v => { if (v == null) delete hpSel().cells; else hpSel().cells = Math.round(v); });
+bindText('sPart', v => { if (v) hpSel().part = v; else delete hpSel().part; });
+bindNum('eX', v => state.engines[sel.i][0] = round(v || 0));
+bindNum('eY', v => state.engines[sel.i][1] = round(v || 0));
+$('bDel').onclick = deleteSel;
+$('bMirrorCopy').onclick = () => {
+  const hp = hpSel(); if (Math.abs(hp.pos[0]) < 0.01) { toast('This hardpoint is on the centreline; a mirror would sit on top of it.'); return; }
+  commit(); const twin = clone(hp); twin.id = nextId(hp.mount); twin.pos = [-hp.pos[0], hp.pos[1]]; if (hp.facing) twin.facing = -hp.facing;
+  state.hardpoints.push(twin); sel = { type: 'hp', i: state.hardpoints.length - 1 }; refresh();
+};
+$('bFit').onclick = fitHit;
+document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+$('tMirror').onclick = toggleMirror;
+$('tMount').onchange = draw; $('tSize').onchange = draw;
+$('zIn').onclick = () => { const r = cv.getBoundingClientRect(); zoomAt(1.25, r.width / 2, r.height / 2); };
+$('zOut').onclick = () => { const r = cv.getBoundingClientRect(); zoomAt(0.8, r.width / 2, r.height / 2); };
+$('zFit').onclick = fitView;
+$('bUndo').onclick = undo;
+$('bNew').onclick = () => { $('confirmModal').hidden = false; $('confirmOk').focus(); };
+$('confirmCancel').onclick = () => { $('confirmModal').hidden = true; };
+$('confirmOk').onclick = () => { $('confirmModal').hidden = true; commit(); state = blank(); img = null; imgData = null; spriteUrl = null; sel = null; fitView(); refresh(); };
+$('bOpenPng').onclick = () => $('fPng').click();
+$('bOpenJson').onclick = () => $('fJson').click();
+function readPng(file) {
+  const fr = new FileReader();
+  fr.onload = () => {
+    commit();
+    if (!state.sprite || state.sprite !== file.name) {
+      if (state.sprite && state.sprite !== file.name && state.hardpoints.length) toast(`Sprite set to ${file.name} (manifest named ${state.sprite}).`);
+      state.sprite = file.name;
+    }
+    if (!state.id) state.id = file.name.replace(/\.[a-z]+$/i, '').toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+    loadSprite(fr.result, true);
+  };
+  fr.readAsDataURL(file);
+}
+function readJson(file) { const fr = new FileReader(); fr.onload = () => importJson(String(fr.result), file.name); fr.readAsText(file); }
+$('fPng').onchange = ev => { const f = ev.target.files[0]; if (f) readPng(f); ev.target.value = ''; };
+$('fJson').onchange = ev => { const f = ev.target.files[0]; if (f) readJson(f); ev.target.value = ''; };
+$('pickOk').onclick = () => { const k = $('pickSel').value; $('pickModal').hidden = true; applyImport(Object.assign({ id: k }, pendingMulti[k]), null); pendingMulti = null; };
+$('pickCancel').onclick = () => { $('pickModal').hidden = true; pendingMulti = null; };
+const stage = $('stage');
+stage.addEventListener('dragover', ev => { ev.preventDefault(); $('drop').hidden = false; });
+stage.addEventListener('dragleave', ev => { if (ev.target === stage || ev.target === $('drop')) $('drop').hidden = true; });
+stage.addEventListener('drop', ev => {
+  ev.preventDefault(); $('drop').hidden = true;
+  [...ev.dataTransfer.files].forEach(f => { if (/\.json$/i.test(f.name)) readJson(f); else if (/^image\//.test(f.type)) readPng(f); });
+});
+$('bCopy').onclick = () => copyText(manifestText());
+$('bSave').onclick = async () => {
+  const errs = renderChecks();
+  if (errs) toast(`Saving with ${errs} error${errs > 1 ? 's' : ''}; the repo check will refuse it until they're fixed.`);
+  const ok = await saveFile('hull.json', manifestText());
+  if (!ok) copyText(manifestText());
+};
+$('bSheet').onclick = async () => {
+  const c = specSheet();
+  const blob = await new Promise(res => c.toBlob(res, 'image/png'));
+  const ok = blob && await saveFile(`${state.id || 'hull'}_spec.png`, blob);
+  if (!ok) { $('sheetImg').src = c.toDataURL('image/png'); $('sheetModal').hidden = false; }
+};
+$('sheetClose').onclick = () => { $('sheetModal').hidden = true; };
+['pickModal', 'confirmModal', 'sheetModal'].forEach(id => $(id).addEventListener('keydown', ev => { if (ev.key === 'Escape') $(id).hidden = true; }));
+
+// ---------- boot ----------
+new ResizeObserver(resize).observe(cv);
+if (!restore()) { state = clone(SAMPLE); loadSprite(SAMPLE_PNG, true); }
+$('bUndo').disabled = true;
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => draw());
+resize(); fitView(); refresh();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>

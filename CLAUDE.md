@@ -1,10 +1,10 @@
 # Terminal Velocity — guide for Claude Code
 
-Terminal Velocity is a top-down space trading and combat game in the style of EV Nova, built in Godot 4 with GDScript. The current goal is the single-system prototype described in `docs/spec.md`. Read it (and `docs/decisions.md`) before starting any milestone; requirement IDs (F1, C3, D7…) come from it.
+Terminal Velocity is a top-down space trading and combat game in the style of EV Nova, built in Godot 4 with GDScript. The prototype (Phase 1, `docs/spec.md`) is complete. The current goal is **Phase 2, described in `docs/phase2-spec.md`**. Read it, `docs/spec.md` (the requirements Phase 2 builds on) and `docs/decisions.md` before starting any milestone; requirement IDs (F1, C3, TR2, OF7…) come from them.
 
 ## How we work (read every session)
 
-- **Source of truth:** `docs/spec.md` (what), `docs/decisions.md` (why), `docs/devlog.md` (what happened). Nothing lives only in chat. If a conversation changes the design, the spec changes in the same session.
+- **Source of truth:** `docs/phase2-spec.md` and `docs/spec.md` (what), `docs/decisions.md` (why), `docs/devlog.md` (what happened). Nothing lives only in chat. If a conversation changes the design, the spec changes in the same session.
 - **Skills:** `design` for design talk (no code), `milestone` to build requirement IDs (plan → approve → build → test → playtest handover), `playtest` for Jarrad's feedback (bug / tuning / design change). Use them even if Jarrad doesn't name them.
 - **Two PCs:** Jarrad switches between two Windows machines. Run the `start` skill at the beginning of every session and `wrap-up` at the end, even if he doesn't name them. Session history doesn't travel between machines; the devlog "Stopped at / Next step" note does.
 - **Pinned Godot version:** 4.7.2-stable (`4.7.2.stable.official.ed1daf0bf`) — both machines must match.
@@ -12,9 +12,9 @@ Terminal Velocity is a top-down space trading and combat game in the style of EV
 - **Requirement IDs** (F1, C3, D8 …) are stable references. Cite them in commits, tests and devlog entries.
 - **Verify, don't guess:** after code changes, run `python tools/check.py` and run the game via the `godot` MCP server to read real runtime errors. "It should work" is not done; GREEN plus a clean run is.
 - **Tuning is data:** feel/balance feedback changes JSON in `data/`, not code.
-- **Branches:** one per milestone (`m<N>-<slug>`). Merge to `main` only after Jarrad confirms the playtest.
+- **Branches:** one per milestone (`m<N>-<slug>` in Phase 1; `p2m<N>-<slug>` in Phase 2). Merge to `main` only after Jarrad confirms the playtest.
 - **Milestones in order:** work one milestone at a time, in the order the spec lists. At the end of each, stop and hand over for playtest; do not start the next one until Jarrad says so.
-- **Commits:** small steps, message `m<N>: <IDs> <summary>` (e.g. `m3: C5 shields absorb damage before armour`).
+- **Commits:** small steps, message `m<N>: <IDs> <summary>` (e.g. `m3: C5 shields absorb damage before armour`); Phase 2 uses `p2m<N>:` (e.g. `p2m1: TR2 hyperspace countdown`).
 - **Ask, don't guess:** if the spec is ambiguous or a requirement seems wrong, ask rather than guess. Do not expand scope beyond the current milestone.
 - **Debug tools** ship with the milestone that needs them (see the Milestones section of the spec).
 - **Devlog:** at the end of each milestone, add an entry to `docs/devlog.md` in the same format.
@@ -54,8 +54,8 @@ tests/
   unit/       GUT tests (test_*.gd) for scripts/sim and the data loader
   fixtures/   Data folders the loader tests read
   smoke/      smoke.tscn (boot + spawn every ship, must print no errors) and scenario.tscn (scripted end-to-end checks)
-tools/        check.py (one health check), hooks/post_edit.py (edit hook)
-docs/         spec.md, decisions.md, devlog.md
+tools/        check.py (one health check), hooks/post_edit.py (edit hook), hardpoint-editor/ (browser tool that writes hull.json)
+docs/         phase2-spec.md (current), spec.md (Phase 1), decisions.md, devlog.md
 ```
 
 ## Conventions

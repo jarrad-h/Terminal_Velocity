@@ -5,12 +5,12 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 ---
 
 ### 2026-10-30 — session wrap-up (cloud session)
-Branch: main (M6 `m6-art` and M7 `m7-hud-tuning` both merged after confirmed playtests)
+Branch: main (M6 `m6-art` and M7 `m7-hud-tuning` both merged after confirmed playtests; Jarrad's Phase 2 spec and hardpoint editor, PRs #2 and #3, merged in)
 Done:
 - M6 art integration: V1–V5 (SOW and pirate art, capsule hitboxes, hardpoints by size and mount, pivot and turret aiming, turret sprites, engine glow), C1/C2 rewrite, world ×2. Merged 2026-10-29.
 - M7 HUD and tuning: H1, H3 schematic target panel with shield bubble, H4 message kinds, G5 standing (pale radar pips when disabled), review tidy-ups, raider beam on a pivot mount, `tools/balance.py`, balance pass (fights about 13 s raider vs shuttle), A8 retuned. Merged 2026-10-29.
-Stopped at: nothing in progress. Every milestone in docs/spec.md is ticked.
-Next step: Jarrad picks what follows the prototype; start with the `design` skill (new scope goes into the spec and decisions before any code).
+Stopped at: nothing in progress. Every prototype milestone in docs/spec.md is ticked, and the Phase 2 spec (docs/phase2-spec.md) is in.
+Next step: Phase 2 milestone 1 (galaxy, hyperlanes and the day clock) on a `p2m1-<slug>` branch when Jarrad says go. Run the `milestone` skill against docs/phase2-spec.md, and check its plan against the open questions below.
 Open questions:
 - Hold-to-aim (F5) can lead for only one shot speed; this will matter once mass drivers exist.
 - The AI never finishes off disabled ships.
@@ -18,6 +18,18 @@ Open questions:
 - `tools/balance.py` ignores shield regen.
 - Flak is unused until point-defence (C13) hulls arrive.
 Check: GREEN
+
+---
+
+## Phase 2 planning (30 Oct 2026)
+
+Designed with Jarrad in claude.ai and committed as `docs/phase2-spec.md`, with the decisions in `docs/decisions.md` (30 Oct entries). `tools/hardpoint-editor/` added (PR #2): a browser tool that writes `hull.json` hull manifests, ahead of OF7. CLAUDE.md and the skills now point at the Phase 2 spec; Phase 2 branches are `p2m<N>-<slug>`.
+
+### Stopped at / Next step
+
+Stopped at: Phase 2 spec merged. Next step: Phase 2 milestone 1 (galaxy, hyperlanes and the day clock) when Jarrad says go; the setting is being worked on separately and doesn't block it.
+
+---
 
 ## Milestone 7: HUD and tuning pass (29 Oct 2026)
 
