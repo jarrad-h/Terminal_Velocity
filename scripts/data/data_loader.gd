@@ -73,7 +73,28 @@ static func load_roots(roots: Array[String]) -> DataSet:
 	for type: String in TYPES:
 		for def: Def in data_set.defs[type].values():
 			def.validate(data_set.defs, data_set.errors)
+	_check_gate_days(data_set)
 	return data_set
+
+
+## TR5: a gate link never takes more days than the fewest-days hyperlane route
+## for the start ship, and fewer whenever that route takes more than one day.
+static func _check_gate_days(data_set: DataSet) -> void:
+	var ship: ShipDef = data_set.get_def("ships", str(data_set.settings.get("player_ship", "")))
+	if ship == null:
+		return
+	for galaxy: GalaxyDef in data_set.defs["galaxy"].values():
+		for i: int in galaxy.gate_links.size():
+			var link: Dictionary = galaxy.gate_links[i]
+			if not galaxy.has_system(link["from"]) or not galaxy.has_system(link["to"]):
+				continue
+			var route: Array[String] = Hyperlanes.plot_route(galaxy, link["from"], link["to"], ship.jump_speed)
+			if route.is_empty():
+				continue
+			var lane_days: int = Hyperlanes.route_cost(galaxy, link["from"], route, ship.jump_speed, 0.0)["days"]
+			if link["days"] > lane_days or (lane_days > 1 and link["days"] >= lane_days):
+				data_set.errors.append("%s: field 'gate_links[%d].days': %d days is no faster than the %d-day hyperlane route for the %s; gates must be quicker" % [
+					galaxy.file, i, link["days"], lane_days, ship.name])
 
 
 static func _load_def(data_set: DataSet, type: String, path: String, refs: Array[Dictionary]) -> void:

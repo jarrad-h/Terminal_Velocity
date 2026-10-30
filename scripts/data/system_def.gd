@@ -35,6 +35,14 @@ static func parse(r: DefReader) -> SystemDef:
 	return d
 
 
+## TR5: the system's gate, or null (at most one per system).
+func gate() -> SystemObjectDef:
+	for o: SystemObjectDef in objects:
+		if o.type == "gate":
+			return o
+	return null
+
+
 ## TR7: the government shown for the system on the map: the first landable
 ## object's, else the first object's that has one, else "".
 func government() -> String:
@@ -53,6 +61,8 @@ func validate(_defs: Dictionary, errors: Array[String]) -> void:
 		if seen.has(o.id):
 			errors.append("%s: field 'objects': object id '%s' is used twice" % [file, o.id])
 		seen[o.id] = true
+	if objects.filter(func(o: SystemObjectDef) -> bool: return o.type == "gate").size() > 1:
+		errors.append("%s: field 'objects': a system has at most one gate" % file)
 	var pools: Dictionary = {}
 	for i: int in traffic.size():
 		var pool_id: String = traffic[i]["pool"]

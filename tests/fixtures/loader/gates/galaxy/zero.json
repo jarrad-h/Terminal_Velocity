@@ -1,0 +1,1 @@
+{"name": "Zero", "start_system": "a", "systems": [{"system": "a", "position": [0, 0]}, {"system": "d", "position": [9, 0]}], "gate_links": [{"from": "a", "to": "d", "days": 0}]}

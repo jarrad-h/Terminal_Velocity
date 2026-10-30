@@ -234,6 +234,21 @@ func test_travel_errors_name_file_and_field() -> void:
 	_expect_error(set, ["game.json", "hyperspace.arrival_speed_fraction", "at most 1"])
 
 
+## TR5, TR6: gate fields, one gate per system, links between gates, and
+## gates faster than the hyperlane route.
+func test_gate_errors() -> void:
+	var set: DataSet = _load(["res://tests/fixtures/loader/gates"])
+	_expect_error(set, ["ring.json", "gate_links[0]", "'b' has no gate"])
+	_expect_error(set, ["ring.json", "gate_links[1].days", "no faster than the 2-day hyperlane route"])
+	_expect_error(set, ["ring.json", "gate_links[2]", "two different systems"])
+	_expect_error(set, ["zero.json", "gate_links[0].days", "at least 1"])
+	_expect_error(set, ["twogates.json", "at most one gate"])
+	_expect_error(set, ["badgate.json", "objects[0].fee", "only gates"])
+	_expect_error(set, ["badgate.json", "objects[1].open_condition", "flag_name"])
+	var galaxy: GalaxyDef = _load([BASE]).get_def("galaxy", "tiny")
+	assert_true(galaxy.gate_links.is_empty(), "gate_links default to none")
+
+
 func test_travel_defaults() -> void:
 	var set: DataSet = _load([BASE])
 	var ship: ShipDef = set.get_def("ships", "alpha")

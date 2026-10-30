@@ -1,0 +1,4 @@
+{"name": "Ring", "start_system": "a",
+ "systems": [{"system": "a", "position": [0, 0]}, {"system": "b", "position": [0, 100]}, {"system": "m", "position": [140, 0]}, {"system": "d", "position": [280, 0]}],
+ "hyperlanes": [{"from": "a", "to": "m"}, {"from": "m", "to": "d"}, {"from": "a", "to": "b"}],
+ "gate_links": [{"from": "a", "to": "b"}, {"from": "a", "to": "d", "days": 2}, {"from": "a", "to": "a"}]}

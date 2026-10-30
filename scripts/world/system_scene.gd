@@ -92,14 +92,27 @@ func reset_visit() -> void:
 ## jump radius moving along `bearing` (origin → destination on the map).
 ## Each arrival is a fresh visit until persistence (milestone 3).
 func enter_system(system_id: String, bearing: Vector2) -> void:
-	_clear_ships_and_shots()
-	var same_system: bool = system != null and system.id == system_id
 	var next: SystemDef = DataRegistry.get_system(system_id)
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
+	var arrival: FlightState = null
 	if player != null and next != null:
 		var settings: Dictionary = DataRegistry.settings["hyperspace"]
 		var speed: float = player.def.top_speed * float(settings["arrival_speed_fraction"])
-		var arrival: FlightState = Hyperlanes.arrival(bearing, next.jump_radius, speed, float(settings["arrival_grace_seconds"]))
+		arrival = Hyperlanes.arrival(bearing, next.jump_radius, speed, float(settings["arrival_grace_seconds"]))
+	_enter(system_id, arrival)
+
+
+## TR5: arrives stopped at `at` (a gate's jump point), keeping the heading.
+func enter_system_at(system_id: String, at: Vector2) -> void:
+	var player: Ship = get_tree().get_first_node_in_group(&"player")
+	_enter(system_id, FlightState.new(at, Vector2.ZERO, player.rotation if player != null else 0.0))
+
+
+func _enter(system_id: String, arrival: FlightState) -> void:
+	_clear_ships_and_shots()
+	var same_system: bool = system != null and system.id == system_id
+	var player: Ship = get_tree().get_first_node_in_group(&"player")
+	if player != null and arrival != null:
 		player.place(arrival.position, arrival.rotation, arrival.velocity)
 		player.set_target(null)
 	load_system(system_id)

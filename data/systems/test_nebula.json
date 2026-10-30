@@ -6,6 +6,7 @@
   "respawn_delay": [5, 15],
   "seed": 1001,
   "objects": [
+    {"id": "nebula_gate", "type": "gate", "name": "Vela Gate", "position": [3000, 7500], "radius": 300, "colour": "#d9a05a", "description": "A consortium-built hyperspace gate.", "government": "local_authority", "min_record": 0, "fee": 50},
     {"id": "sol", "type": "star", "name": "Vela", "position": [0, -12000], "radius": 1600, "colour": "#fff0c0"},
     {"id": "haven", "type": "planet", "name": "Haven", "position": [6000, 3000], "radius": 640, "colour": "#4a8a5a",
      "description": "A temperate world with a busy orbital dock.", "landable": true, "government": "local_authority", "min_record": -20},

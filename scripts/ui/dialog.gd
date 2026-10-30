@@ -6,9 +6,13 @@ extends CanvasLayer
 
 signal closed
 
+## H5: the shared look for new screens (the Amber Glass restyle changes this file).
+const THEME_PATH: String = "res://assets/ui/theme.tres"
+
 var _title: Label
 var _body: Label
-var _buttons: HBoxContainer
+var _buttons: BoxContainer
+var _panel: PanelContainer
 var _choices: Array[Dictionary] = []  # {"id", "button", "action"}
 var _was_paused: bool = false
 
@@ -32,6 +36,7 @@ func _init() -> void:
 	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(centre)
 	var panel := PanelContainer.new()
+	_panel = panel
 	panel.custom_minimum_size = Vector2(560.0, 0.0)
 	centre.add_child(panel)
 	var margin := MarginContainer.new()
@@ -48,7 +53,7 @@ func _init() -> void:
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.custom_minimum_size = Vector2(520.0, 0.0)
 	box.add_child(_body)
-	_buttons = HBoxContainer.new()
+	_buttons = BoxContainer.new()
 	_buttons.add_theme_constant_override("separation", 10)
 	box.add_child(_buttons)
 
@@ -56,6 +61,12 @@ func _init() -> void:
 func _ready() -> void:
 	_was_paused = get_tree().paused
 	get_tree().paused = true
+
+
+## H5: new screens use the shared theme and list their choices top to bottom.
+func use_shared_theme(vertical_choices: bool = true) -> void:
+	_panel.theme = load(THEME_PATH)
+	_buttons.vertical = vertical_choices
 
 
 func set_title(text: String) -> void:

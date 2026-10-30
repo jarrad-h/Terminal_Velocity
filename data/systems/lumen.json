@@ -5,6 +5,7 @@
   "edge_radius": 12000,
   "jump_radius": 10000,
   "objects": [
+    {"id": "lumen_gate", "type": "gate", "name": "Lumen Gate", "position": [-2000, 6500], "radius": 300, "colour": "#d9a05a", "description": "A consortium-built hyperspace gate.", "government": "local_authority", "min_record": 15, "fee": 80},
     {
       "id": "lumen",
       "type": "star",

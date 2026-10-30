@@ -5,6 +5,7 @@
   "edge_radius": 12000,
   "jump_radius": 10000,
   "objects": [
+    {"id": "aster_gate", "type": "gate", "name": "Aster Gate", "position": [2000, 7000], "radius": 300, "colour": "#d9a05a", "description": "A consortium-built hyperspace gate.", "government": "local_authority", "min_record": 0, "fee": 40},
     {
       "id": "aster",
       "type": "star",

@@ -162,6 +162,12 @@ func refuel() -> void:
 		GameState.set_fuel(player.def.fuel, player.def.fuel)
 
 
+## TR6: sets a named flag (0 clears it), e.g. to close a gate.
+func set_flag(name: String, value: int) -> void:
+	if OS.is_debug_build():
+		GameState.set_flag(name, value)
+
+
 ## TR7 from the console: plots a route to `system_id`.
 func plot_route(system_id: String) -> bool:
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
@@ -340,7 +346,7 @@ func run_command(line: String) -> String:
 	var gov_arg: Callable = func(index: int) -> String: return w[index] if w.size() > index else ""
 	match w[0]:
 		"help":
-			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | reload | " \
+			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | flag <name> [n] | reload | " \
 				+ "time <scale> | pause | resume | step | invuln on|off | ai on|off | traffic on|off | radar all|range | " \
 				+ "kill | disable | clear | credits <n> | record <gov> <n> | overlay <name> on|off | ids <type> | pos"
 		"spawn", "pool":
@@ -364,6 +370,11 @@ func run_command(line: String) -> String:
 			return "Route: %s" % " > ".join(GameState.travel.route) if w.size() > 1 and plot_route(w[1]) else "Usage: route <reachable system id>"
 		"reveal":
 			return "Revealed %s" % w[1] if w.size() > 1 and reveal_system(w[1]) else "Usage: reveal <hidden system id>"
+		"flag":
+			if w.size() < 2 or not GateRules.is_valid_condition(w[1]) or w[1].begins_with("!") or (w.size() > 2 and not ConsoleParser.is_int(w[2])):
+				return "Usage: flag <name> [value, default 1; 0 clears]"
+			set_flag(w[1], w[2].to_int() if w.size() > 2 else 1)
+			return "Flag %s = %d" % [w[1], GameState.flag(w[1])]
 		"fuel":
 			refuel()
 			return "Fuel %.0f" % GameState.travel.fuel

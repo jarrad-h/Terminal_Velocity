@@ -27,5 +27,13 @@
     {"from": "ember", "to": "redhaven"},
     {"from": "solace", "to": "hollow"},
     {"from": "hollow", "to": "redhaven"}
+  ],
+  "gate_links": [
+    {"from": "test_nebula", "to": "test_graveyard", "days": 1},
+    {"from": "test_nebula", "to": "lumen", "days": 1},
+    {"from": "test_nebula", "to": "aster", "days": 1},
+    {"from": "test_graveyard", "to": "lumen", "days": 1},
+    {"from": "test_graveyard", "to": "aster", "days": 1},
+    {"from": "lumen", "to": "aster", "days": 1}
   ]
 }

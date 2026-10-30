@@ -1,7 +1,8 @@
 class_name PlayerActions
 extends Node
-## The player's port and wreck actions: landing (S2, G4, S3), boarding (C9)
-## and the escape pod with rescue (C10). Keys: L land, B board.
+## The player's port and wreck actions: landing (S2, G4, S3), docking with a
+## gate (TR5, TR6), boarding (C9) and the escape pod with rescue (C10).
+## Keys: L land or dock, B board.
 
 var scene: Node  # SystemScene
 ## The open landed / boarding / rescue window, if any.
@@ -41,20 +42,23 @@ func try_land() -> String:
 	var player: Ship = _player()
 	if player == null or not player.can_act() or dialog != null or scene.hyperspace.is_active():
 		return "none"
-	var port: SystemObjectDef = _nearest_landable(player.global_position)
+	var port: SystemObjectDef = _nearest_port(player.global_position)
 	if port == null:
 		GameState.post_message("Nothing to land on in this system")
 		return "none"
+	var docking: bool = port.type == "gate"
 	var landing: Dictionary = DataRegistry.settings["landing"]
 	var check: String = PortRules.landing_check(player.global_position.distance_to(port.position), port.radius,
 		float(landing["radius_fraction"]), player.get_velocity().length(), float(landing["max_speed"]))
 	match check:
 		"far":
-			GameState.post_message("Too far from %s to land" % port.name)
+			GameState.post_message("Too far from %s to %s" % [port.name, "dock" if docking else "land"])
 			return "far"
 		"fast":
-			GameState.post_message("Slow down to land on %s" % port.name)
+			GameState.post_message("Slow down to %s %s" % ["dock with" if docking else "land on", port.name])
 			return "fast"
+	if docking:
+		return _dock_at_gate(port, player)
 	if not PortRules.landing_allowed(port.government, GameState.get_record(port.government), port.min_record):
 		GameState.post_message("%s refuses you landing" % port.name)
 		return "refused"
@@ -81,12 +85,41 @@ func _take_off(port: SystemObjectDef) -> void:
 	GameState.post_message("Took off from %s" % port.name)
 
 
-func _nearest_landable(from: Vector2) -> SystemObjectDef:
+## The nearest place L acts on: a landable planet or station, or a gate.
+func _nearest_port(from: Vector2) -> SystemObjectDef:
 	var best: SystemObjectDef = null
 	for obj: SystemObjectDef in scene.system.objects:
-		if obj.landable and (best == null or from.distance_squared_to(obj.position) < from.distance_squared_to(best.position)):
+		if (obj.landable or obj.type == "gate") and (best == null or from.distance_squared_to(obj.position) < from.distance_squared_to(best.position)):
 			best = obj
 	return best
+
+
+# --- TR5, TR6 gates -------------------------------------------------------
+
+func _dock_at_gate(gate: SystemObjectDef, player: Ship) -> String:
+	var record: float = GameState.get_record(gate.government) if gate.government != "" else 0.0
+	match GateRules.dock_problem(GateRules.is_open(gate.open_condition, GameState.flags), record, gate.min_record):
+		GateRules.CLOSED:
+			GameState.post_message("%s is closed" % gate.name)
+			return "closed"
+		GateRules.RECORD:
+			GameState.post_message("%s refuses you" % gate.name)
+			return "refused"
+	_end_boarding()
+	player.place(player.global_position, player.rotation)  # docked: stopped
+	player.set_target(null)
+	dialog = GateScreen.open(scene, gate, scene.system.id, func(system_id: String, days: int) -> void:
+		_travel_by_gate(gate, system_id, days))
+	dialog.closed.connect(func() -> void: dialog = null)
+	return ""
+
+
+func _travel_by_gate(gate: SystemObjectDef, system_id: String, days: int) -> void:
+	GameState.add_credits(-gate.fee)
+	dialog.close()
+	scene.hyperspace.arrive_at_gate(system_id)
+	GameState.advance_days(days)
+	GameState.post_message("Through %s to %s after %d day%s" % [gate.name, Hyperspace.system_name(system_id), days, "" if days == 1 else "s"])
 
 
 # --- C9 boarding -----------------------------------------------------------

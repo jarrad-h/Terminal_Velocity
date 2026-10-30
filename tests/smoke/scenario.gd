@@ -573,6 +573,7 @@ func _run() -> void:
 	_debug.set_traffic_enabled(false)
 	_debug.clear_ships()
 	await _hyperspace_checks(player, scene_root)
+	await _gate_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
 
 	# System switch (D11 goto).
@@ -629,6 +630,64 @@ func _run() -> void:
 
 func actions_of(scene_root: Node) -> PlayerActions:
 	return scene_root.actions
+
+
+## P2M2: docking with gates, the destination list and gate travel (TR5, TR6).
+func _gate_checks(player: Ship, scene_root: Node) -> void:
+	var actions: PlayerActions = scene_root.actions
+	var travel: TravelState = GameState.travel
+	_check(_debug.switch_system("test_nebula"), "back to the start system")
+	GameState.set_credits(1000)
+	GameState.set_record("local_authority", 0.0)
+	var gate: SystemObjectDef = scene_root.system.gate()
+	_check(gate != null, "TR5: the start system has a gate")
+	player.place(gate.position + Vector2(gate.radius * 3.0, 0.0), 0.0)
+	await _frames(2)
+	_check(actions.try_land() == "far", "too far to dock")
+	player.place(gate.position, 0.0)
+	await _frames(2)
+	_check(actions.try_land() == "" and actions.dialog != null and get_tree().paused, "TR5: L docks with the gate and lists destinations")
+	_check(actions.dialog.has_choice("aster") and actions.dialog.has_choice("lumen") and actions.dialog.has_choice("test_graveyard"), "every linked gate is listed")
+	actions.dialog.choose("leave")
+	await _frames(2)
+	_debug.set_flag("graveyard_gate_closed", 1)
+	actions.try_land()
+	_check(actions.dialog != null and not actions.dialog.has_choice("test_graveyard"), "TR6: a closed destination can't be picked")
+	var day_before: int = GameState.clock.day
+	actions.dialog.choose("aster")
+	await _frames(3)
+	_check(travel.current_system == "aster" and scene_root.system.id == "aster", "TR5: through the gate to Aster")
+	_check(GameState.credits == 1000 - gate.fee, "TR6: paid the departure gate's fee (%d)" % GameState.credits)
+	_check(GameState.clock.day == day_before + 1, "TR5: the link's days passed")
+	var aster_gate: SystemObjectDef = scene_root.system.gate()
+	_check(player.global_position.distance_to(aster_gate.position) < 1.0 and player.get_velocity().is_zero_approx(), "arrives stopped at the gate")
+	_check(not get_tree().paused and actions.dialog == null, "unpaused after gate travel")
+	_check(travel.map_state(DataRegistry.galaxy(), "aster") == "explored", "gate arrival explores")
+	GameState.set_credits(5)
+	actions.try_land()
+	_check(actions.dialog != null and not actions.dialog.has_choice("test_nebula"), "TR6: can't pick a gate you can't pay for")
+	GameState.set_credits(1000)
+	actions.dialog.choose("leave")
+	await _frames(2)
+	_check(_debug.switch_system("lumen"), "go to lumen")
+	var lumen_gate: SystemObjectDef = scene_root.system.gate()
+	player.place(lumen_gate.position, 0.0)
+	await _frames(2)
+	_check(actions.try_land() == "refused", "TR6: record below the gate's minimum is refused")
+	GameState.set_record("local_authority", lumen_gate.min_record)
+	_check(actions.try_land() == "", "docks once the record is high enough")
+	actions.dialog.choose("leave")
+	await _frames(2)
+	_check(_debug.switch_system("test_graveyard"), "go to the graveyard")
+	player.place(scene_root.system.gate().position, 0.0)
+	await _frames(2)
+	_check(actions.try_land() == "closed", "TR6: a flag closes the gate")
+	_check(_debug.run_command("flag graveyard_gate_closed 0").contains("= 0"), "flag via console")
+	_check(actions.try_land() == "", "reopened")
+	actions.dialog.choose("leave")
+	await _frames(2)
+	GameState.set_record("local_authority", 0.0)
+	_check(_debug.switch_system("test_nebula"), "back to the start")
 
 
 ## Sends a key press as an action event and waits until it has been handled
