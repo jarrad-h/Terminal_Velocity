@@ -6,8 +6,8 @@
     "stop_speed": 2,
     "align_tolerance": 1,
     "thrust_angle": 20,
-    "overdrive_accel_factor": 5,
-    "engage_speed_factor": 8,
+    "overdrive_accel_factor": 3,
+    "engage_speed_factor": 12,
     "arrival_speed_fraction": 0.5,
     "arrival_grace_seconds": 2
   },
