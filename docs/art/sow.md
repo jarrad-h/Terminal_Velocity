@@ -7,7 +7,7 @@ Concept board (exploration history, variants, parts list): the Claude design can
 ## Style
 
 - **Painted pixels at 1:1**, Starsector-style: each sprite is painted at high resolution and reduced to native size with a 64-colour palette, crisp alpha and a darker rim pixel (no black outline).
-- **Light is baked in from the top-left** (placeholder, accepted). The sprite rotates in-engine, so the light rotates with it. Normal maps can be added later without redrawing.
+- **Lit live (Amber Glass).** Every sprite and part comes with light maps: `<name>_albedo.png` (colours without baked shading), `<name>_n.png` (normal map) and `<name>_e.png` (what glows). The game lights ships with the system's star and weapon flashes; see `docs/art/lighting.md`. The plain `<name>.png` keeps the old top-left baked light as the unlit fallback.
 - **Palette:** white deck plates over slate flanks, dark ribbed collars between modules, red livery (bow cap, aft band, emblem), cyan glass and engine glow.
 - **Art faces up** (nose towards −Y), matching `data/README.md`.
 
@@ -68,6 +68,14 @@ python art_src/sow/export.py sow_f_a_stack n2   # just these
 ```
 
 Needs Python 3.10+ with `numpy` and `Pillow`. `art_src/.gdignore` keeps Godot from scanning the scripts.
+
+Every run also writes the light maps next to each sprite (`art_src/sow/lightmaps.py`). The baked sprites stay byte-identical, so a light-map change never alters the fallback art. To check the lit look without Godot:
+
+```
+python art_src/sow/preview_lit.py       # writes docs/art/lighting/sow_lit.png
+```
+
+When painting new parts: `p.facet()` and `p.edges()` feed the normal map automatically, `p.glow()` feeds the emission map, and any hand-written shading factor should go through `p.lit(f, nx)` (returns `f` unchanged for the baked sprite; records the surface direction for the normal map).
 
 ## Current ship data vs art (as of this branch)
 

@@ -21,7 +21,7 @@ def taper(p, y0, L, w_top, w_bot):
     n = np.clip((p.X - CX) / np.maximum(half, 0.5), -0.99, 0.99)
     nf = np.clip((np.floor((n + 1) / 2 * 5) + 0.5) / 5 * 2 - 1, -0.99, 0.99)
     f = 0.6 + 0.52 * np.clip(0.8 * np.sqrt(1 - nf ** 2) - 0.5 * nf, 0, None)
-    p.fill(m, np.clip(col * f[..., None], 0, 255)); p.edges(m)
+    p.fill(m, np.clip(col * p.lit(f, nf)[..., None], 0, 255)); p.edges(m)
     yw = y0 + 0.8 if w_top > w_bot else y0 + L - 0.8
     p.rivets(m, yw, CX - wide / 2 + 1, CX + wide / 2 - 1)
     p.wear(m, 3)
@@ -54,7 +54,7 @@ def nacelle(p, side, y0, L, w, ang=8.0, gap=0.5, big=False):
     n = np.clip(lx / (w / 2), -0.99, 0.99); nf = np.clip((np.floor((n * side + 1) / 2 * 4) + 0.5) / 4 * 2 - 1, -0.99, 0.99) * side
     f = 0.6 + 0.52 * np.clip(0.8 * np.sqrt(1 - nf ** 2) - 0.5 * nf * side * np.sign(side), 0, None)
     two = np.where((lx * side > 0)[..., None], np.asarray(WHITE, np.float32), np.asarray(DARK, np.float32))
-    p.fill(body, np.clip(two * f[..., None], 0, 255)); p.edges(body, 0.45)
+    p.fill(body, np.clip(two * p.lit(f, nf)[..., None], 0, 255)); p.edges(body, 0.45)
     intake = np.clip(0.5 - (np.hypot(lx / (w / 2 - 1), (ly - w * 0.3) / (w * 0.22)) - 1) * 8, 0, 1) * body
     p.fill(intake, (30, 34, 44))
     inner = np.clip(0.5 - (np.hypot(lx / (w / 2 - 2), (ly - w * 0.3) / (w * 0.15)) - 1) * 8, 0, 1) * body
@@ -67,7 +67,7 @@ def nacelle(p, side, y0, L, w, ang=8.0, gap=0.5, big=False):
     nw, nh = w * (0.95 if big else 0.85), (5.5 if big else 3.6)
     noz = p.poly([world(-nw * 0.38, L - 0.6), world(nw * 0.38, L - 0.6), world(nw / 2, L - 0.6 + nh), world(-nw / 2, L - 0.6 + nh)])
     shade = np.clip(0.55 + 0.6 * np.sqrt(np.clip(1 - (lx / (nw / 2)) ** 2, 0, 1)) - 0.3 * lx / (nw / 2), 0.2, 1.3)
-    p.fill(noz, np.clip(np.array([62, 68, 82], np.float32) * shade[..., None], 0, 255)); p.edges(noz, 0.4)
+    p.fill(noz, np.clip(np.array([62, 68, 82], np.float32) * p.lit(shade, np.clip(lx / (nw / 2), -1, 1), flat=1.0)[..., None], 0, 255)); p.edges(noz, 0.4)
     if hasattr(p, 'engines'): p.engines.append(world(0, L - 0.6 + nh))
     p.glow(p.poly([world(-nw * 0.42, L - 1.5 + nh), world(nw * 0.42, L - 1.5 + nh), world(nw / 2 - 0.2, L - 0.6 + nh), world(-nw / 2 + 0.2, L - 0.6 + nh)]))
 

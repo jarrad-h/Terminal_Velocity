@@ -40,6 +40,11 @@ class Paint:
         n = np.clip((self.X - (x0 + x1) / 2) / ((x1 - x0) / 2), -0.99, 0.99)
         nf = np.clip((np.floor((n + 1) / 2 * facets) + 0.5) / facets * 2 - 1, -0.99, 0.99)
         return 0.6 + 0.52 * np.clip(0.8 * np.sqrt(1 - nf ** 2) - 0.5 * nf, 0, None)
+    def lit(self, f, nx, ny=None, flat=0.86):
+        """Hand-written shading factor f for the next fill. Returns f unchanged here; when the light-map
+        exporter (lightmaps.py) is active it records the surface direction (nx across, ny down the
+        canvas, both -1..1) for the normal map and returns `flat` so the albedo carries no baked light."""
+        return f
     def glow(self, m, col=CYAN):
         c = np.asarray(col, np.float32); self.fill(m, c)
         self.fill(m * self.rect(0, 0, self.uw, self.uh), np.clip(c * 1.25 + 30, 0, 255), 0.35, solid=False)
@@ -74,7 +79,7 @@ def deck(p, y0, y1, x0=HX0, x1=HX1, ch=0.8):
 def collar(p, y, x0=HX0 - 0.6, x1=HX1 + 0.6):
     m = p.rect(x0, y, x1, y + 1.2)
     n = np.clip((p.X - (x0 + x1) / 2) / ((x1 - x0) / 2), -1, 1)
-    p.fill(m, np.clip(np.asarray(RIB, np.float32) * (1.15 - 0.45 * n)[..., None], 0, 255))
+    p.fill(m, np.clip(np.asarray(RIB, np.float32) * p.lit(1.15 - 0.45 * n, n * 0.8, flat=1.15)[..., None], 0, 255))
     for x in np.arange(x0 + 0.7, x1 - 0.4, 1.3): p.fill(m * p.rect(x, y + 0.25, x + 0.45, y + 0.95), (96, 104, 120), 0.9)
     return m
 
@@ -107,7 +112,7 @@ def hatch(p, cx, cy):
 def nozzle(p, cx, y0, w=5, h=4):
     m = p.poly([(cx - w * 0.38, y0), (cx + w * 0.38, y0), (cx + w / 2, y0 + h), (cx - w / 2, y0 + h)])
     n = np.clip((p.X - cx) / (w / 2), -1, 1)
-    p.fill(m, np.clip(np.array([62, 68, 82], np.float32) * (0.55 + 0.6 * np.sqrt(1 - n ** 2) - 0.3 * n)[..., None], 0, 255)); p.edges(m, 0.4)
+    p.fill(m, np.clip(np.array([62, 68, 82], np.float32) * p.lit(0.55 + 0.6 * np.sqrt(1 - n ** 2) - 0.3 * n, n, flat=1.0)[..., None], 0, 255)); p.edges(m, 0.4)
     p.glow(p.poly([(cx - w * 0.42, y0 + h - 0.9), (cx + w * 0.42, y0 + h - 0.9), (cx + w / 2 - 0.2, y0 + h), (cx - w / 2 + 0.2, y0 + h)]))
 
 def emblem(p, cx, cy):
