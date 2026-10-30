@@ -1,0 +1,47 @@
+{
+ "id": "station_pirate_rock",
+ "name": "Pirate station (Hollowed rock)",
+ "size_px": [
+  480,
+  480
+ ],
+ "sprite_scale": 1,
+ "hardpoints": [
+  {
+   "id": "T1",
+   "size": "medium",
+   "mount": "turret",
+   "pos": [
+    -57.8,
+    -108.5
+   ]
+  },
+  {
+   "id": "T2",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    -112.0,
+    42.0
+   ]
+  },
+  {
+   "id": "T3",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    82.2,
+    105.0
+   ]
+  },
+  {
+   "id": "T4",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    45.5,
+    -56.0
+   ]
+  }
+ ]
+}
