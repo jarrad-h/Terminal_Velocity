@@ -54,6 +54,7 @@ static func settings_for(system: SystemDef, defaults: Dictionary) -> Dictionary:
 func set_enabled(value: bool) -> void:
 	enabled = value
 	_apply_enabled()
+	DynamicLights.set_all_enabled(get_tree(), value)  # V8 lights follow (D14)
 
 
 func set_height(value: float) -> void:

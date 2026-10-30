@@ -46,7 +46,12 @@
   "lighting": {
     "enabled": true,
     "ambient": "#4b5161",
-    "star": {"colour": "#ffc890", "energy": 1.2, "height": 0.3}
+    "star": {"colour": "#ffc890", "energy": 1.2, "height": 0.3},
+    "max_lights": 24,
+    "shot": {"energy": 2.5, "radius": 150, "height": 20},
+    "beam": {"energy": 3.0, "radius": 180, "height": 20},
+    "impact": {"energy": 4.0, "radius": 220, "height": 24, "duration": 0.3},
+    "engine": {"energy": 1.5, "radius": 90, "height": 12}
   },
   "ai": {
     "thrust_angle": 35,

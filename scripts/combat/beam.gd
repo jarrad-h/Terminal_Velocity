@@ -6,6 +6,8 @@ extends Node2D
 
 var weapon: WeaponDef
 var _length: float = 0.0
+## V8: lights the beam's far end while it fires.
+var _light: PointLight2D = null
 
 
 func _init() -> void:
@@ -29,11 +31,18 @@ func fire(shooter: Node, exclude: Array[RID], delta: float) -> void:
 		if scale > 0.0:
 			hit["target"].health.apply_damage(weapon.damage_shield * scale, weapon.damage_armor * scale, shooter)
 	visible = true
+	if _light == null:
+		_light = DynamicLights.attach(self, weapon.colour, "beam")
+	if _light != null:
+		_light.position = Vector2.UP * _length
 	queue_redraw()
 
 
 func stop() -> void:
 	visible = false
+	if _light != null:
+		_light.queue_free()
+		_light = null
 
 
 ## C12: drawn in segments that thin and fade with the damage falloff.

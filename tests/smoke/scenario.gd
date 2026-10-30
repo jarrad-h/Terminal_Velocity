@@ -716,8 +716,21 @@ func _lighting_checks(player: Ship, scene_root: Node) -> void:
 	await get_tree().process_frame
 	var down: Vector2 = Vector2.DOWN.rotated(lighting.star_light.rotation)
 	_check(down.dot(lighting.light_direction()) > 0.99, "V7: the light travels from the star towards the player")
+	# V8: shots carry lights, capped.
+	var cap: int = int(DataRegistry.settings["lighting"]["max_lights"])
+	var shots: Array[Projectile] = []
+	for i: int in cap + 10:
+		shots.append(Projectile.fire(scene_root.get_node("World/Shots"), DataRegistry.get_weapon("laser_small"),
+			player.global_position + Vector2(0.0, -400.0 - i * 4.0), Vector2.UP, Vector2.ZERO, null, []))
+	_check(DynamicLights.active_count() == cap, "V8: shot lights stop at the cap (%d of %d)" % [DynamicLights.active_count(), cap])
+	_check(shots[0].get_child_count() > 0 and shots[0].get_child(0) is PointLight2D, "V8: a shot carries a point light")
+	for shot: Projectile in shots:
+		shot.queue_free()
+	await _frames(2)
+	_check(DynamicLights.active_count() == 0, "V8: lights are released with their shots")
 	lighting.set_enabled(false)
 	_check(not lighting.star_light.enabled and lighting.ambient.color == Color.WHITE, "lighting off")
+	_check(Projectile.fire(scene_root.get_node("World/Shots"), DataRegistry.get_weapon("laser_small"), player.global_position + Vector2(0, -400), Vector2.UP, Vector2.ZERO, null, []).get_child_count() == 0, "no new lights while lighting is off")
 	lighting.set_enabled(true)
 
 

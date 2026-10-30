@@ -49,6 +49,9 @@ Fields marked **required** have no default.
 | `lighting.enabled` | V7: live lighting on (star, ambient, lit sprites); off draws everything flat | `true` |
 | `lighting.ambient` | V7: colour the unlit side of lit things is darkened to (a `CanvasModulate`); things without light maps, the backdrop and the HUD aren't darkened. A system's `lighting.ambient` overrides it | `"#4b5161"` |
 | `lighting.star.colour`, `.energy`, `.height` | V7: the star light: colour, strength, and height (0 = skimming the plane, strong side light; 1 = straight down, flat). It comes from the system's star towards the player. A system's `lighting.star` overrides any of them | `"#ffc890"`, `1.2`, `0.3` |
+| `lighting.max_lights` | V8: most shot, beam and impact lights burning at once; more fire goes unlit (keeps performance flat) | `24` |
+| `lighting.shot`, `.beam`, `.impact` | V8: point lights in the weapon's colour on shots, at a beam's far end, and at impacts: `energy`, `radius` (px), `height` (px above the plane; low = side light on hulls); `impact.duration` is its fade time, s | see `game.json` |
+| `lighting.engine` | V8: one dim light at a ship's engines in its engine glow colour, following thrust (`energy` at full thrust, `radius`, `height`) | `1.5`, `90`, `12` |
 | `camera.zoom` | Camera zoom; above 1 zooms in (data: `0.75` for the 1:1 ship art) | `1.0` |
 | `camera.smoothing_speed` | How fast the camera catches up; `0` locks it to the ship | `0` |
 | `local_space.chunk_size` | Side of one local-space chunk in px | `1024` |

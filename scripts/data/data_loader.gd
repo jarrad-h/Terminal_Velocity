@@ -22,7 +22,11 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"mounts": {"arc": {"pivot": 30.0, "turret": 360.0}, "traverse": {"pivot": 180.0, "turret": 360.0},
 		"fire_tolerance": 5.0, "turret_sprites": {"small": "", "medium": "", "large": "", "point_defence": ""}},
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
-	"lighting": {"enabled": true, "ambient": "#4b5161", "star": {"colour": "#ffc890", "energy": 1.2, "height": 0.3}},
+	"lighting": {"enabled": true, "ambient": "#4b5161", "star": {"colour": "#ffc890", "energy": 1.2, "height": 0.3},
+		"max_lights": 24, "shot": {"energy": 2.5, "radius": 150.0, "height": 20.0},
+		"beam": {"energy": 3.0, "radius": 180.0, "height": 20.0},
+		"impact": {"energy": 4.0, "radius": 220.0, "height": 24.0, "duration": 0.3},
+		"engine": {"energy": 1.5, "radius": 90.0, "height": 12.0}},
 	"player": {"credits": 0, "record": 0.0, "escape_pod": true, "insured": true, "uninsured_ship": "shuttle",
 		"rescue_fee_pct": 10.0, "rescue_days": [2.0, 5.0], "pod_speed": 600.0, "pod_time": 3.0},
 	"landing": {"max_speed": 60.0, "radius_fraction": 0.6, "repair_cost_per_point": 0.0},
@@ -189,6 +193,11 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	star_light.number("energy", 0.0, false, 0.0)
 	if star_light.number("height", 0.0, false, 0.0) > 1.0:
 		star_light.error("height", "must be at most 1")
+	lighting.integer("max_lights", 0, false, 0)
+	for kind: String in ["shot", "beam", "impact", "engine"]:
+		var point: DefReader = lighting.object(kind)
+		for key: String in SETTINGS_DEFAULTS["lighting"][kind]:
+			point.number(key, 0.0, false, 0.0)
 	var glow: DefReader = reader.object("engine_glow")
 	if glow.number("idle", 0.0, false, 0.0) > 1.0:
 		glow.error("idle", "must be at most 1")
