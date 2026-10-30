@@ -119,10 +119,12 @@ static func jump_problem(destination: String, adjacent: bool, distance_from_cent
 	return ""
 
 
-## TR4: arrival on the side of the destination facing the origin, at its jump
-## radius, moving inward along the bearing (origin → destination) at `speed`.
-static func arrival(travel_bearing: Vector2, jump_radius: float, speed: float) -> FlightState:
-	return FlightState.new(-travel_bearing * jump_radius, travel_bearing * speed, Aim.rotation_of(travel_bearing))
+## TR4: arrival on the side of the destination facing the origin, `grace`
+## seconds of travel outside its jump radius (so the next jump can start at
+## once), moving inward along the bearing (origin → destination) at `speed`.
+static func arrival(travel_bearing: Vector2, jump_radius: float, speed: float, grace: float = 0.0) -> FlightState:
+	var distance: float = jump_radius + speed * maxf(grace, 0.0)
+	return FlightState.new(-travel_bearing * distance, travel_bearing * speed, Aim.rotation_of(travel_bearing))
 
 
 static func _less(a: Vector2i, b: Vector2i) -> bool:

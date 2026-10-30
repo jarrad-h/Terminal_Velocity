@@ -97,8 +97,9 @@ func enter_system(system_id: String, bearing: Vector2) -> void:
 	var next: SystemDef = DataRegistry.get_system(system_id)
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
 	if player != null and next != null:
-		var speed: float = player.def.top_speed * float(DataRegistry.settings["hyperspace"]["arrival_speed_fraction"])
-		var arrival: FlightState = Hyperlanes.arrival(bearing, next.jump_radius, speed)
+		var settings: Dictionary = DataRegistry.settings["hyperspace"]
+		var speed: float = player.def.top_speed * float(settings["arrival_speed_fraction"])
+		var arrival: FlightState = Hyperlanes.arrival(bearing, next.jump_radius, speed, float(settings["arrival_grace_seconds"]))
 		player.place(arrival.position, arrival.rotation, arrival.velocity)
 		player.set_target(null)
 	load_system(system_id)

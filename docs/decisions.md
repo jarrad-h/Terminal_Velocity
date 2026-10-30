@@ -176,3 +176,8 @@ Why: Jarrad wants player stations and ship manufacturing late game; these choice
 - **Keys:** J jump/cancel, M map, click a system to plot the shortest route.
 - **Stranding:** every system with a planet sells fuel and the empty transit systems are one jump from fuel; hailing for fuel and rescue come later.
 Why: Jarrad's direction, 30 Oct 2026 (normal ship movement into the jump reads as flying, not a teleport; separate day costs leave room for activities; hidden systems leave room for discovery).
+
+## 2026-10-30 — P2M1 playtest: arrive just outside the jump radius; disabled ships coast to a stop (TR4, C7)
+- **Arrival (TR4):** arrivals appear `hyperspace.arrival_grace_seconds` (2) of inward travel outside the jump radius, so J works at once for the next leg; the jump sequence then stops the ship outside the radius anyway. Rejected: a fixed distance margin of 1500 px (Jarrad: only needs two seconds; seconds scale with each ship's arrival speed).
+- **Disabled drag (C7):** a disabled ship loses `combat.disabled_drag` (30 px/s²) of speed until it stops, for every ship including the player's. A raider disabled at full speed stops in about 11 s. The one exception to "no drag" (F2); normal flight is unchanged.
+Why: Jarrad's playtest — a disabled raider at top speed was impossible to catch and board.

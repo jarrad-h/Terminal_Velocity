@@ -57,8 +57,8 @@ Branch `p2m1-galaxy-hyperlanes`, built in a cloud session (Godot 4.7.2 headless;
   - Cause: radar-visible scenery came only from loaded chunks, which reach just past the screen edge, while the radar reaches 6000 px (since M6).
   - Fix: `LocalSpace.distant_radar_points` generates radar-visible placements for unloaded chunks inside radar range from the same seed, without building nodes. Destroyed objects and drift are respected.
   - Scenario check: distant hulls show, and they sit where the chunk later loads them.
-- **Design change, to confirm (TR4):** arrive outside the jump radius, so J works straight away for the next leg.
-- **Design change, to confirm (C7):** disabled ships coast to a stop instead of drifting forever; fast raiders are uncatchable once disabled.
+- **Design change, confirmed and built (TR4):** arrivals appear `hyperspace.arrival_grace_seconds` (2) of inward travel outside the jump radius, so J works straight away for the next leg. The shuttle arrives 260 px out. Spec and decisions updated; scenario checks the distance and that J works on arrival.
+- **Design change, confirmed and built (C7):** disabled ships, the player's included, coast to a stop at `combat.disabled_drag` (30 px/s²). A raider at full speed stops in about 11 s. `FlightModel.coast` has a unit test; the scenario checks a disabled ship slows and stops.
 
 ### Review (godot-reviewer) and fixes
 

@@ -23,6 +23,7 @@ Fields marked **required** have no default.
 | `hyperspace.overdrive_accel_factor` | TR2: after the countdown the ship accelerates at its `accel` × this, past its speed cap (more than 0) | `6` |
 | `hyperspace.engage_speed_factor` | TR2: the hyperdrive engages at the ship's `top_speed` × this (more than 1) | `4` |
 | `hyperspace.arrival_speed_fraction` | TR4: arrivals enter at this fraction of top speed (0–1) | `0.5` |
+| `hyperspace.arrival_grace_seconds` | TR4: arrivals appear this many seconds of inward travel outside the jump radius, so J works straight away for the next leg | `2` |
 | `art_scale` | V1: one scale for all ship art: sprites, hitboxes, hardpoints and engine exits (all written in art px) are multiplied by it. More than 0 | `1.0` |
 | `mounts.arc.pivot`, `mounts.arc.turret` | V3: default total arc in degrees (0–360) for pivot and turret hardpoints, centred on the heading; a hardpoint's `arc` overrides it. Fixed mounts have no arc | `30`, `360` |
 | `mounts.traverse.pivot`, `mounts.traverse.turret` | V4: how fast a pivot or turret barrel swings, degrees/s; a hardpoint's `traverse` overrides it | `180`, `360` |
@@ -43,6 +44,7 @@ Fields marked **required** have no default.
 | `boarding.max_speed` | C9: …and relative speed is below this, px/s | `40` |
 | `boarding.time` | C9: seconds the boarding progress bar runs (more than 0) | `2` |
 | `boarding.assist_armor_pct` | C9 Assist: patched-up ships get back to this % of max armour, up to 100 (keep it above ships' `disable_armor_pct`) | `50` |
+| `combat.disabled_drag` | C7: a disabled ship (any ship, the player's too) loses this much speed per second until it stops, px/s²; 0 = drifts forever | `30` |
 | `combat.friendly_fire_pct` | % damage AI shots do to their own and allied governments' ships (C11); 0 = off. Player shots always do full damage | `100` |
 | `camera.zoom` | Camera zoom; above 1 zooms in (data: `0.75` for the 1:1 ship art) | `1.0` |
 | `camera.smoothing_speed` | How fast the camera catches up; `0` locks it to the ship | `0` |

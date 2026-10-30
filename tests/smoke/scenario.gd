@@ -169,6 +169,16 @@ func _run() -> void:
 
 	dummy.health.force_disable()
 	_check(dummy.health.is_disabled and not dummy.can_act(), "disabled at 33%% armour (C7)")
+	var coaster: Ship = _debug.spawn_ships("shuttle", 1, "", player.global_position + Vector2(-600.0, 0.0))[0]
+	coaster.health.force_disable()
+	coaster.body.state.velocity = Vector2(60.0, 0.0)
+	await _frames(30)
+	var coasting: float = coaster.get_velocity().length()
+	_check(coasting < 60.0 and coasting > 0.0, "C7: a disabled ship slows down (%.1f px/s)" % coasting)
+	await _frames(90)
+	_check(coaster.get_velocity().is_zero_approx(), "C7: ...and comes to a stop")
+	coaster.remove_from_group(&"ships")
+	coaster.queue_free()
 	dummy.health.force_destroy()
 	await _frames(2)
 	_check(not is_instance_valid(dummy), "destroyed dummy removed (C7)")
@@ -723,9 +733,15 @@ func _hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	_check(GameState.clock.day == day_before + Hyperlanes.jump_days(length, player.def.jump_speed), "TM2: the jump cost its days")
 	_check(is_equal_approx(travel.fuel, fuel_before - player.def.jump_fuel), "TR8: the jump cost its fuel")
 	var new_radius: float = scene_root.system.jump_radius
-	_check(absf(player.global_position.length() - new_radius) < 60.0, "TR4: arrives at the jump radius (%f)" % player.global_position.length())
-	_check(player.global_position.normalized().dot(-bearing) > 0.99, "TR4: arrives on the side facing the origin")
 	var arrival_speed: float = player.def.top_speed * float(DataRegistry.settings["hyperspace"]["arrival_speed_fraction"])
+	var grace: float = float(DataRegistry.settings["hyperspace"]["arrival_grace_seconds"])
+	var out_by: float = player.global_position.length() - new_radius
+	_check(out_by > 0.0 and absf(out_by - arrival_speed * grace) < 20.0, "TR4: arrives %.1f s of travel outside the jump radius (%.0f px)" % [grace, out_by])
+	_check(player.global_position.normalized().dot(-bearing) > 0.99, "TR4: arrives on the side facing the origin")
+	travel.route.assign([travel.destination()]) if not travel.route.is_empty() else null
+	if not travel.route.is_empty():
+		_check(hyper.try_jump() == "", "TR4: J works straight away on arrival")
+		hyper.cancel("test")
 	_check(player.get_velocity().normalized().dot(bearing) > 0.99 and absf(player.get_velocity().length() - arrival_speed) < 1.0, "TR4: moving inward at reduced speed")
 	_check(travel.map_state(galaxy, destination) == "explored", "TR7: visiting explores")
 	_check(travel.destination() == "lumen", "TR7: the next leg is selected")

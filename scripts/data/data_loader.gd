@@ -17,7 +17,8 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"art_scale": 1.0,
 	"calendar": {"start_date": "3200-01-01"},
 	"hyperspace": {"stop_speed": 2.0, "align_tolerance": 1.0, "thrust_angle": 20.0,
-		"overdrive_accel_factor": 6.0, "engage_speed_factor": 4.0, "arrival_speed_fraction": 0.5},
+		"overdrive_accel_factor": 6.0, "engage_speed_factor": 4.0, "arrival_speed_fraction": 0.5,
+		"arrival_grace_seconds": 2.0},
 	"mounts": {"arc": {"pivot": 30.0, "turret": 360.0}, "traverse": {"pivot": 180.0, "turret": 360.0},
 		"fire_tolerance": 5.0, "turret_sprites": {"small": "", "medium": "", "large": "", "point_defence": ""}},
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
@@ -25,7 +26,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"rescue_fee_pct": 10.0, "rescue_days": [2.0, 5.0], "pod_speed": 600.0, "pod_time": 3.0},
 	"landing": {"max_speed": 60.0, "radius_fraction": 0.6, "repair_cost_per_point": 0.0},
 	"boarding": {"range": 60.0, "max_speed": 40.0, "time": 2.0, "assist_armor_pct": 50.0},
-	"combat": {"friendly_fire_pct": 100.0},
+	"combat": {"friendly_fire_pct": 100.0, "disabled_drag": 30.0},
 	"local_space": {"chunk_size": 1024.0},
 	"ai": {"thrust_angle": 35.0,
 		"standoff_fraction": 0.4, "think_interval": 0.25, "disengage_factor": 1.5,
@@ -182,7 +183,9 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		boarding.error("time", "must be more than 0")
 	if boarding.has("assist_armor_pct") and float(boarding.data["assist_armor_pct"]) > 100.0:
 		boarding.error("assist_armor_pct", "must be at most 100")
-	reader.object("combat").number("friendly_fire_pct", 100.0, false, 0.0)
+	var combat: DefReader = reader.object("combat")
+	combat.number("friendly_fire_pct", 100.0, false, 0.0)
+	combat.number("disabled_drag", 0.0, false, 0.0)
 	var ai: DefReader = reader.object("ai")
 	for key: String in SETTINGS_DEFAULTS["ai"]:
 		if SETTINGS_DEFAULTS["ai"][key] is Array:

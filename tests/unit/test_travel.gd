@@ -88,6 +88,8 @@ func test_arrival_faces_inward_from_the_origin_side() -> void:
 	assert_vec_near(s.position, Vector2(-8000, 0), "TR4: arrives on the side facing the origin")
 	assert_vec_near(s.velocity, Vector2(130, 0), "TR4: moving inward along the bearing at reduced speed")
 	assert_vec_near(FlightModel.heading(s.rotation), Vector2.RIGHT, "facing the direction of travel")
+	var outside: FlightState = Hyperlanes.arrival(b, 8000.0, 130.0, 2.0)
+	assert_vec_near(outside.position, Vector2(-8260, 0), "TR4: two seconds of travel outside the jump radius")
 
 
 func test_calendar_dates() -> void:

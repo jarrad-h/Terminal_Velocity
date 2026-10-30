@@ -16,5 +16,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	var input: FlightInput = ship.get_flight_input()  # may hold the ship still (TR2)
 	state = FlightModel.step(state, input, ship.flight_stats(), delta)
+	if ship.health.is_disabled:
+		state.velocity = FlightModel.coast(state.velocity, float(DataRegistry.settings["combat"]["disabled_drag"]), delta)
 	ship.position = state.position
 	ship.rotation = state.rotation
