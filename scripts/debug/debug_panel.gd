@@ -160,6 +160,26 @@ func _build() -> void:
 	_fill_selects()
 
 	box.add_child(HSeparator.new())
+	box.add_child(_make_label("Lighting (D14)"))
+	box.add_child(_make_toggle("Lighting on", DebugCommands.set_lighting, DebugCommands.is_lighting_on))
+	var star_row := HBoxContainer.new()
+	box.add_child(star_row)
+	star_row.add_child(_make_label("Star from °"))
+	var angle := _make_spin(-180.0, 180.0, 15.0)
+	angle.value_changed.connect(func(value: float) -> void: DebugCommands.set_star_angle(value))
+	star_row.add_child(angle)
+	star_row.add_child(_make_button("Follow star", func() -> void: DebugCommands.set_star_angle(null)))
+	var height_row := HBoxContainer.new()
+	box.add_child(height_row)
+	height_row.add_child(_make_label("Star height"))
+	var height := _make_spin(0.0, 1.0, 0.05)
+	height.allow_greater = false
+	height.allow_lesser = false
+	height.value = float(DataRegistry.settings["lighting"]["star"]["height"])
+	height.value_changed.connect(DebugCommands.set_star_height)
+	height_row.add_child(height)
+
+	box.add_child(HSeparator.new())
 	box.add_child(_make_label("Combat"))
 	_invulnerable_check = CheckBox.new()
 	_invulnerable_check.text = "Player invulnerable"
