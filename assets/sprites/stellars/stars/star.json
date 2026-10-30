@@ -1,0 +1,11 @@
+{
+ "id": "star",
+ "kind": "star",
+ "size_px": [
+  1024,
+  1024
+ ],
+ "disc_px": 460,
+ "sprite_scale": "radius * 2 / disc_px",
+ "note": "emission only, greyscale: modulate by the star colour and draw additive"
+}

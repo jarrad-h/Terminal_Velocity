@@ -1,0 +1,23 @@
+{
+ "id": "planet_gas_giant",
+ "kind": "planet",
+ "size_px": [
+  1024,
+  1024
+ ],
+ "disc_px": 900,
+ "sprite_scale": "radius * 2 / disc_px",
+ "layers": [
+  "albedo",
+  "n",
+  "atmo",
+  "atmo_n",
+  "rings",
+  "rings_n"
+ ],
+ "rings_px": [
+  1900,
+  1900
+ ],
+ "name": "Gas giant"
+}

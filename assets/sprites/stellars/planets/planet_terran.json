@@ -1,0 +1,20 @@
+{
+ "id": "planet_terran",
+ "kind": "planet",
+ "size_px": [
+  1024,
+  1024
+ ],
+ "disc_px": 900,
+ "sprite_scale": "radius * 2 / disc_px",
+ "layers": [
+  "albedo",
+  "n",
+  "e",
+  "clouds",
+  "clouds_n",
+  "atmo",
+  "atmo_n"
+ ],
+ "name": "Terran"
+}

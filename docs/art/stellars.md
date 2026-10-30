@@ -1,4 +1,4 @@
-# Stellars: gates and stations (first pass)
+# Stellars: gates, stations, planets, the star and scenery (first pass)
 
 First-pass production art for Phase 2 milestone 2 (V9): one hyperspace gate and one station per owner. Jarrad has signed these off as stand-ins; more iterations will follow (the gate especially, which is expected to become more complex and animated later). Concepts and the picks are in `docs/art/concepts/` and on the claude.ai design canvas "Terminal Velocity Gates and Stations Concepts".
 
@@ -63,6 +63,54 @@ python art_src/stellar/export.py gate_halo --ss 4     # quick draft (overwrites 
 
 Concepts: `python art_src/stellar/concepts.py gates|stations` writes `docs/art/concepts/`.
 
-## Still to come in this art session
+## Planets, star, scenery and map icons (first pass)
 
-Planets (eight types at half size with `sprite_scale` 2, cloud, atmosphere and ring layers), a tintable star (quarter size, emission only), asteroid and debris variants, wrecks broken up from the SOW parts, nav buoys, and galaxy-map icons.
+Also stand-ins, signed off by Jarrad for now; another pass will follow. Review sheets: `docs/art/stellars/planets_lit.png`, `star_tints.png`, `scenery_lit.png`, `icons.png`.
+
+### Planets (`stellars/planets/`)
+
+Eight types, one sprite set each, reusable for any planet of that type: `planet_terran`, `planet_ocean`, `planet_desert`, `planet_ice`, `planet_volcanic`, `planet_barren`, `planet_rust`, `planet_gas_giant`.
+
+- **Canvas 1024 px, disc 900 px** (room round the disc for the atmosphere). Scale per stellar: `sprite_scale = radius * 2 / 900` (Meridian, radius 600: 1.33; Tethys, 1200: 2.67). Use Linear texture filtering for planets, since they are scaled up.
+- **No baked terminator.** The normal map is the sphere plus surface relief, so the lit side faces the system's star wherever the planet sits.
+- **Layers**, all on the 1024 canvas and centred, drawn in this order:
+  1. `_rings` + `_rings_n` (gas giant only; its own 1900 px canvas, same centre) under the planet, lit.
+  2. `_albedo` + `_n` the surface, lit.
+  3. `_e` emission (city lights on terran, ocean and rust; lava on volcanic), additive and unshaded. City lights currently show on the day side too; masking them to the dark side needs a small shader.
+  4. `_clouds` + `_clouds_n`, lit; can turn slowly as a separate node.
+  5. `_atmo` + `_atmo_n`, the atmosphere rim, additive and lit.
+- `<planet>.png` is the baked fallback (all layers, light from the top-left). `<planet>.json` lists the layers, `disc_px` and, for rings, `rings_px`.
+- The barren moon has no clouds or atmosphere; desert and ice have no emission.
+
+### Star (`stellars/stars/`)
+
+`star_e.png`: one greyscale star, emission only (granulation, limb darkening, corona). **Canvas 1024 px, disc 460 px**: `sprite_scale = radius * 2 / 460`. Modulate by the star's data `colour` and draw additive; it is not lit by anything. No albedo or normal map.
+
+### Scenery (`stellars/scenery/`)
+
+Each sprite has `_albedo`, `_n`, `_e` and the baked `.png`, cropped square with the object centred (scenery spins about its centre). The game scales a scenery sprite so its largest side equals the object's size, so each is drawn at the top of its range and only ever scales down.
+
+| Set | Files | Drawn at | Fits scenery type |
+|---|---|---|---|
+| Large asteroids | `asteroid_large_rock_1..4`, `asteroid_large_ice_1..3`, `asteroid_large_metal_1..3` | ~180 px | `large_asteroid` (90–180) |
+| Rocks | `asteroid_rock_1..6`, `asteroid_rock_ice_1..4`, `asteroid_rock_metal_1..4` | ~48 px | `rock` (20–45) |
+| Rock debris | `debris_rock_1..6` | ~12 px | `small_debris` (5–12) |
+| Wreck metal | `debris_metal_1..6` | ~16 px | wreck fragments (a new debris type, or mixed into `small_debris`) |
+| Wreck sections | `wreck_sow_bow`, `wreck_sow_mid`, `wreck_sow_aft`, `wreck_sow_split` | up to ~110 px | `derelict_hull` (50–110) |
+| Nav buoys | `buoy_authority`, `buoy_gate` | 36 px | new scenery or system objects; their lights are in `_e` |
+
+Wreck sections are SOW hull modules torn across and scorched, lights dead. Ice and metal sets are new options for system data (for example an icy belt); nothing points at them yet.
+
+### Map icons (`stellars/icons/`)
+
+64 px icons for the galaxy map's system view (TR7): `icon_star` (greyscale, tint it), one per planet type, `icon_gate_halo` and one per station. Lit from the upper right, transparent background.
+
+### Regenerating
+
+```
+python art_src/stellar/export_natural.py all        # planets, star, scenery, icons (about 8 minutes)
+python art_src/stellar/export_natural.py planets planet_ice
+python art_src/stellar/export_natural.py scenery
+```
+
+Sources: `natural.py` (planets and the star: 3D noise on the sphere, layers, lit preview), `scenery.py` (asteroids, debris, wrecks, buoys), `export_natural.py`. Icons are made from the planet, star, gate and station files, so export those first.
