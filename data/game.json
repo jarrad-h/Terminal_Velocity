@@ -76,6 +76,18 @@
     }
   },
   "engine_glow": {"idle": 0.25, "response": 6},
+  "galaxy_map": {
+    "colours": {
+      "background": "#050810",
+      "lane": "#3a5070",
+      "route": "#ffee40",
+      "current": "#ffffff",
+      "selected": "#ffee40",
+      "unexplored": "#6a7080",
+      "label": "#d8e0f0",
+      "jump_radius": "#5a7aa0"
+    }
+  },
   "messages": {
     "show_seconds": 4,
     "fade_seconds": 1,

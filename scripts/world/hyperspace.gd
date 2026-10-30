@@ -1,12 +1,15 @@
 class_name Hyperspace
 extends Node
-## The player's hyperlane jump (TR2–TR4, TR8, TM2). J checks the jump and
+## The player's hyperlane jump (TR2–TR4, TR8, TM2) and the galaxy map (TR7,
+## M). J checks the jump and
 ## hands the ship to a JumpSequence (controls locked); J again or firing
 ## cancels, and so does being disabled. When the hyperdrive engages, fuel and
 ## days are spent and the next system loads with the player at its jump radius.
 
 var scene: Node  # SystemScene
 var sequence: JumpSequence = null
+## TR7: the open galaxy map, if any.
+var map: GalaxyMap = null
 var _destination: String = ""
 
 
@@ -26,7 +29,10 @@ func status_text() -> String:
 func _unhandled_input(event: InputEvent) -> void:
 	if DebugCommands.console_open:
 		return
-	if event.is_action_pressed(&"jump", false, true):
+	if event.is_action_pressed(&"galaxy_map", false, true):
+		open_map()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"jump", false, true):
 		if is_active():
 			cancel("Jump cancelled")
 		else:
@@ -34,6 +40,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif is_active() and (event.is_action_pressed(&"fire_primary") or event.is_action_pressed(&"fire_secondary")):
 		cancel("Jump cancelled: weapons fired")
+
+
+## TR7: opens the galaxy map (not while landed, boarding or in another window).
+func open_map() -> GalaxyMap:
+	if map != null or scene.actions.dialog != null or _player() == null:
+		return null
+	map = GalaxyMap.open(scene, self)
+	map.closed.connect(func() -> void: map = null)
+	return map
 
 
 ## TR2: starts the jump to the plotted destination, or posts why it can't.

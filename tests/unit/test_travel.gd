@@ -137,3 +137,18 @@ func test_travel_state_round_trips() -> void:
 	assert_near(back.fuel, 150.0, "fuel")
 	assert_true(back.route == ["c", "e"], "route")
 	assert_true(back.map_changes == {"b": "explored", "h": "unexplored"}, "map changes")
+
+
+func test_map_fits_points_inside_the_rect() -> void:
+	var points: Array[Vector2] = [Vector2(0, 0), Vector2(200, 100)]
+	var t: Transform2D = MapLayout.fit(points, Rect2(0, 0, 420, 420), 10.0)
+	assert_vec_near(t * Vector2(0, 0), Vector2(10, 110), "left edge at the margin, centred vertically")
+	assert_vec_near(t * Vector2(200, 100), Vector2(410, 310), "keeps the aspect ratio")
+	var single: Transform2D = MapLayout.fit([Vector2(5, 5)] as Array[Vector2], Rect2(0, 0, 100, 100), 10.0)
+	assert_vec_near(single * Vector2(5, 5), Vector2(50, 50), "one system sits in the middle")
+
+
+func test_map_pick_nearest_within_radius() -> void:
+	var points: Array[Vector2] = [Vector2(0, 0), Vector2(30, 0)]
+	assert_true(MapLayout.pick(points, Vector2(20, 2), 14.0) == 1, "nearest")
+	assert_true(MapLayout.pick(points, Vector2(15, 40), 14.0) == -1, "nothing close enough")

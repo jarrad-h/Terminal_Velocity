@@ -37,6 +37,8 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
 		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
 	"engine_glow": {"idle": 0.25, "response": 6.0},
+	"galaxy_map": {"colours": {"background": "#050810", "lane": "#3a5070", "route": "#ffee40",
+		"current": "#ffffff", "selected": "#ffee40", "unexplored": "#6a7080", "label": "#d8e0f0", "jump_radius": "#5a7aa0"}},
 	"messages": {"show_seconds": 4.0, "fade_seconds": 1.0, "max_lines": 3, "colours": {
 		"info": "#d8e0f0", "combat": "#ffb060", "standing": "#ff7a7a", "credits": "#ffe070"}},
 	"hud": {"colours": {"shield": "#59a0ff", "armor": "#e69a4d", "schematic_full": "#40e070",
@@ -201,6 +203,9 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var message_colours: DefReader = messages.object("colours")
 	for key: String in SETTINGS_DEFAULTS["messages"]["colours"]:
 		message_colours.colour(key)
+	var map_colours: DefReader = reader.object("galaxy_map").object("colours")
+	for key: String in SETTINGS_DEFAULTS["galaxy_map"]["colours"]:
+		map_colours.colour(key)
 	var hud_colours: DefReader = reader.object("hud").object("colours")
 	for key: String in SETTINGS_DEFAULTS["hud"]["colours"]:
 		hud_colours.colour(key)

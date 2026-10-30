@@ -35,6 +35,18 @@ static func parse(r: DefReader) -> SystemDef:
 	return d
 
 
+## TR7: the government shown for the system on the map: the first landable
+## object's, else the first object's that has one, else "".
+func government() -> String:
+	for o: SystemObjectDef in objects:
+		if o.landable and o.government != "":
+			return o.government
+	for o: SystemObjectDef in objects:
+		if o.government != "":
+			return o.government
+	return ""
+
+
 func validate(_defs: Dictionary, errors: Array[String]) -> void:
 	var seen: Dictionary = {}
 	for o: SystemObjectDef in objects:

@@ -589,11 +589,15 @@ func _run() -> void:
 	_finish()
 
 
+## Sends a key press as an action event and waits until it has been handled
+## (input is delivered on process frames, not physics frames).
 func _press(action: StringName) -> void:
 	var event := InputEventAction.new()
 	event.action = action
 	event.pressed = true
 	Input.parse_input_event(event)
+	await get_tree().process_frame
+	await get_tree().process_frame
 
 
 ## P2M1: jump checks, cancelling, a full jump and the D11 commands.
@@ -609,7 +613,23 @@ func _hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	await _teleport(player, Vector2.ZERO)
 	_check(hyper.try_jump() == Hyperlanes.NO_DESTINATION, "TR2: no jump without a destination")
 	_check(not hyper.plot_to("hollow"), "TR7: a hidden system can't be routed to")
-	_check(hyper.plot_to("lumen") and travel.route.size() == 2, "TR7: two-jump route to lumen (%s)" % [travel.route])
+	await _press(&"galaxy_map")
+	await _frames(2)
+	var map: GalaxyMap = hyper.map
+	_check(map != null and get_tree().paused, "TR7: M opens the map and pauses")
+	if map != null:
+		_check(not map._screen_points().has("hollow"), "TR7: hidden systems aren't drawn")
+		_check(map._screen_points().size() == galaxy.system_ids.size() - 1, "every other system is drawn")
+		_check(map.select("lumen") and travel.route.size() == 2, "TR7: clicking lumen plots a two-jump route (%s)" % [travel.route])
+		_check(map._title.text == "Unexplored system" and map._info.text.contains("2 jumps"), "TR7: unexplored panel shows route cost")
+		map.select(travel.current_system)
+		_check(map._title.text == scene_root.system.name and map._info.text.contains("You are here"), "explored panel")
+		map.select("lumen")
+		await _press(&"galaxy_map")
+		await get_tree().process_frame
+		await get_tree().process_frame
+		_check(hyper.map == null and not get_tree().paused, "M closes the map and unpauses")
+	_check(travel.route.size() == 2 and travel.route[-1] == "lumen", "route kept after closing the map")
 	var destination: String = travel.destination()
 	_check(hyper.try_jump() == Hyperlanes.INSIDE, "TR2: no jump inside the jump radius")
 	var radius: float = scene_root.system.jump_radius
@@ -619,11 +639,11 @@ func _hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	_debug.refuel()
 
 	_check(hyper.try_jump() == "", "jump starts")
-	_press(&"jump")
+	await _press(&"jump")
 	await _frames(2)
 	_check(not hyper.is_active() and player.autopilot == null, "TR2: pressing J again cancels")
 	_check(hyper.try_jump() == "", "jump restarts")
-	_press(&"fire_primary")
+	await _press(&"fire_primary")
 	await _frames(2)
 	Input.action_release(&"fire_primary")
 	_check(not hyper.is_active(), "TR2: firing cancels")
