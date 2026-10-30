@@ -20,7 +20,7 @@ Fields marked **required** have no default.
 | `hyperspace.stop_speed` | TR2: during the jump sequence the ship counts as stopped below this speed (px/s) and is held still | `2` |
 | `hyperspace.align_tolerance` | TR2: degrees from the destination bearing at which the ship counts as facing it | `1` |
 | `hyperspace.thrust_angle` | TR2: while stopping, the ship burns once within this many degrees of facing against its velocity | `20` |
-| `hyperspace.overdrive_accel_factor` | TR2: after the countdown the ship accelerates at its `accel` × this, past its speed cap | `6` |
+| `hyperspace.overdrive_accel_factor` | TR2: after the countdown the ship accelerates at its `accel` × this, past its speed cap (more than 0) | `6` |
 | `hyperspace.engage_speed_factor` | TR2: the hyperdrive engages at the ship's `top_speed` × this (more than 1) | `4` |
 | `hyperspace.arrival_speed_fraction` | TR4: arrivals enter at this fraction of top speed (0–1) | `0.5` |
 | `art_scale` | V1: one scale for all ship art: sprites, hitboxes, hardpoints and engine exits (all written in art px) are multiplied by it. More than 0 | `1.0` |

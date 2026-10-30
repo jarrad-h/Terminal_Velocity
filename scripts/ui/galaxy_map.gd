@@ -162,7 +162,8 @@ func _screen_points() -> Dictionary:
 func _on_map_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var screen: Dictionary = _screen_points()
-		var ids: Array = screen.keys()
+		var ids: Array[String] = []
+		ids.assign(screen.keys())
 		var points: Array[Vector2] = []
 		points.assign(screen.values())
 		var index: int = MapLayout.pick(points, event.position, PICK_RADIUS)

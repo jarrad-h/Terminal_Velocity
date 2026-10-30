@@ -93,6 +93,7 @@ func reset_visit() -> void:
 ## Each arrival is a fresh visit until persistence (milestone 3).
 func enter_system(system_id: String, bearing: Vector2) -> void:
 	_clear_ships_and_shots()
+	var same_system: bool = system != null and system.id == system_id
 	var next: SystemDef = DataRegistry.get_system(system_id)
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
 	if player != null and next != null:
@@ -102,6 +103,8 @@ func enter_system(system_id: String, bearing: Vector2) -> void:
 		player.set_target(null)
 	load_system(system_id)
 	local_space.reset_visit()
+	if same_system:
+		traffic.configure(system, true)  # D11 goto here: refill like a fresh visit
 	if player != null:
 		Flash.spawn(world, player.global_position, player.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
 

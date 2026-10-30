@@ -116,6 +116,7 @@ func swap_player_ship(ship_id: String) -> bool:
 		push_error("swap_player_ship: no player or no ship '%s'" % ship_id)
 		return false
 	player.setup(def)
+	GameState.set_fuel(GameState.travel.fuel, def.fuel)  # TR8: a smaller tank can't hold more
 	return true
 
 

@@ -230,6 +230,7 @@ func test_travel_errors_name_file_and_field() -> void:
 	_expect_error(set, ["game.json", "galaxy", "no galaxy definition with id 'no_such_galaxy'"])
 	_expect_error(set, ["game.json", "calendar.start_date", "expected a date"])
 	_expect_error(set, ["game.json", "hyperspace.engage_speed_factor", "more than 1"])
+	_expect_error(set, ["game.json", "hyperspace.overdrive_accel_factor", "more than 0"])
 	_expect_error(set, ["game.json", "hyperspace.arrival_speed_fraction", "at most 1"])
 
 

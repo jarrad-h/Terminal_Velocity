@@ -46,6 +46,20 @@ Branch `p2m1-galaxy-hyperlanes`, built in a cloud session (Godot 4.7.2 headless;
   - scenario: map open and close, route plotting, every jump refusal and cancel, a full jump (phases, days, fuel, arrival point and speed, next leg), landing days, refuel, rescue days and D11;
   - smoke: visits all 10 systems.
 
+### Review (godot-reviewer) and fixes
+
+- **Fixed before handover:**
+  - **The countdown ran about 3× fast.** Ship body, weapons and engine glow each called `get_flight_input()`, and each call stepped the autopilot. Input is now computed once per physics tick and cached (`Ship.get_flight_input`). The scenario now checks the countdown lasts its data time.
+  - Jumping, landing and boarding now refuse each other.
+  - The map won't open mid-jump.
+  - `hyperspace.overdrive_accel_factor` must be more than 0.
+  - Fuel is clamped when the ship changes.
+  - `goto` to the current system refills its traffic.
+- **Left for later:**
+  - The arrival flash's colour, size and length are hard-coded, as the AI's jump flash already is. They could move to data with the next effects pass.
+  - The map remembers whether the game was paused when it opened, so a debug console `pause`/`resume` while it's open is undone on close (same as Dialog).
+  - The saves milestone should check that loaded system IDs exist, and should only save while landed: a jump in progress isn't saved.
+
 ### Key values
 
 - **Shuttle:** fuel 300, 100 per jump (3 jumps), countdown 3 s, jump speed 150.

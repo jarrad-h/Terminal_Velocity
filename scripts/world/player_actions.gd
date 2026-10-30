@@ -39,7 +39,7 @@ func _unhandled_input(event: InputEvent) -> void:
 ## success or the reason ("none", "far", "fast", "refused").
 func try_land() -> String:
 	var player: Ship = _player()
-	if player == null or not player.can_act() or dialog != null:
+	if player == null or not player.can_act() or dialog != null or scene.hyperspace.is_active():
 		return "none"
 	var port: SystemObjectDef = _nearest_landable(player.global_position)
 	if port == null:
@@ -95,7 +95,7 @@ func _nearest_landable(from: Vector2) -> SystemObjectDef:
 ## if alongside and matched; returns "" or the reason ("none", "far", "fast").
 func try_board() -> String:
 	var player: Ship = _player()
-	if player == null or not player.can_act() or dialog != null or _boarding_id != 0:
+	if player == null or not player.can_act() or dialog != null or _boarding_id != 0 or scene.hyperspace.is_active():
 		return "none"
 	var candidate: Ship = _board_candidate(player)
 	if candidate == null:
@@ -116,6 +116,10 @@ func try_board() -> String:
 		player.health.damaged.connect(_on_player_hit_while_boarding)
 	GameState.post_message("Boarding the %s..." % candidate.def.name)
 	return ""
+
+
+func is_boarding() -> bool:
+	return _boarding_id != 0
 
 
 ## 0–1 while boarding, -1 otherwise (HUD progress bar).

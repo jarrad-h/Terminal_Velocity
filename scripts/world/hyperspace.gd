@@ -46,6 +46,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func open_map() -> GalaxyMap:
 	if map != null or scene.actions.dialog != null or _player() == null:
 		return null
+	if is_active():
+		GameState.post_message("The map is locked while the hyperdrive is engaged")
+		return null
 	map = GalaxyMap.open(scene, self)
 	map.closed.connect(func() -> void: map = null)
 	return map
@@ -55,7 +58,7 @@ func open_map() -> GalaxyMap:
 ## Returns "" on success, else a Hyperlanes problem or "none".
 func try_jump() -> String:
 	var player: Ship = _player()
-	if player == null or not player.can_act() or is_active() or scene.actions.dialog != null:
+	if player == null or not player.can_act() or is_active() or scene.actions.dialog != null or scene.actions.is_boarding():
 		return "none"
 	var galaxy: GalaxyDef = DataRegistry.galaxy()
 	var travel: TravelState = GameState.travel

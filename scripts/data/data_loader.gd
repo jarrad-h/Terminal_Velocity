@@ -139,6 +139,8 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		hyperspace.number(key, 0.0, false, 0.0)
 	if hyperspace.number("arrival_speed_fraction", 0.0, false, 0.0) > 1.0:
 		hyperspace.error("arrival_speed_fraction", "must be at most 1")
+	if hyperspace.has("overdrive_accel_factor") and float(hyperspace.data["overdrive_accel_factor"]) <= 0.0:
+		hyperspace.error("overdrive_accel_factor", "must be more than 0 (or the ship never reaches hyperdrive speed)")
 	if hyperspace.has("engage_speed_factor") and float(hyperspace.data["engage_speed_factor"]) <= 1.0:
 		hyperspace.error("engage_speed_factor", "must be more than 1 (the hyperdrive engages beyond top speed)")
 	if reader.number("art_scale", 1.0, false, 0.0) <= 0.0:

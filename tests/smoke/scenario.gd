@@ -530,10 +530,10 @@ func _run() -> void:
 	await _frames(2)
 	player.set_target(mark[0])
 	Input.action_press(&"aim_target")
-	var aim_input: FlightInput = player.get_flight_input()
+	var aim_input: FlightInput = player.controller.get_flight_input()
 	Input.action_release(&"aim_target")
 	_check(aim_input.turn > 0.0, "holding T turns toward a target on the right (F5)")
-	_check(player.get_flight_input().turn == 0.0, "released: no turning")
+	_check(player.controller.get_flight_input().turn == 0.0, "released: no turning")
 	_check(scene_root.hud.radar.target_off_radar() == Vector2.ZERO, "no arrow while in radar range")
 	mark[0].place(Vector2(0.0, 20000.0), 0.0)
 	_check(scene_root.hud.radar.target_off_radar().is_equal_approx(Vector2(0.0, 1.0)), "arrow points at a distant target (H2)")
@@ -551,7 +551,7 @@ func _run() -> void:
 	_check(_debug.run_command("frobnicate").begins_with("Unknown command"), "unknown command is reported (D10)")
 	_debug.toggle_console()
 	Input.action_press(&"thrust")
-	_check(not player.get_flight_input().thrust, "typing in the console doesn't fly the ship (D10)")
+	_check(not player.controller.get_flight_input().thrust, "typing in the console doesn't fly the ship (D10)")
 	Input.action_release(&"thrust")
 	_debug.toggle_console()
 	_check(_debug.run_command("clear").begins_with("Removed"), "clear via console")
@@ -600,6 +600,10 @@ func _run() -> void:
 	_check(_debug.player_location_text().contains("Chunk ("), "position and chunk readout (D9)")
 	await _frames(5)
 	_finish()
+
+
+func actions_of(scene_root: Node) -> PlayerActions:
+	return scene_root.actions
 
 
 ## Sends a key press as an action event and waits until it has been handled
@@ -682,15 +686,21 @@ func _hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	await _frames(2)
 	_check(not player.get_flight_input().thrust or hyper.sequence.phase == P.STOPPING, "TR2: the player's thrust key is ignored")
 	Input.action_release(&"thrust")
+	_check(actions_of(scene_root).try_land() == "none" and actions_of(scene_root).try_board() == "none", "no landing or boarding mid-jump")
+	_check(hyper.open_map() == null, "map locked mid-jump")
 	var phases: Array[int] = []
+	var countdown_ticks: int = 0
 	for i: int in 60 * 40:
 		if not hyper.is_active():
 			break
 		if phases.is_empty() or phases[-1] != hyper.sequence.phase:
 			phases.append(hyper.sequence.phase)
 		if hyper.sequence.phase == P.COUNTDOWN:
+			countdown_ticks += 1
 			_check(player.get_velocity().is_zero_approx(), "TR2: stopped during the countdown")
 		await get_tree().physics_frame
+	var countdown_s: float = float(countdown_ticks) / Engine.physics_ticks_per_second
+	_check(absf(countdown_s - player.def.jump_countdown) < 0.1, "TR2: countdown lasts its data time (%.2f s, want %.1f)" % [countdown_s, player.def.jump_countdown])
 	await _frames(2)
 	_check(phases == [P.STOPPING, P.ALIGNING, P.COUNTDOWN, P.OVERDRIVE], "TR2: stop, align, countdown, overdrive (%s)" % [phases])
 	_check(travel.current_system == destination and scene_root.system.id == destination, "TR2: arrived in %s" % destination)
