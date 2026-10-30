@@ -97,6 +97,14 @@ def field(p, m, col, k=1.0):
     if not hasattr(p, 'fld'): p.fld = np.zeros_like(p.rgb)
     p.fld = np.maximum(p.fld, np.asarray(col, np.float32) * (m * k)[..., None])
 
+def heat(p, m, col, k=0.35):
+    """Heat bleeding onto a surface: a tint on the baked sprite, a dim glow in the emission map
+    (the surface keeps its colour and normal in the light-map pass)."""
+    if hasattr(p, 'em'):
+        p.em = np.maximum(p.em, np.asarray(col, np.float32) * (m * k)[..., None])
+    else:
+        p.fill(m, col, k, solid=False)
+
 def lamp(p, x, y, r, col, ring=False, housing=(36, 38, 46)):
     p.fill(p.ell(x - r * 1.7, y - r * 1.7, x + r * 1.7, y + r * 1.7), housing)
     m = p.ell(x - r, y - r, x + r, y + r)
@@ -134,7 +142,7 @@ def render(fn, uw, uh, seed=7):
     with lightmaps.active():
         q = Paint(uw, uh, seed); fn(q)
         alb, nrm, em, er = maps(q)
-    return {'sprite': sprite, 'albedo': alb, 'n': nrm, 'e': em, 'e_ring': er, 'hps': getattr(p, 'hps', [])}
+    return {'sprite': sprite, 'albedo': alb, 'n': nrm, 'e': em, 'e_ring': er, 'hps': getattr(p, 'hps', []), 'mounts': getattr(p, 'mounts', [])}
 
 def save(imgs, folder, name):
     os.makedirs(folder, exist_ok=True)
