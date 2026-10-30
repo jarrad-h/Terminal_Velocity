@@ -53,6 +53,7 @@ Playtest confirmed by Jarrad on 30 Oct 2026; merged to `main`. Branch `p2m1-gala
   - `game.json` `hyperspace.engage_speed_factor` 4 → 8 and `overdrive_accel_factor` 6 → 5.
   - The shuttle's run goes from 0.8 s to 1.9 s and it leaves at twice the speed (2080 px/s).
   - Other ships: courier 1.7 s, raider 1.7 s, corvette 1.85 s, freighter 2.6 s.
+  - Jarrad then retuned it on his PC: `overdrive_accel_factor` 3, `engage_speed_factor` 12. The shuttle's run is now about 4.7 s and it leaves at 3120 px/s. These are the values merged.
 - **Bug (H2): radar scenery popped in at about 2–3k px** (derelict hulls in Hollow).
   - Cause: radar-visible scenery came only from loaded chunks, which reach just past the screen edge, while the radar reaches 6000 px (since M6).
   - Fix: `LocalSpace.distant_radar_points` generates radar-visible placements for unloaded chunks inside radar range from the same seed, without building nodes. Destroyed objects and drift are respected.
