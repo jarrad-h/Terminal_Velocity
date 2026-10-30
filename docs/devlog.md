@@ -6,7 +6,7 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ## Phase 2 Milestone 1: Galaxy, hyperlanes and the day clock (30 Oct 2026)
 
-Branch `p2m1-galaxy-hyperlanes`, built in a cloud session (Godot 4.7.2 headless; checked by unit tests, the scenario test, and screenshots rendered under a virtual display). Not yet playtested. Design agreed with Jarrad first: see `docs/decisions.md` "P2M1 scope" and the updated TR2, TR4, TR7, TR8 and TM2.
+Playtest confirmed by Jarrad on 30 Oct 2026; merged to `main`. Branch `p2m1-galaxy-hyperlanes`, built in a cloud session (Godot 4.7.2 headless; checked by unit tests, the scenario test, and screenshots rendered under a virtual display). Design agreed with Jarrad first: see `docs/decisions.md` "P2M1 scope" and the updated TR2, TR4, TR7, TR8 and TM2.
 
 ### Built
 
@@ -81,6 +81,10 @@ Branch `p2m1-galaxy-hyperlanes`, built in a cloud session (Godot 4.7.2 headless;
 - **Lanes:** 130–162 map units, so the shuttle takes 1–2 days per jump. Test Nebula to Redhaven is 5 jumps and 7 days.
 - **Systems:** jump radius 10000 in most systems (6000 in the transit systems, 11000 in Graveyard).
 - **Fuel price:** refuel price 2 (the pirate port 4), so a full shuttle tank is 600 cr.
+
+### Stopped at / Next step
+
+Stopped at: P2M1 merged to `main` (30 Oct 2026). Next step: Phase 2 milestone 2 (gates, TR5–TR6) on `p2m2-<slug>` when Jarrad says go; Jarrad also has art-asset work to slot into Phase 2 (see the conversation's answer: decide where before starting).
 
 ### Known gaps and questions
 

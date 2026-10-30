@@ -184,7 +184,7 @@ About ten systems with placeholder names, laid out so every Phase 2 rule has a p
 
 Eight milestones, each ending in a playtest; persistence comes before saves so the save format is designed around it, and every state added from milestone 1 must be serialisable. Branches follow `p2m<N>-<slug>`.
 
-1. **Galaxy, hyperlanes and the day clock:** galaxy data, the test cluster's systems, hyperlane jumps with edge rule and countdown, arrival, fuel and refuelling, galaxy map with route plotting, day costs. Done when TR1–TR4, TR7–TR8 and TM1–TM3 work (TM3 with nothing yet to step).
+1. ✅ (merged 2026-10-30) **Galaxy, hyperlanes and the day clock:** galaxy data, the test cluster's systems, hyperlane jumps with edge rule and countdown, arrival, fuel and refuelling, galaxy map with route plotting, day costs. Done when TR1–TR4, TR7–TR8 and TM1–TM3 work (TM3 with nothing yet to step).
 2. **Gates:** gate stellars, destination list, fee and record check, closable by flag. Done when TR5–TR6 work and the map shows gate links.
 3. **Persistence foundation:** entity registry, travel by the player's rules, materialise and write-back, off-screen encounters, system memory with recovery, news. Done when PS1–PS7 work with the test cluster's three persistent entities.
 4. **Pilot and saves:** pilot creation (name, ironman), save/load, autosave, versioned format. Done when SV1–SV4 work and a save made mid-route restores entities in transit.
