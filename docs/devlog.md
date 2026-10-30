@@ -6,7 +6,7 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ## Phase 2 Milestone 2: Gates and lighting (30 Oct 2026)
 
-Branch `p2m2-gates-lighting`, built in a cloud session (Godot 4.7.2 headless; checked by unit tests and the scenario test, plus measurements and screenshots rendered under a virtual display). Not yet playtested. Scope widened on 30 Oct to fold in lit ships after the light maps landed (PR #4); first-pass stellar art (PR #5) merged into `main` and wired in here. Decisions: `docs/decisions.md`, 30 Oct entries on lighting and milestone 2.
+Playtest confirmed by Jarrad on 30 Oct 2026; merged to `main`. Branch `p2m2-gates-lighting`, built in a cloud session (Godot 4.7.2 headless; checked by unit tests and the scenario test, plus measurements and screenshots rendered under a virtual display). Scope widened on 30 Oct to fold in lit ships after the light maps landed (PR #4); first-pass stellar art (PR #5) merged into `main` and wired in here. Decisions: `docs/decisions.md`, 30 Oct entries on lighting and milestone 2.
 
 ### Built
 
@@ -37,6 +37,10 @@ Branch `p2m2-gates-lighting`, built in a cloud session (Godot 4.7.2 headless; ch
   - **Scenery:** large asteroids, rocks, small debris and derelict hulls now use the PR #5 sprites, lit.
   - **New stations:** a trader yard at Solace and a pirate rock at Redhaven, so all three station art sets appear in the cluster.
 - **D14:** console `light on|off`, `star angle <deg>|auto` and `star height <0-1>`, plus a Lighting section in the debug panel.
+
+### Stopped at / Next step
+
+Stopped at: P2M2 merged to `main` (30 Oct 2026). Next step: plan Phase 2 milestone 3 (persistence foundation, PS1–PS7, plus AI hyperspace travel and gate traffic from the M2 playtest) on `p2m3-<slug>`.
 
 ### Checks
 
