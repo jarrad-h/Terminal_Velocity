@@ -88,6 +88,14 @@ static func build(obj: SystemObjectDef, settings: Dictionary) -> Node2D:
 				ring.texture = load(ring_path)
 				ring.material = LitSprite.emissive_material()
 				root.add_child(ring)
+			if obj.type == "gate":
+				# V9: the open field is a light source for ships and the ring.
+				var glow: Dictionary = settings["gate_light"]
+				var light: PointLight2D = DynamicLights.make(Color.html(glow["colour"]), glow)
+				light.name = "Light"
+				light.texture_scale /= root.scale.x
+				light.position = jump_point(obj) / root.scale.x
+				root.add_child(light)
 	return root
 
 

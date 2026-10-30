@@ -54,8 +54,12 @@ func _update_gates() -> void:
 		return
 	for obj: SystemObjectDef in system.objects:
 		var view: Node2D = _views.get(obj.id)
-		if obj.type == "gate" and view != null and view.has_node("Ring"):
-			view.get_node("Ring").visible = GateRules.is_open(obj.open_condition, GameState.flags)
+		if obj.type == "gate" and view != null:
+			var open: bool = GateRules.is_open(obj.open_condition, GameState.flags)
+			if view.has_node("Ring"):
+				view.get_node("Ring").visible = open
+			if view.has_node("Light"):
+				view.get_node("Light").visible = open
 	queue_redraw()
 
 

@@ -46,7 +46,8 @@
   "lighting": {
     "enabled": true,
     "ambient": "#4b5161",
-    "star": {"colour": "#ffc890", "energy": 1.2, "height": 0.3},
+    "star": {"colour": "", "tint": 0.6, "energy": 1.2, "height": 0.3,
+             "near_factor": 2.0, "far_factor": 0.8, "far_radii": 8, "glare_start_radii": 2, "glare_energy": 0.15},
     "max_lights": 24,
     "shot": {"energy": 2.5, "radius": 150, "height": 20},
     "beam": {"energy": 3.0, "radius": 180, "height": 20},
@@ -88,7 +89,8 @@
   },
   "engine_glow": {"idle": 0.25, "response": 6},
   "stellars": {"cloud_spin": 0.6, "night_only_emission": ["planet_terran", "planet_ocean", "planet_rust"],
-    "star_disc_cover": 0.97, "star_disc_colour": "#000000"},
+    "star_disc_cover": 0.97, "star_disc_colour": "#000000",
+    "gate_light": {"colour": "#9a86ff", "energy": 1.6, "radius": 900, "height": 60}},
   "galaxy_map": {
     "colours": {
       "background": "#050810",

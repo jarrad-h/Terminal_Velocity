@@ -210,3 +210,4 @@ Why: found by the godot-reviewer at the milestone 2 handover.
 - **Moved to milestone 3:** AI ships flying the hyperspace sequence (PS3), and scheduled traffic through the gate network at hub systems.
 - 1-day gate links equal to 1-day hyperlane routes are confirmed fine; the Solace trader yard and Redhaven pirate rock stay.
 Why: Jarrad's playtest of milestone 2, 30 Oct 2026.
+- (Same day, while building it) **Glare without blowout:** in the glare the ambient rises to the star light's colour, not white, and the directional light fades to `lighting.star.glare_energy` (0.15), so a ship inside the star is lit evenly in the star's hue with its detail intact; white ambient plus doubled starlight blew hulls out to white.

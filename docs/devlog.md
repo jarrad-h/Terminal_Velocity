@@ -57,10 +57,14 @@ Branch `p2m2-gates-lighting`, built in a cloud session (Godot 4.7.2 headless; ch
   - Cause: the star art is additive emission, which brightens the backdrop without hiding it.
   - Fix: an opaque disc just inside the limb sits under the glow (`stellars.star_disc_cover` 0.97, `star_disc_colour` black).
   - Check: scenario checks the disc exists.
-- **Design questions raised:**
-  - AI ships still vanish at the edge instead of flying the hyperspace sequence;
-  - scheduled traffic transiting the gate network through hub systems;
-  - starlight hued by the star's colour.
+- **Design changes, confirmed by Jarrad and built (V7, V9):**
+  - **Star colour:** starlight takes the star's own colour, tinted towards white (`lighting.star.tint` 0.6). Redhaven's red star gives pink-red light.
+  - **Distance:** starlight strength scales from `near_factor` 2.0 at the star's edge to `far_factor` 0.8 at 8 radii.
+  - **Glare:** from 2 radii in, the light turns overhead, the ambient rises to the light's colour and the direct light fades to 0.15. Inside the star the hull is lit evenly in its hue with no shadow side, and the change is gradual. A first try blended the ambient to white and blew hulls out to white; fixed before commit.
+  - **Gate light:** an open gate's field is a violet light (`stellars.gate_light`) that lights nearby ships and its ring, and goes out when closed.
+  - Checks: unit tests for `StarLight`; scenario checks for the colour, distance, glare and gate light; screenshots at four distances from Redhaven's star and beside Vela Gate.
+- **Moved to milestone 3:** AI ships flying the hyperspace sequence, and scheduled traffic through the gate network.
+- **Confirmed:** 1-day gate links equal to 1-day hyperlane routes are fine; the Solace and Redhaven stations stay.
 
 ### Review (godot-reviewer) and fixes
 

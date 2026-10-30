@@ -733,11 +733,13 @@ func _lighting_checks(player: Ship, scene_root: Node) -> void:
 	_check(hull.light_mask & LitSprite.NEAR_LIGHT != 0, "V8: ...but does reach hulls")
 	var gate_view: Node2D = objects.view_of(scene_root.system.gate().id)
 	_check(gate_view.get_node("Ring").visible, "V9: an open gate shows its ring")
+	_check(gate_view.get_node("Light") is PointLight2D and gate_view.get_node("Light").visible, "V9: an open gate is a light source")
 	var gate_def: SystemObjectDef = scene_root.system.gate()
 	var was: String = gate_def.open_condition
 	gate_def.open_condition = "!test_gate_flag"
 	GameState.set_flag("test_gate_flag", 1)
 	_check(not gate_view.get_node("Ring").visible, "V9: a closed gate hides its ring (TR6)")
+	_check(not gate_view.get_node("Light").visible, "V9: ...and its light goes out")
 	gate_def.open_condition = was
 	GameState.set_flag("test_gate_flag", 0)
 	_check(gate_view.get_node("Ring").visible, "...and shows it again when reopened")
@@ -761,6 +763,29 @@ func _lighting_checks(player: Ship, scene_root: Node) -> void:
 		shot.queue_free()
 	await _frames(2)
 	_check(DynamicLights.active_count() == 0, "V8: lights are released with their shots")
+	# V7: starlight in the star's colour, stronger and flatter near the star.
+	var sol: SystemObjectDef = null
+	for o: SystemObjectDef in scene_root.system.objects:
+		if o.type == "star":
+			sol = o
+	var star_cfg: Dictionary = DataRegistry.settings["lighting"]["star"]
+	if String(star_cfg["colour"]) == "" and not scene_root.system.lighting.get("star", {}).has("colour"):
+		_check(lighting.star_light.color.is_equal_approx(StarLight.tinted(sol.colour, float(star_cfg["tint"]))), "V7: light in the star's colour")
+	player.place(sol.position + Vector2(sol.radius * 20.0, 0.0), 0.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var far_energy: float = lighting.star_light.energy
+	_check(lighting.glare_now() == 0.0 and lighting.ambient.color.is_equal_approx(expected["ambient"]), "V7: shadows far from the star")
+	player.place(sol.position + Vector2(sol.radius * 2.5, 0.0), 0.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_check(lighting.star_light.energy > far_energy, "V7: stronger near the star (%.2f > %.2f)" % [lighting.star_light.energy, far_energy])
+	player.place(sol.position + Vector2(sol.radius * 0.5, 0.0), 0.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_check(is_equal_approx(lighting.star_light.height, 1.0) and lighting.ambient.color.is_equal_approx(lighting.star_light.color), "V7: inside the star, lit evenly in its hue, no shadow side")
+	player.place(Vector2(3000.0, 0.0), 0.0)
+	await get_tree().process_frame
 	_check(_debug.run_command("star angle 0") != "" and lighting.light_direction().is_equal_approx(Vector2.LEFT), "D14: star angle override (light from the right travels left)")
 	_check(_debug.run_command("star height 0.8").contains("0.80") and is_equal_approx(lighting.star_light.height, 0.8), "D14: star height")
 	_check(_debug.run_command("star angle auto").contains("follows") and lighting.angle_override == null, "D14: back to the star")
