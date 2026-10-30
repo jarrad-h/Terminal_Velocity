@@ -545,7 +545,14 @@ func _run() -> void:
 	GameState.set_record("pirates", 0.0)
 	await _frames(2)
 
-	# System switch.
+	# P2M1: hyperspace and the day clock (TR2–TR4, TR7, TR8, TM2, D11).
+	var traffic_was_on: bool = _debug.is_traffic_enabled()
+	_debug.set_traffic_enabled(false)
+	_debug.clear_ships()
+	await _hyperspace_checks(player, scene_root)
+	_debug.set_traffic_enabled(traffic_was_on)
+
+	# System switch (D11 goto).
 	_check(_debug.switch_system("test_graveyard"), "switch to test_graveyard")
 	_check(_debug.current_system_id() == "test_graveyard", "current system updated")
 	await _teleport(player, Vector2(2200.0, 0.0))
@@ -580,6 +587,102 @@ func _run() -> void:
 	_check(_debug.player_location_text().contains("Chunk ("), "position and chunk readout (D9)")
 	await _frames(5)
 	_finish()
+
+
+func _press(action: StringName) -> void:
+	var event := InputEventAction.new()
+	event.action = action
+	event.pressed = true
+	Input.parse_input_event(event)
+
+
+## P2M1: jump checks, cancelling, a full jump and the D11 commands.
+func _hyperspace_checks(player: Ship, scene_root: Node) -> void:
+	var hyper: Hyperspace = scene_root.hyperspace
+	var travel: TravelState = GameState.travel
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	var P := JumpSequence.Phase
+	_check(travel.current_system == galaxy.start_system, "starts in the galaxy's start system (TR1)")
+	_check(travel.map_state(galaxy, galaxy.start_system) == "explored", "start system is explored (TR7)")
+	_debug.refuel()
+	travel.route.clear()
+	await _teleport(player, Vector2.ZERO)
+	_check(hyper.try_jump() == Hyperlanes.NO_DESTINATION, "TR2: no jump without a destination")
+	_check(not hyper.plot_to("hollow"), "TR7: a hidden system can't be routed to")
+	_check(hyper.plot_to("lumen") and travel.route.size() == 2, "TR7: two-jump route to lumen (%s)" % [travel.route])
+	var destination: String = travel.destination()
+	_check(hyper.try_jump() == Hyperlanes.INSIDE, "TR2: no jump inside the jump radius")
+	var radius: float = scene_root.system.jump_radius
+	await _teleport(player, Vector2(radius + 400.0, 0.0))
+	travel.fuel = 10.0
+	_check(hyper.try_jump() == Hyperlanes.NO_FUEL, "TR2: no jump without enough fuel")
+	_debug.refuel()
+
+	_check(hyper.try_jump() == "", "jump starts")
+	_press(&"jump")
+	await _frames(2)
+	_check(not hyper.is_active() and player.autopilot == null, "TR2: pressing J again cancels")
+	_check(hyper.try_jump() == "", "jump restarts")
+	_press(&"fire_primary")
+	await _frames(2)
+	Input.action_release(&"fire_primary")
+	_check(not hyper.is_active(), "TR2: firing cancels")
+	_check(hyper.try_jump() == "", "jump restarts again")
+	player.health.apply_damage(5.0, 0.0)
+	await _frames(2)
+	_check(hyper.is_active(), "TR2: hits don't cancel")
+	player.health.force_disable()
+	await _frames(2)
+	_check(not hyper.is_active() and player.autopilot == null, "TR2: being disabled cancels")
+	player.health.repair_full()
+	player.set_tint(Color.WHITE)
+
+	# A full jump: moving fast across the bearing, so it has to stop and turn.
+	var origin: String = travel.current_system
+	var bearing: Vector2 = Hyperlanes.bearing(galaxy, origin, destination)
+	player.place(Vector2(radius + 400.0, 0.0), 0.0, bearing.orthogonal() * player.def.top_speed)
+	await _frames(2)
+	var day_before: int = GameState.clock.day
+	var fuel_before: float = travel.fuel
+	_check(hyper.try_jump() == "", "full jump starts")
+	Input.action_press(&"thrust")
+	await _frames(2)
+	_check(not player.get_flight_input().thrust or hyper.sequence.phase == P.STOPPING, "TR2: the player's thrust key is ignored")
+	Input.action_release(&"thrust")
+	var phases: Array[int] = []
+	for i: int in 60 * 40:
+		if not hyper.is_active():
+			break
+		if phases.is_empty() or phases[-1] != hyper.sequence.phase:
+			phases.append(hyper.sequence.phase)
+		if hyper.sequence.phase == P.COUNTDOWN:
+			_check(player.get_velocity().is_zero_approx(), "TR2: stopped during the countdown")
+		await get_tree().physics_frame
+	await _frames(2)
+	_check(phases == [P.STOPPING, P.ALIGNING, P.COUNTDOWN, P.OVERDRIVE], "TR2: stop, align, countdown, overdrive (%s)" % [phases])
+	_check(travel.current_system == destination and scene_root.system.id == destination, "TR2: arrived in %s" % destination)
+	var length: float = Hyperlanes.lane_length(galaxy, origin, destination)
+	_check(GameState.clock.day == day_before + Hyperlanes.jump_days(length, player.def.jump_speed), "TM2: the jump cost its days")
+	_check(is_equal_approx(travel.fuel, fuel_before - player.def.jump_fuel), "TR8: the jump cost its fuel")
+	var new_radius: float = scene_root.system.jump_radius
+	_check(absf(player.global_position.length() - new_radius) < 60.0, "TR4: arrives at the jump radius (%f)" % player.global_position.length())
+	_check(player.global_position.normalized().dot(-bearing) > 0.99, "TR4: arrives on the side facing the origin")
+	var arrival_speed: float = player.def.top_speed * float(DataRegistry.settings["hyperspace"]["arrival_speed_fraction"])
+	_check(player.get_velocity().normalized().dot(bearing) > 0.99 and absf(player.get_velocity().length() - arrival_speed) < 1.0, "TR4: moving inward at reduced speed")
+	_check(travel.map_state(galaxy, destination) == "explored", "TR7: visiting explores")
+	_check(travel.destination() == "lumen", "TR7: the next leg is selected")
+	_check(get_tree().get_nodes_in_group(&"ships").size() == 1, "only the player came through")
+
+	# D11
+	var day_now: int = GameState.clock.day
+	_check(_debug.run_command("days 5").begins_with("Date"), "days via console (D11)")
+	_check(GameState.clock.day == day_now + 5, "D11: five days passed")
+	_check(_debug.run_command("reveal hollow").begins_with("Revealed"), "reveal via console")
+	_check(travel.map_state(galaxy, "hollow") == "unexplored", "TR7: revealed system is unexplored")
+	_check(_debug.run_command("goto test_nebula").begins_with("Arrived"), "goto via console (D11)")
+	_check(travel.current_system == "test_nebula" and GameState.clock.day == day_now + 5, "D11: goto costs no days")
+	_check(not _debug.switch_system("nowhere"), "goto refuses unknown systems")
+	_debug.refuel()
 
 
 func _teleport(ship: Ship, at: Vector2) -> void:

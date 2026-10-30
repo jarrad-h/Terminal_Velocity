@@ -18,6 +18,8 @@ var hit_radius: float = 0.0
 ## V1: game.json art_scale, applied to sprite, hitbox, hardpoints and engines.
 var art_scale: float = 1.0
 var controller: Node = null
+## TR2: while set, the jump sequence flies the ship instead of its controller.
+var autopilot: JumpSequence = null
 ## Government ID ("" = none). Set at spawn.
 var government: String = ""
 ## AI role from its pool ("trader", "warship", "pirate"); "" for the player and idle ships.
@@ -99,9 +101,18 @@ func set_controller(new_controller: Node) -> void:
 
 ## Controller intent for this frame; nothing while disabled (C7: drifts).
 func get_flight_input() -> FlightInput:
-	if controller == null or not can_act():
+	if not can_act():
+		return FlightInput.new()
+	if autopilot != null:
+		return autopilot.step(body.state, body.stats, get_physics_process_delta_time())
+	if controller == null:
 		return FlightInput.new()
 	return controller.get_flight_input()
+
+
+## Flight stats for this frame: the hull's, or the jump sequence's overdrive.
+func flight_stats() -> FlightStats:
+	return autopilot.flight_stats(body.stats) if autopilot != null else body.stats
 
 
 func can_act() -> bool:

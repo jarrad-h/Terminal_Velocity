@@ -16,6 +16,7 @@ var system: SystemDef = null
 @onready var camera: FollowCamera = $Camera
 @onready var traffic: TrafficSpawner = $TrafficSpawner
 var actions: PlayerActions
+var hyperspace: Hyperspace
 
 
 func _ready() -> void:
@@ -31,8 +32,12 @@ func _ready() -> void:
 	actions.name = "PlayerActions"
 	actions.scene = self
 	add_child(actions)
+	hyperspace = Hyperspace.new()
+	hyperspace.name = "Hyperspace"
+	hyperspace.scene = self
+	add_child(hyperspace)
 	camera.configure(settings["camera"])
-	load_system(DataRegistry.galaxy().start_system)
+	load_system(GameState.travel.current_system)
 
 	var player: Ship = spawn_ship(settings["player_ship"], Vector2.ZERO)
 	if player != null:
@@ -43,6 +48,7 @@ func _ready() -> void:
 		camera.target = player
 	hud.player = player
 	hud.actions = actions
+	hud.hyperspace = hyperspace
 
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
 	if OS.is_debug_build():
@@ -77,14 +83,36 @@ func load_system(system_id: String) -> bool:
 ## C10: as if the player left and came back — every other ship goes,
 ## destroyed scenery returns, and traffic refills.
 func reset_visit() -> void:
+	_clear_ships_and_shots()
+	local_space.reset_visit()
+	traffic.configure(system, true)
+
+
+## TR2, TR4: the player leaves this system for `system_id`, arriving at its
+## jump radius moving along `bearing` (origin → destination on the map).
+## Each arrival is a fresh visit until persistence (milestone 3).
+func enter_system(system_id: String, bearing: Vector2) -> void:
+	_clear_ships_and_shots()
+	var next: SystemDef = DataRegistry.get_system(system_id)
+	var player: Ship = get_tree().get_first_node_in_group(&"player")
+	if player != null and next != null:
+		var speed: float = player.def.top_speed * float(DataRegistry.settings["hyperspace"]["arrival_speed_fraction"])
+		var arrival: FlightState = Hyperlanes.arrival(bearing, next.jump_radius, speed)
+		player.place(arrival.position, arrival.rotation, arrival.velocity)
+		player.set_target(null)
+	load_system(system_id)
+	local_space.reset_visit()
+	if player != null:
+		Flash.spawn(world, player.global_position, player.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
+
+
+func _clear_ships_and_shots() -> void:
 	for node: Node in get_tree().get_nodes_in_group(&"ships"):
 		if not node.is_in_group(&"player"):
 			node.remove_from_group(&"ships")
 			node.queue_free()
 	for shot: Node in $World/Shots.get_children():
 		shot.queue_free()
-	local_space.reset_visit()
-	traffic.configure(system, true)
 
 
 ## Spawns a ship. Non-player ships get an IdleController until M4 adds AI.

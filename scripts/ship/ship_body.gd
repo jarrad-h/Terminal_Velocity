@@ -14,6 +14,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	state = FlightModel.step(state, ship.get_flight_input(), stats, delta)
+	var input: FlightInput = ship.get_flight_input()  # may hold the ship still (TR2)
+	state = FlightModel.step(state, input, ship.flight_stats(), delta)
 	ship.position = state.position
 	ship.rotation = state.rotation
