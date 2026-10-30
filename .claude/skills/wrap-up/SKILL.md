@@ -8,7 +8,7 @@ description: Use when Jarrad ends a session or switches computers on Terminal Ve
 Goal: the other PC (or a fresh session on this one) can carry on from the repo alone. Nothing may be left only on this machine or only in this conversation.
 
 1. **Check health.** Run `python tools/check.py`. Don't block on RED (half-finished work is fine on a feature branch), but record what's failing.
-2. **Capture design changes.** If this session agreed anything about the design that isn't yet in `docs/spec.md` or `docs/decisions.md`, add it now (follow the `design` skill's rules for IDs and the decision log).
+2. **Capture design changes.** If this session agreed anything about the design that isn't yet in the spec (`docs/phase2-spec.md` or `docs/spec.md`) or `docs/decisions.md`, add it now (follow the `design` skill's rules for IDs and the decision log).
 3. **Write the handover** — append to `docs/devlog.md` under today's date:
    ```
    ### YYYY-MM-DD — session wrap-up (<machine name from $env:COMPUTERNAME>)

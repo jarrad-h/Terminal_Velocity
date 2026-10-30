@@ -4,6 +4,16 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Phase 2 planning (30 Oct 2026)
+
+Designed with Jarrad in claude.ai and committed as `docs/phase2-spec.md`, with the decisions in `docs/decisions.md` (30 Oct entries). `tools/hardpoint-editor/` added (PR #2): a browser tool that writes `hull.json` hull manifests, ahead of OF7. CLAUDE.md and the skills now point at the Phase 2 spec; Phase 2 branches are `p2m<N>-<slug>`.
+
+### Stopped at / Next step
+
+Stopped at: Phase 2 spec merged. Next step: Phase 2 milestone 1 (galaxy, hyperlanes and the day clock) when Jarrad says go; the setting is being worked on separately and doesn't block it.
+
+---
+
 ## Milestone 7: HUD and tuning pass (29 Oct 2026)
 
 Playtest confirmed by Jarrad on 29 Oct 2026. Branch `m7-hud-tuning`. Designed with Jarrad first (spec and decisions 2026-10-29); built in the cloud session (checked headless, by the scenario test, a 10-minute soak, and rendering under a virtual display).

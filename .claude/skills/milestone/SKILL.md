@@ -8,7 +8,7 @@ description: Use when Jarrad asks to build, start, continue or finish a mileston
 Argument: a milestone number or a list of requirement IDs.
 
 ## 1. Plan (stop for approval)
-- Read `docs/spec.md`, `docs/decisions.md`, the tail of `docs/devlog.md`, and the code the work touches.
+- Read `docs/phase2-spec.md`, `docs/spec.md`, `docs/decisions.md`, the tail of `docs/devlog.md`, and the code the work touches.
 - Create branch `m<N>-<slug>` from `main` (or continue it if it exists).
 - Present a plan: requirement IDs covered, files to add/change, data schema changes, tests to add, and anything in the spec that is ambiguous. Ask the ambiguous questions now, in one batch.
 - Wait for Jarrad's go-ahead before writing code.
