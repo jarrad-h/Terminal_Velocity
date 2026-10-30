@@ -1,0 +1,104 @@
+{
+  "id": "ember",
+  "name": "Ember",
+  "seed": 3008,
+  "edge_radius": 12000,
+  "jump_radius": 10000,
+  "objects": [
+    {
+      "id": "ember",
+      "type": "star",
+      "name": "Ember",
+      "position": [
+        0,
+        0
+      ],
+      "radius": 1600,
+      "colour": "#ff7040"
+    },
+    {
+      "id": "forge",
+      "type": "planet",
+      "name": "Forge",
+      "position": [
+        5000,
+        -5000
+      ],
+      "radius": 440,
+      "colour": "#b06040",
+      "description": "Smelters and ore haulers; the air tastes of metal.",
+      "landable": true,
+      "government": "independent_traders",
+      "min_record": -80
+    }
+  ],
+  "traffic": [
+    {
+      "pool": "trader_traffic",
+      "count": 2
+    },
+    {
+      "pool": "pirate_raid",
+      "count": 2
+    }
+  ],
+  "backdrop": {
+    "parallax": 0.02,
+    "base_colour": "#04050a",
+    "stars": {
+      "density": 0.05,
+      "brightness": 0.8,
+      "size": 1.2,
+      "spacing": 16
+    },
+    "nebula": {
+      "coverage": 0.55,
+      "intensity": 0.7,
+      "softness": 0.4,
+      "gradient": [
+        "#0a0404",
+        "#3a1008",
+        "#a04020"
+      ]
+    },
+    "noise": {
+      "seed": 46,
+      "frequency": 0.005,
+      "octaves": 5,
+      "texture_size": 1024,
+      "scale": 2
+    }
+  },
+  "local_space": [
+    {
+      "scenery": "dust",
+      "density": 30
+    },
+    {
+      "scenery": "large_asteroid",
+      "density": 1.2,
+      "region": {
+        "shape": "ring",
+        "centre": [
+          0,
+          0
+        ],
+        "inner_radius": 3000,
+        "radius": 7000
+      }
+    },
+    {
+      "scenery": "rock",
+      "density": 1,
+      "region": {
+        "shape": "ring",
+        "centre": [
+          0,
+          0
+        ],
+        "inner_radius": 3000,
+        "radius": 7000
+      }
+    }
+  ]
+}

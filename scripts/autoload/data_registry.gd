@@ -64,6 +64,15 @@ func get_personality(id: String) -> PersonalityDef:
 	return _set.get_def("personalities", id)
 
 
+func get_galaxy(id: String) -> GalaxyDef:
+	return _set.get_def("galaxy", id)
+
+
+## TR1: the galaxy game.json names.
+func galaxy() -> GalaxyDef:
+	return get_galaxy(settings.get("galaxy", ""))
+
+
 ## Sorted IDs of one type folder ("ships", "systems"…).
 func ids(type: String) -> Array[String]:
 	return _set.ids(type)

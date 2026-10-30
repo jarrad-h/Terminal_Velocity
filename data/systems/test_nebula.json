@@ -2,6 +2,7 @@
   "id": "test_nebula",
   "name": "Test Nebula",
   "edge_radius": 14000,
+  "jump_radius": 10000,
   "respawn_delay": [5, 15],
   "seed": 1001,
   "objects": [

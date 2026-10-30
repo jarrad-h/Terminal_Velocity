@@ -31,5 +31,9 @@
   "engine_glow": {
     "colour": "#ffa040",
     "size": 7
-  }
+  },
+  "fuel": 300,
+  "jump_fuel": 100,
+  "jump_countdown": 3,
+  "jump_speed": 150
 }

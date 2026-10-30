@@ -1,0 +1,97 @@
+{
+  "id": "solace",
+  "name": "Solace",
+  "seed": 3007,
+  "edge_radius": 12000,
+  "jump_radius": 10000,
+  "objects": [
+    {
+      "id": "solace",
+      "type": "star",
+      "name": "Solace",
+      "position": [
+        0,
+        0
+      ],
+      "radius": 1200,
+      "colour": "#ffe0b0"
+    },
+    {
+      "id": "homestead",
+      "type": "planet",
+      "name": "Homestead",
+      "position": [
+        -6000,
+        2400
+      ],
+      "radius": 560,
+      "colour": "#6a9a50",
+      "description": "Settler farms; fuel and water for anyone who pays.",
+      "landable": true,
+      "government": "independent_traders",
+      "min_record": -80
+    },
+    {
+      "id": "verge",
+      "type": "planet",
+      "name": "Verge",
+      "position": [
+        3000,
+        -7000
+      ],
+      "radius": 900,
+      "colour": "#9080a0",
+      "description": "A gas giant.",
+      "landable": false,
+      "government": "",
+      "min_record": -1000
+    }
+  ],
+  "traffic": [
+    {
+      "pool": "trader_traffic",
+      "count": 2
+    },
+    {
+      "pool": "pirate_raid",
+      "count": 1
+    }
+  ],
+  "backdrop": {
+    "parallax": 0.02,
+    "base_colour": "#04050a",
+    "stars": {
+      "density": 0.05,
+      "brightness": 0.8,
+      "size": 1.2,
+      "spacing": 16
+    },
+    "nebula": {
+      "coverage": 0.5,
+      "intensity": 0.6,
+      "softness": 0.4,
+      "gradient": [
+        "#05080a",
+        "#103030",
+        "#307060"
+      ]
+    },
+    "noise": {
+      "seed": 45,
+      "frequency": 0.005,
+      "octaves": 5,
+      "texture_size": 1024,
+      "scale": 2
+    }
+  },
+  "local_space": [
+    {
+      "scenery": "dust",
+      "density": 30
+    },
+    {
+      "scenery": "small_debris",
+      "density": 0.6
+    }
+  ]
+}

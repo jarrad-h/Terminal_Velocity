@@ -2,6 +2,7 @@
   "id": "test_graveyard",
   "name": "Test Graveyard",
   "edge_radius": 12000,
+  "jump_radius": 11000,
   "respawn_delay": [5, 15],
   "seed": 2002,
   "objects": [

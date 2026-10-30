@@ -1,7 +1,8 @@
 class_name Hud
 extends CanvasLayer
 ## Player panel (H1: ship name, shield and armour, credits, disabled warning),
-## target panel (H3), radar (H2), message line (H4) and the boarding bar (C9).
+## target panel (H3), radar (H2), message line (H4), the boarding bar (C9),
+## and travel: date (TM1), fuel (TR8), destination and jump status (TR2, TR7).
 
 var player: Ship = null:
 	set(value):
@@ -14,13 +15,19 @@ var messages: MessageLine
 var target_panel: TargetPanel
 ## Set by the system scene; boarding progress (C9).
 var actions: PlayerActions = null
+## Set by the system scene; jump status (TR2).
+var hyperspace: Hyperspace = null
 var _board_bar: ProgressBar
+var _jump_status: Label
 
 var _ship_name: Label
 var _player_shield: ProgressBar
 var _player_armor: ProgressBar
 var _status: Label
 var _credits: Label
+var _date: Label
+var _fuel: Label
+var _destination: Label
 
 
 func _ready() -> void:
@@ -43,6 +50,15 @@ func _ready() -> void:
 	_board_bar.show_percentage = false
 	_board_bar.visible = false
 	add_child(_board_bar)
+	_jump_status = Label.new()
+	_jump_status.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_jump_status.offset_left = -200.0
+	_jump_status.offset_right = 200.0
+	_jump_status.offset_top = -200.0
+	_jump_status.offset_bottom = -176.0
+	_jump_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_jump_status.add_theme_font_size_override("font_size", 20)
+	add_child(_jump_status)
 	radar.configure(DataRegistry.settings["radar"])
 	DataRegistry.data_reloaded.connect(func() -> void: radar.configure(DataRegistry.settings["radar"]))
 	var colours: Dictionary = DataRegistry.settings["hud"]["colours"]
@@ -57,6 +73,12 @@ func _ready() -> void:
 	box.add_child(_ship_name)
 	_credits = Label.new()
 	box.add_child(_credits)
+	_date = Label.new()
+	box.add_child(_date)
+	_fuel = Label.new()
+	box.add_child(_fuel)
+	_destination = Label.new()
+	box.add_child(_destination)
 	_player_shield = make_bar(box, "Shield", Color.html(colours["shield"]), 250.0)
 	_player_armor = make_bar(box, "Armour", Color.html(colours["armor"]), 250.0)
 	_status = Label.new()
@@ -71,6 +93,13 @@ func _process(_delta: float) -> void:
 		return
 	_ship_name.text = player.def.name
 	_credits.text = "Credits %d" % GameState.credits
+	_date.text = GameState.date_text()
+	var travel: TravelState = GameState.travel
+	_fuel.text = "Fuel %.0f / %.0f" % [travel.fuel, player.def.fuel]
+	var destination: String = travel.destination()
+	_destination.text = "Jump to %s%s (J)" % [Hyperspace.system_name(destination),
+		" +%d more" % (travel.route.size() - 1) if travel.route.size() > 1 else ""] if destination != "" else "No destination (M for map)"
+	_jump_status.text = hyperspace.status_text() if hyperspace != null else ""
 	var progress: float = actions.board_progress() if actions != null else -1.0
 	_board_bar.visible = progress >= 0.0
 	_board_bar.value = maxf(progress, 0.0)

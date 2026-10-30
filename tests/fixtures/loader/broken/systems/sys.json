@@ -1,4 +1,5 @@
 {"name": "Sys",
+ "objects": [{"id": "pad", "type": "station", "name": "Pad", "position": [0, 0], "landing_days": -1, "refuel_price": "cheap"}],
  "local_space": [
    {"scenery": "unknown_rock", "density": 1}
  ]}

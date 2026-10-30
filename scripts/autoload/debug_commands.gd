@@ -116,6 +116,7 @@ func swap_player_ship(ship_id: String) -> bool:
 		push_error("swap_player_ship: no player or no ship '%s'" % ship_id)
 		return false
 	player.setup(def)
+	GameState.set_fuel(GameState.travel.fuel, def.fuel)  # TR8: a smaller tank can't hold more
 	return true
 
 
@@ -128,14 +129,43 @@ func reload_data() -> Array[String]:
 	return errors
 
 
-## Switches the current system's backdrop and local space.
+## D11: jumps straight to any system in the galaxy (no fuel, no days),
+## arriving at its jump radius from the current system's side.
 func switch_system(system_id: String) -> bool:
 	if not OS.is_debug_build():
 		return false
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
-	if scene == null:
+	if scene == null or DataRegistry.get_system(system_id) == null or not DataRegistry.galaxy().has_system(system_id):
 		return false
-	return scene.load_system(system_id)
+	scene.hyperspace.cancel("Jump cancelled")
+	var origin: String = GameState.travel.current_system
+	GameState.travel.route.clear()
+	scene.hyperspace.arrive(system_id, origin)
+	return true
+
+
+## D11: advances the date by `days` (each day stepped, TM3).
+func advance_days(days: int) -> void:
+	if OS.is_debug_build():
+		GameState.advance_days(days)
+
+
+## D11 (debug for TR7 reveals): makes a hidden system unexplored.
+func reveal_system(system_id: String) -> bool:
+	return OS.is_debug_build() and GameState.travel.reveal(DataRegistry.galaxy(), system_id)
+
+
+## Fills the player's fuel tank (D11 travel testing).
+func refuel() -> void:
+	var player: Ship = _player()
+	if OS.is_debug_build() and player != null:
+		GameState.set_fuel(player.def.fuel, player.def.fuel)
+
+
+## TR7 from the console: plots a route to `system_id`.
+func plot_route(system_id: String) -> bool:
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	return OS.is_debug_build() and scene != null and scene.hyperspace.plot_to(system_id)
 
 
 func current_system_id() -> String:
@@ -310,7 +340,7 @@ func run_command(line: String) -> String:
 	var gov_arg: Callable = func(index: int) -> String: return w[index] if w.size() > index else ""
 	match w[0]:
 		"help":
-			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | system <id> | reload | " \
+			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | reload | " \
 				+ "time <scale> | pause | resume | step | invuln on|off | ai on|off | traffic on|off | radar all|range | " \
 				+ "kill | disable | clear | credits <n> | record <gov> <n> | overlay <name> on|off | ids <type> | pos"
 		"spawn", "pool":
@@ -323,8 +353,20 @@ func run_command(line: String) -> String:
 			return "Spawned %d" % made.size() if not made.is_empty() else "Nothing spawned (unknown id '%s'?)" % w[1]
 		"swap":
 			return "Swapped to %s" % w[1] if w.size() > 1 and swap_player_ship(w[1]) else "Usage: swap <ship id>"
-		"system":
-			return "Switched to %s" % w[1] if w.size() > 1 and switch_system(w[1]) else "Usage: system <system id>"
+		"goto", "system":
+			return "Arrived in %s" % w[1] if w.size() > 1 and switch_system(w[1]) else "Usage: goto <system id in the galaxy>"
+		"days":
+			if w.size() < 2 or not ConsoleParser.is_int(w[1]) or w[1].to_int() < 0:
+				return "Usage: days <n>"
+			advance_days(w[1].to_int())
+			return "Date %s" % GameState.date_text()
+		"route":
+			return "Route: %s" % " > ".join(GameState.travel.route) if w.size() > 1 and plot_route(w[1]) else "Usage: route <reachable system id>"
+		"reveal":
+			return "Revealed %s" % w[1] if w.size() > 1 and reveal_system(w[1]) else "Usage: reveal <hidden system id>"
+		"fuel":
+			refuel()
+			return "Fuel %.0f" % GameState.travel.fuel
 		"reload":
 			var errors: Array[String] = reload_data()
 			return "Reloaded" if errors.is_empty() else "Reload failed:\n" + "\n".join(errors)
@@ -383,7 +425,7 @@ func run_command(line: String) -> String:
 			return "Overlay %s %s" % [w[1], w[2]]
 		"ids":
 			if w.size() < 2:
-				return "Usage: ids ships|weapons|governments|ai_pools|systems|scenery|personalities"
+				return "Usage: ids ships|weapons|governments|ai_pools|systems|scenery|personalities|galaxy"
 			return ", ".join(DataRegistry.ids(w[1]))
 		"pos":
 			return player_location_text()

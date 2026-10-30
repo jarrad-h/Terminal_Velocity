@@ -24,6 +24,14 @@ static func step(state: FlightState, input: FlightInput, stats: FlightStats, del
 	return next
 
 
+## C7: a disabled ship coasts to a stop, losing `drag` px/s of speed per second.
+static func coast(velocity: Vector2, drag: float, delta: float) -> Vector2:
+	var speed: float = velocity.length()
+	if speed <= 0.0 or drag <= 0.0:
+		return velocity
+	return velocity * (maxf(speed - drag * delta, 0.0) / speed)
+
+
 ## Unit vector the ship faces at `rotation`.
 static func heading(rotation: float) -> Vector2:
 	return Vector2.UP.rotated(rotation)
