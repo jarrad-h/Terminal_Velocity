@@ -1,0 +1,14 @@
+{
+ "id": "gate_halo",
+ "name": "Hyperspace gate (Halo)",
+ "size_px": [
+  600,
+  600
+ ],
+ "sprite_scale": 1,
+ "hardpoints": [],
+ "jump_point": [
+  0,
+  0
+ ]
+}

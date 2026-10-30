@@ -1,0 +1,30 @@
+[
+ {
+  "id": "T1",
+  "size": "medium",
+  "mount": "turret",
+  "x": 0.0,
+  "y": -105.0
+ },
+ {
+  "id": "T2",
+  "size": "small",
+  "mount": "turret",
+  "x": -122.5,
+  "y": 80.5
+ },
+ {
+  "id": "T3",
+  "size": "small",
+  "mount": "turret",
+  "x": 105.0,
+  "y": -52.5
+ },
+ {
+  "id": "M1",
+  "size": "small",
+  "mount": "launcher",
+  "x": 7.0,
+  "y": 115.5
+ }
+]

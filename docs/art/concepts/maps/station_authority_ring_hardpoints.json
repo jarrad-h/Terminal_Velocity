@@ -1,0 +1,72 @@
+[
+ {
+  "id": "T1",
+  "size": "small",
+  "mount": "turret",
+  "x": 142.5,
+  "y": 82.2
+ },
+ {
+  "id": "T2",
+  "size": "small",
+  "mount": "turret",
+  "x": -142.5,
+  "y": 82.2
+ },
+ {
+  "id": "T3",
+  "size": "small",
+  "mount": "turret",
+  "x": -142.5,
+  "y": -82.2
+ },
+ {
+  "id": "T4",
+  "size": "small",
+  "mount": "turret",
+  "x": 142.5,
+  "y": -82.3
+ },
+ {
+  "id": "T5",
+  "size": "medium",
+  "mount": "turret",
+  "x": -24.5,
+  "y": 0.0
+ },
+ {
+  "id": "T6",
+  "size": "medium",
+  "mount": "turret",
+  "x": 24.5,
+  "y": 0.0
+ },
+ {
+  "id": "T7",
+  "size": "small",
+  "mount": "turret",
+  "x": 90.1,
+  "y": 156.1
+ },
+ {
+  "id": "T8",
+  "size": "small",
+  "mount": "turret",
+  "x": -90.1,
+  "y": 156.1
+ },
+ {
+  "id": "T9",
+  "size": "small",
+  "mount": "turret",
+  "x": -90.1,
+  "y": -156.1
+ },
+ {
+  "id": "T10",
+  "size": "small",
+  "mount": "turret",
+  "x": 90.1,
+  "y": -156.1
+ }
+]

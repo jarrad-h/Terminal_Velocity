@@ -1,0 +1,29 @@
+{
+ "id": "station_trader_yard",
+ "name": "Trader station (Container yard)",
+ "size_px": [
+  480,
+  480
+ ],
+ "sprite_scale": 1,
+ "hardpoints": [
+  {
+   "id": "T1",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    0.0,
+    -110.2
+   ]
+  },
+  {
+   "id": "T2",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    0.0,
+    113.8
+   ]
+  }
+ ]
+}

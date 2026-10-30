@@ -1,0 +1,105 @@
+{
+ "id": "station_authority_ring",
+ "name": "Authority station (Ring)",
+ "size_px": [
+  480,
+  480
+ ],
+ "sprite_scale": 1,
+ "hardpoints": [
+  {
+   "id": "T1",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    116.3,
+    116.3
+   ]
+  },
+  {
+   "id": "T2",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    -116.3,
+    116.3
+   ]
+  },
+  {
+   "id": "T3",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    -116.3,
+    -116.3
+   ]
+  },
+  {
+   "id": "T4",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    116.3,
+    -116.3
+   ]
+  },
+  {
+   "id": "T5",
+   "size": "medium",
+   "mount": "turret",
+   "pos": [
+    -22.8,
+    1.8
+   ]
+  },
+  {
+   "id": "T6",
+   "size": "medium",
+   "mount": "turret",
+   "pos": [
+    22.8,
+    1.8
+   ]
+  },
+  {
+   "id": "T7",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    68.6,
+    165.7
+   ],
+   "role": "point_defence"
+  },
+  {
+   "id": "T8",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    -68.6,
+    165.7
+   ],
+   "role": "point_defence"
+  },
+  {
+   "id": "T9",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    -68.6,
+    -165.7
+   ],
+   "role": "point_defence"
+  },
+  {
+   "id": "T10",
+   "size": "small",
+   "mount": "turret",
+   "pos": [
+    68.6,
+    -165.7
+   ],
+   "role": "point_defence"
+  }
+ ]
+}
