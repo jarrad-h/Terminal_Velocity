@@ -574,6 +574,8 @@ func _run() -> void:
 	_debug.clear_ships()
 	await _hyperspace_checks(player, scene_root)
 	await _gate_checks(player, scene_root)
+	await _frames(2)
+	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
 
 	# System switch (D11 goto).
@@ -688,6 +690,35 @@ func _gate_checks(player: Ship, scene_root: Node) -> void:
 	await _frames(2)
 	GameState.set_record("local_authority", 0.0)
 	_check(_debug.switch_system("test_nebula"), "back to the start")
+
+
+## P2M2: lit hulls and turrets (V6), star and ambient light from data (V7).
+func _lighting_checks(player: Ship, scene_root: Node) -> void:
+	var lighting: SystemLighting = scene_root.lighting
+	_check(lighting != null and lighting.star_light.enabled, "V7: the star light is on")
+	var expected: Dictionary = SystemLighting.settings_for(scene_root.system, DataRegistry.settings["lighting"])
+	_check(lighting.ambient.color.is_equal_approx(expected["ambient"]), "V7: ambient from data")
+	_check(is_equal_approx(lighting.star_light.height, expected["star_height"]), "V7: star height from data")
+	var hull: Sprite2D = player.visual.get_child(player.visual.get_child_count() - 1)
+	_check(hull.texture is CanvasTexture and (hull.texture as CanvasTexture).normal_texture != null, "V6: the shuttle hull is lit from its normal map")
+	_check(hull.get_node_or_null("Emission") != null, "V6: emission layer on the hull")
+	var armed: Ship = _debug.spawn_ships("shuttle", 1, "", player.global_position + Vector2(-600.0, 0.0))[0]
+	var turret: Sprite2D = armed.weapons.find_child("TurretSprite", true, false)
+	_check(turret != null and turret.texture is CanvasTexture, "V6: turrets are lit too")
+	armed.remove_from_group(&"ships")
+	armed.queue_free()
+	var raider: Ship = _debug.spawn_ships("pirate_raider", 1, "", player.global_position + Vector2(600.0, 0.0))[0]
+	var raider_hull: Sprite2D = raider.visual.get_child(raider.visual.get_child_count() - 1)
+	_check(not raider_hull.texture is CanvasTexture and raider_hull.material == LitSprite.unshaded_material(), "V6: no maps, so the raider falls back to its baked sprite")
+	raider.remove_from_group(&"ships")
+	raider.queue_free()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var down: Vector2 = Vector2.DOWN.rotated(lighting.star_light.rotation)
+	_check(down.dot(lighting.light_direction()) > 0.99, "V7: the light travels from the star towards the player")
+	lighting.set_enabled(false)
+	_check(not lighting.star_light.enabled and lighting.ambient.color == Color.WHITE, "lighting off")
+	lighting.set_enabled(true)
 
 
 ## Sends a key press as an action event and waits until it has been handled

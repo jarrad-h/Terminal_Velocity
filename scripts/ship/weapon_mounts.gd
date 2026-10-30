@@ -67,9 +67,8 @@ func _add_turret_sprite(mount: Mount, settings: Dictionary, art_scale: float) ->
 	var path: String = Ship.SPRITE_DIR.path_join(String(settings["mounts"]["turret_sprites"][key]))
 	if String(settings["mounts"]["turret_sprites"][key]) == "":
 		return  # no turret art for this size (the loader checks named paths exist)
-	var sprite := Sprite2D.new()
+	var sprite: Sprite2D = LitSprite.build(path)  # V6
 	sprite.name = "TurretSprite"
-	sprite.texture = load(path)
 	sprite.scale = Vector2.ONE * art_scale
 	mount.barrel.add_child(sprite)
 

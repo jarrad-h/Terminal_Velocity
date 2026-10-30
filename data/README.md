@@ -46,6 +46,9 @@ Fields marked **required** have no default.
 | `boarding.assist_armor_pct` | C9 Assist: patched-up ships get back to this % of max armour, up to 100 (keep it above ships' `disable_armor_pct`) | `50` |
 | `combat.disabled_drag` | C7: a disabled ship (any ship, the player's too) loses this much speed per second until it stops, px/s²; 0 = drifts forever | `30` |
 | `combat.friendly_fire_pct` | % damage AI shots do to their own and allied governments' ships (C11); 0 = off. Player shots always do full damage | `100` |
+| `lighting.enabled` | V7: live lighting on (star, ambient, lit sprites); off draws everything flat | `true` |
+| `lighting.ambient` | V7: colour the unlit side of lit things is darkened to (a `CanvasModulate`); things without light maps, the backdrop and the HUD aren't darkened. A system's `lighting.ambient` overrides it | `"#4b5161"` |
+| `lighting.star.colour`, `.energy`, `.height` | V7: the star light: colour, strength, and height (0 = skimming the plane, strong side light; 1 = straight down, flat). It comes from the system's star towards the player. A system's `lighting.star` overrides any of them | `"#ffc890"`, `1.2`, `0.3` |
 | `camera.zoom` | Camera zoom; above 1 zooms in (data: `0.75` for the 1:1 ship art) | `1.0` |
 | `camera.smoothing_speed` | How fast the camera catches up; `0` locks it to the ship | `0` |
 | `local_space.chunk_size` | Side of one local-space chunk in px | `1024` |
@@ -225,6 +228,7 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `local_space` | `[{"scenery": <scenery ID>, "density": d, "region": {…}}]` | `[]` |
 | `edge_radius` | Traffic arrives and leaves this far from the system centre, px (A6) | `6000` |
 | `respawn_delay` | Seconds before replacing a ship that left or died `[min, max]` | `[5, 15]` |
+| `lighting` | V7: `{"ambient": "#rrggbb", "star": {"colour": "#rrggbb", "energy": n, "height": 0–1}}`, any key optional; overrides `game.json` `lighting` for this system | `{}` |
 | `jump_radius` | TR2: hyperlane jumps need the ship at least this far from the centre, px; TR4: arrivals appear at this distance | `8000` |
 
 **`objects[]`:** `id` (**required**, unique in the system), `type` (`star`, `planet`, `station`, `gate`; **required**; at most one gate per system), `name` (**required**), `position` (**required**), `radius` (`100`), `colour` (`"#7f99cc"`), `sprite` (`""`), `description` (`""`), `landable` (`false`), `government` (government ID, `""`), `min_record` (`-1000`), `sells_fuel` (TR8, landable objects only; `true`), `refuel_price` (TR8: credits per unit of fuel; `2`), `landing_days` (TM2: days that pass on landing; `1`), `takeoff_days` (TM2: days that pass on taking off; `0`). Landed activities (trade, missions) will carry their own day costs when they exist. Gates only (TR5, TR6): L docks with a gate (same distance and speed rules as landing) and lists the gates it links to; `min_record` refuses docking below it, `fee` (credits charged to leave through this gate; `0`) and `open_condition` (`""` always open, `"flag_name"` open while that flag is set, `"!flag_name"` open while it isn't; `""`). Gates don't use `landable`, `sells_fuel` or the day fields.

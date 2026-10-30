@@ -37,6 +37,10 @@ static func fire(parent: Node, p_weapon: WeaponDef, at: Vector2, direction: Vect
 	return shot
 
 
+func _init() -> void:
+	material = LitSprite.unshaded_material()  # V6: full brightness, not lit or darkened
+
+
 func _physics_process(delta: float) -> void:
 	if weapon.kind == "guided":
 		if is_instance_valid(target) and not target.health.is_destroyed:

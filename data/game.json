@@ -43,6 +43,11 @@
   },
   "combat": {"friendly_fire_pct": 100, "disabled_drag": 30},
   "camera": {"zoom": 0.75, "smoothing_speed": 0},
+  "lighting": {
+    "enabled": true,
+    "ambient": "#4b5161",
+    "star": {"colour": "#ffc890", "energy": 1.2, "height": 0.3}
+  },
   "ai": {
     "thrust_angle": 35,
     "standoff_fraction": 0.4,

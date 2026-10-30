@@ -11,6 +11,10 @@ var _strength: float = 0.0
 @onready var ship: Ship = owner_ship()
 
 
+func _init() -> void:
+	material = LitSprite.unshaded_material()  # V6: full brightness, not lit or darkened
+
+
 func owner_ship() -> Ship:
 	var node: Node = get_parent()
 	while node != null and not node is Ship:

@@ -17,6 +17,7 @@ var system: SystemDef = null
 @onready var traffic: TrafficSpawner = $TrafficSpawner
 var actions: PlayerActions
 var hyperspace: Hyperspace
+var lighting: SystemLighting
 
 
 func _ready() -> void:
@@ -37,6 +38,11 @@ func _ready() -> void:
 	hyperspace.scene = self
 	add_child(hyperspace)
 	camera.configure(settings["camera"])
+	lighting = SystemLighting.new()
+	lighting.name = "Lighting"
+	world.add_child(lighting)
+	world.move_child(lighting, 0)
+	lighting.enabled = bool(settings["lighting"]["enabled"])
 	load_system(GameState.travel.current_system)
 
 	var player: Ship = spawn_ship(settings["player_ship"], Vector2.ZERO)
@@ -75,6 +81,7 @@ func load_system(system_id: String) -> bool:
 	system = next
 	backdrop.configure(system.backdrop)
 	system_objects.configure(system)
+	lighting.configure(system)
 	local_space.configure(system, float(DataRegistry.settings["local_space"]["chunk_size"]))
 	traffic.configure(system, new_system)
 	return true

@@ -8,6 +8,10 @@ var weapon: WeaponDef
 var _length: float = 0.0
 
 
+func _init() -> void:
+	material = LitSprite.unshaded_material()  # V6: full brightness, not lit or darkened
+
+
 func _ready() -> void:
 	visible = false
 

@@ -22,6 +22,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"mounts": {"arc": {"pivot": 30.0, "turret": 360.0}, "traverse": {"pivot": 180.0, "turret": 360.0},
 		"fire_tolerance": 5.0, "turret_sprites": {"small": "", "medium": "", "large": "", "point_defence": ""}},
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
+	"lighting": {"enabled": true, "ambient": "#4b5161", "star": {"colour": "#ffc890", "energy": 1.2, "height": 0.3}},
 	"player": {"credits": 0, "record": 0.0, "escape_pod": true, "insured": true, "uninsured_ship": "shuttle",
 		"rescue_fee_pct": 10.0, "rescue_days": [2.0, 5.0], "pod_speed": 600.0, "pod_time": 3.0},
 	"landing": {"max_speed": 60.0, "radius_fraction": 0.6, "repair_cost_per_point": 0.0},
@@ -180,6 +181,14 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		var problem: String = ShipDef.sprite_problem(sprites.string(key))
 		if problem != "":
 			sprites.error(key, problem)
+	var lighting: DefReader = reader.object("lighting")
+	lighting.boolean("enabled", true)
+	lighting.colour("ambient")
+	var star_light: DefReader = lighting.object("star")
+	star_light.colour("colour")
+	star_light.number("energy", 0.0, false, 0.0)
+	if star_light.number("height", 0.0, false, 0.0) > 1.0:
+		star_light.error("height", "must be at most 1")
 	var glow: DefReader = reader.object("engine_glow")
 	if glow.number("idle", 0.0, false, 0.0) > 1.0:
 		glow.error("idle", "must be at most 1")

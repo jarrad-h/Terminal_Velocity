@@ -9,6 +9,10 @@ const LABEL_COLOUR := Color(0.85, 0.9, 1.0, 0.9)
 var system: SystemDef = null
 
 
+func _init() -> void:
+	material = LitSprite.unshaded_material()  # V6: full brightness, not lit or darkened
+
+
 func configure(p_system: SystemDef) -> void:
 	system = p_system
 	queue_redraw()

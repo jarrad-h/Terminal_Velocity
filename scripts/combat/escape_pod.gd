@@ -22,6 +22,10 @@ static func launch(parent: Node, at: Vector2, direction: Vector2, base_velocity:
 	return pod
 
 
+func _init() -> void:
+	material = LitSprite.unshaded_material()  # V6: full brightness, not lit or darkened
+
+
 func _physics_process(delta: float) -> void:
 	position += velocity * delta
 	_life -= delta

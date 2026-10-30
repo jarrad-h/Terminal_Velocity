@@ -325,8 +325,7 @@ func _build_visual() -> void:
 		visual.add_child(glow)
 	var sprite_path: String = SPRITE_DIR.path_join(def.sprite)
 	if def.sprite != "" and ResourceLoader.exists(sprite_path):
-		var sprite := Sprite2D.new()
-		sprite.texture = load(sprite_path)
+		var sprite: Sprite2D = LitSprite.build(sprite_path)  # V6: lit when the art has maps
 		sprite.scale = Vector2.ONE * art_scale
 		visual.add_child(sprite)
 		return
@@ -339,6 +338,7 @@ func _build_visual() -> void:
 	])
 	shape.position = def.hit_offset * art_scale
 	shape.color = placeholder_colour()
+	shape.material = LitSprite.unshaded_material()
 	visual.add_child(shape)
 
 
