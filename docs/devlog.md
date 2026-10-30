@@ -4,6 +4,21 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+### 2026-10-30 — session wrap-up (cloud session)
+Branch: main (M6 `m6-art` and M7 `m7-hud-tuning` both merged after confirmed playtests)
+Done:
+- M6 art integration: V1–V5 (SOW and pirate art, capsule hitboxes, hardpoints by size and mount, pivot and turret aiming, turret sprites, engine glow), C1/C2 rewrite, world ×2. Merged 2026-10-29.
+- M7 HUD and tuning: H1, H3 schematic target panel with shield bubble, H4 message kinds, G5 standing (pale radar pips when disabled), review tidy-ups, raider beam on a pivot mount, `tools/balance.py`, balance pass (fights about 13 s raider vs shuttle), A8 retuned. Merged 2026-10-29.
+Stopped at: nothing in progress. Every milestone in docs/spec.md is ticked.
+Next step: Jarrad picks what follows the prototype; start with the `design` skill (new scope goes into the spec and decisions before any code).
+Open questions:
+- Hold-to-aim (F5) can lead for only one shot speed; this will matter once mass drivers exist.
+- The AI never finishes off disabled ships.
+- Hot reload doesn't recolour the HUD.
+- `tools/balance.py` ignores shield regen.
+- Flak is unused until point-defence (C13) hulls arrive.
+Check: GREEN
+
 ## Milestone 7: HUD and tuning pass (29 Oct 2026)
 
 Playtest confirmed by Jarrad on 29 Oct 2026. Branch `m7-hud-tuning`. Designed with Jarrad first (spec and decisions 2026-10-29); built in the cloud session (checked headless, by the scenario test, a 10-minute soak, and rendering under a virtual display).
