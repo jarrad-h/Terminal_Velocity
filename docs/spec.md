@@ -1,5 +1,7 @@
 # Terminal Velocity Prototype — Requirements & Scope
 
+**Phase 1 (the prototype), complete: Milestone 7 merged 29 Oct 2026.** Kept as the record of Phase 1 and as the home of the F, B, L, C, A, G, S, H, D and V requirements that Phase 2 builds on. Phase 2 lives in `docs/phase2-spec.md`.
+
 Source of truth for design. Edit this file (not a chat or external doc) when design changes. Requirement IDs are stable; never renumber.
 
 ## Purpose and success criteria
