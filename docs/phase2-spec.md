@@ -89,7 +89,7 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
 - OF4: Items sell back at a data-set fraction of their price; mission-granted items can be flagged unsellable.
 - OF5: Every number an outfit changes uses one modifier system, so a new outfit type is data unless it needs new behaviour.
 - OF6: The trader escape kit is the design target for a non-combat player: afterburner, hyperspace tuning, sensor range, and cargo jettison as a decoy that pirates break off to collect.
-- OF7: Hull geometry (sprite, scale, hit shape, hardpoints, engines, part sprites) lives in one manifest per hull, `hull.json`. Ship data names its hull and holds only stats and a loadout by hardpoint ID; hardpoints the loadout leaves empty are upgrade slots. A check validates every manifest and every loadout against its hull; generated spec sheets are for review only. The manifest also carries, so player-built ships stay possible later: a size class and displacement; a hit shape made of one or more primitives (capsules at any angle, circles, boxes), replacing the single along-the-hull capsule that cannot fit wide hulls; sprite layers (several sprites at offsets and depths, as turrets already are); and, for generated hulls, the list of parts each was built from. Schema 1 is what `tools/hardpoint-editor` writes today; OF7 extends it.
+- OF7: Hull geometry (sprite, scale, hit shape, hardpoints, engines, part sprites) lives in one manifest per hull, `hull.json`. Ship data names its hull and holds only stats and a loadout by hardpoint ID; hardpoints the loadout leaves empty are upgrade slots. A check validates every manifest and every loadout against its hull; generated spec sheets are for review only. The manifest also carries, so player-built ships stay possible later: a size class and displacement; a hit shape made of one or more primitives (capsules at any angle, circles, boxes), replacing the single along-the-hull capsule that cannot fit wide hulls; sprite layers (several sprites at offsets and depths, as turrets already are), each listing its albedo, normal and emission map paths alongside the sprite (V6); and, for generated hulls, the list of parts each was built from. Schema 1 is what `tools/hardpoint-editor` writes today; OF7 extends it.
 - OF8: A shipyard sets the largest hull size class it builds or sells, as well as its tech level, so small yards offer only small hulls.
 - OF9: A hull's base stats pass through the same modifier system as outfits (OF5), so a later phase can derive the base from a ship's parts without changing flight or combat code.
 
@@ -109,11 +109,20 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
 - PR3: Faction standing is the existing legal record; ranks are data granted by missions, with privileges (salary, price modifier, landing rights).
 - PR4: Achievements are data conditions over game state (for example owning a hull over a size, or reaching a point in a faction's missions), shown in the pilot screen.
 
+**Lighting and look (V, H continued; art direction "Amber Glass", see `docs/art/lighting.md`)**
+
+- V6: Hulls and turrets that have light maps are lit live: albedo and normal map as one `CanvasTexture`, emission as an additive, unshaded overlay sprite. A sprite without maps (the pirate raider for now) falls back to its baked sprite. The lit flank stays on the star side at every heading.
+- V7: The system's star is the key light: its direction comes from the star stellar's position, and its colour, energy and height come from system data with documented defaults. Each system also sets an ambient level that darkens the unlit side. The backdrop and the HUD are neither lit nor darkened.
+- V8: Shots, beams and impacts carry short-lived point lights that light nearby hulls; engine exits (from the hull's engine points) carry dim lights that follow thrust. Light colours, radii and energies are data, and a cap on simultaneous lights keeps performance unchanged.
+- V9: Planets, stations and gates are drawn from their sprites when they have one, and lit the same way (V6) when the sprite has maps; flat placeholders until the art lands.
+- H5: New screens (gate list, trade, shipyard and later) take their colours and fonts from one shared `Theme` resource, so the later Amber Glass HUD restyle is a one-place change.
+
 **Debug (D, continued)**
 
 - D11: Jump directly to any system; advance the date by N days.
 - D12: View and edit flags, ratings and records; list available missions and why others are not available.
 - D13: Inspect the persistent-entity registry and system memory; spawn or move a persistent entity.
+- D14: Lighting on and off, and live control of the star's direction and height.
 
 ## Persistence model
 
@@ -185,7 +194,7 @@ About ten systems with placeholder names, laid out so every Phase 2 rule has a p
 Eight milestones, each ending in a playtest; persistence comes before saves so the save format is designed around it, and every state added from milestone 1 must be serialisable. Branches follow `p2m<N>-<slug>`.
 
 1. ✅ (merged 2026-10-30) **Galaxy, hyperlanes and the day clock:** galaxy data, the test cluster's systems, hyperlane jumps with edge rule and countdown, arrival, fuel and refuelling, galaxy map with route plotting, day costs. Done when TR1–TR4, TR7–TR8 and TM1–TM3 work (TM3 with nothing yet to step).
-2. **Gates:** gate stellars, destination list, fee and record check, closable by flag. Done when TR5–TR6 work and the map shows gate links.
+2. **Gates and lighting:** gate stellars, destination list, fee and record check, closable by flag, gate links on the map; lit ships (V6), star and ambient light from system data (V7), weapon and engine lights (V8), lit stellars on placeholders until the art lands (V9), the shared UI theme for the gate list (H5) and the lighting debug controls (D14). Done when TR5–TR6 work, the map shows gate links, ships light correctly at every heading, shots light nearby hulls, performance is unchanged and the check is GREEN. Gate, station and planet art comes from Jarrad's parallel `art/*` session and merges when its branch passes the check (see "Art requests for milestone 2").
 3. **Persistence foundation:** entity registry, travel by the player's rules, materialise and write-back, off-screen encounters, system memory with recovery, news. Done when PS1–PS7 work with the test cluster's three persistent entities.
 4. **Pilot and saves:** pilot creation (name, ironman), save/load, autosave, versioned format. Done when SV1–SV4 work and a save made mid-route restores entities in transit.
 5. **Economy:** commodities, market tiers, price events, cargo hold, trade screen, cargo jettison. Done when EC1–EC4 work and a pure trading run across four systems turns a profit.
@@ -193,7 +202,11 @@ Eight milestones, each ending in a playtest; persistence comes before saves so t
 7. **Mission engine:** flags, the condition grammar, declarative missions, script hooks, templates, mission log, persistent mission targets and escorts. Done when MS1–MS6 work with the four templates.
 8. **Progression and the first arc:** ratings, ranks, achievements, the pilot screen, and a 5–8 mission arc. Done when PR1–PR4 work and the success criteria at the top are met in an hour-long playtest.
 
-Debug tools land with the milestone that needs them: D11 in 1, D13 in 3, D12 in 7.
+Debug tools land with the milestone that needs them: D11 in 1, D14 in 2, D13 in 3, D12 in 7.
+
+**Art requests for milestone 2** (for the parallel art session; all images follow `docs/art/lighting.md`: `<name>.png` plus `_albedo`, `_n` and `_e`, pixel-aligned, at 1:1 × `art_scale`)
+
+- *To be filled in when milestone 2's plan is agreed: sizes, the gate's jump anchor point, and any state frames.*
 
 ## Art phase (between Phase 2 and Phase 3)
 
@@ -213,6 +226,7 @@ An art phase follows Phase 2 to build an expanded asset library, so Phase 3 cont
 **Pipeline**
 
 1. Each hull ships with a manifest (`hull.json`): sprite, scale, hit shape, hardpoints (ID, size, mount, position, arc), engines and part sprites. The manifest is the single source of truth for geometry.
+1a. Every sprite ships with albedo, normal and emission maps (`<name>_albedo.png`, `<name>_n.png`, `<name>_e.png`, pixel-aligned with `<name>.png`; conventions in `docs/art/lighting.md`). Generated art gets them from the generator automatically; hand-made or AI-made art must supply them.
 2. Ship data names a hull and holds only gameplay stats and a loadout by hardpoint ID; the loader reads the geometry from the manifest, so nothing is copied by hand.
 3. Readable spec sheets and summaries are generated from the manifest for review; the game never reads them.
 4. A check script validates every manifest (schema, files exist, hardpoints inside the sprite, valid sizes and mounts) and every ship loadout against its hull.
@@ -236,6 +250,8 @@ An art phase follows Phase 2 to build an expanded asset library, so Phase 3 cont
 - Dynamic supply and demand, replacing or layering on fixed tiers.
 - Fauna, including leviathans, when fauna is introduced.
 - Contraband scanning, escorts, hailing and bribes, AI finishing off disabled ships, point defence (C13).
+- HUD restyle to Amber Glass (dark scene, translucent panels, amber accents); until then new screens use the shared `Theme` (H5).
+- Light maps for the pirate raider (its painter bakes light per plate; needs plate facings as normals and its hot parts as glow).
 
 **Carried over from the prototype devlog**
 
