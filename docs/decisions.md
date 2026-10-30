@@ -165,3 +165,8 @@ Rejected: keeping prose hardpoint documentation as the contract.
 ## 2026-10-30 — Prepare for player-built ships; art phase before Phase 3
 Every ship is saved as a design plus instance state (SV1), and art is kept as individual part assets with their own manifests (category, attachment points, paint mask, cosmetic flag), so a late-game ship designer and player shipyards stay possible without rework. An art phase between Phase 2 and Phase 3 builds the expanded asset library.
 Why: Jarrad wants player stations and ship manufacturing late game; these choices are cheap now and expensive to retrofit.
+
+## 2026-10-30 — Art direction "Amber Glass": normal-mapped sprites, lit live
+Ships stay painted pixel sprites at 1:1, but every sprite and part also exports an albedo, a normal map and an emission map from the same generator scripts, so the game lights them live: the system's star is the key light, weapon fire and engines are point lights, glass and lamps glow on their own. The UI direction is Amber Glass (dark scene, translucent HUD panels floating over it, amber accents). Baked sprites stay in the repo as the unlit fallback until the lighting is wired in.
+Why: with light baked into the sprite, the lit side turns with the ship; with normal maps the lit flank stays on the star side at every heading, and the parts kit keeps one image set per part. Compared on the concept canvas against pre-rendered 3D frames and real-time 3D.
+Rejected for now: pre-rendered rotation frames (light fixed to the screen, a re-render per variant); real-time 3D (largest change to the rendering layer; still the natural upgrade path later).

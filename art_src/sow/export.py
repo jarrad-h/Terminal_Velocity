@@ -86,8 +86,18 @@ for _code, _label, _fn in kit6.STYLES:
     if _code not in ('vls_round', 'vls_strip'): continue
     PARTS['msl_' + _code] = ((lambda f: (lambda q: (f(q, 4), kit6.fit(q))))(_fn), 24)
 
+import lightmaps
+
 def render(fn, h):
     p = Paint(80, h); p.mounts = []; p.mounts_fixed = []; fn(p); im = reduce(p); return im.crop(im.getbbox())
+
+def render_maps(fn, h, bbox, paint=None):
+    """Albedo, normal and emission maps for a sprite, cropped to the baked sprite's bbox so they line up."""
+    with lightmaps.active():
+        p = paint(h) if paint else Paint(80, h)
+        if not paint: p.mounts = []; p.mounts_fixed = []
+        fn(p)
+    return lightmaps.maps(p, bbox)
 
 # ---- armed hulls: hull sprite without turrets + mount positions; turret sprites centred on their pivot ----
 import json
@@ -102,13 +112,19 @@ ARMED = {k: v for k, v in ARMED.items() if k not in kit7.SHIPS}
 ARMED.update(kit7.SHIPS)      # pass 3: P-B (VLS-4), K-B, R-A, R-B (tapers, necks, hugging nacelles)
 build = kit7.build
 
-def turret_part(kind, ring_only=False):
+def turret_part(kind, ring_only=False, light_maps=False):
     half = 8 if kind == 'ml' else math.ceil(TUR[kind]['r'] * 0.4 + TUR[kind]['ln'] + 1.5)
-    p = Paint(2 * half, 2 * half); p.mounts = []
-    if ring_only: ring(p, half, half, kind)
-    elif kind == 'ml': kit6.launcher_turret(p, half, half)
-    else: turret_sprite(p, half, half, kind)
-    return reduce(p)          # not cropped: the image centre is the pivot
+    def paint():
+        p = Paint(2 * half, 2 * half); p.mounts = []
+        if ring_only: ring(p, half, half, kind)
+        elif kind == 'ml': kit6.launcher_turret(p, half, half)
+        else: turret_sprite(p, half, half, kind)
+        return p
+    if light_maps:
+        with lightmaps.active(): p = paint()
+        side = int(round(2 * half * K))
+        return lightmaps.maps(p, (0, 0, side, side))  # full canvas, like the sprite: centre = pivot
+    return reduce(paint())    # not cropped: the image centre is the pivot
 
 
 import math, json
@@ -306,12 +322,17 @@ if __name__ == '__main__':
     os.makedirs(os.path.join(OUT, 'parts'), exist_ok=True)
     for name, (fn, h) in PARTS.items():
         if only and name not in only: continue
-        im = render(fn, h); im.save(os.path.join(OUT, 'parts', f'{name}.png')); print(f'parts/{name}.png', im.size)
+        p = Paint(80, h); p.mounts = []; p.mounts_fixed = []; fn(p); im = reduce(p); bb = im.getbbox(); im = im.crop(bb)
+        im.save(os.path.join(OUT, 'parts', f'{name}.png'))
+        lightmaps.save(render_maps(fn, h, bb), os.path.join(OUT, 'parts'), name)
+        print(f'parts/{name}.png + light maps', im.size)
     for kind, code in (('t1', 'tur1'), ('t2', 'tur2'), ('pd', 'pd1')):
         if only and code not in only: continue
         turret_part(kind).save(os.path.join(OUT, 'parts', f'{code}.png'))
         turret_part(kind, True).save(os.path.join(OUT, 'parts', f'{code}_ring.png'))
-        print(f'parts/{code}.png + ring')
+        lightmaps.save(turret_part(kind, light_maps=True), os.path.join(OUT, 'parts'), code)
+        lightmaps.save(turret_part(kind, True, light_maps=True), os.path.join(OUT, 'parts'), f'{code}_ring')
+        print(f'parts/{code}.png + ring + light maps')
 
     ALL = dict(SHIPS); ALL.update(ARMED)
     records = {}
@@ -320,6 +341,7 @@ if __name__ == '__main__':
         if only and name not in only: continue
         p = new_paint(h); fn(p); im = reduce(p); bb = im.getbbox(); im = im.crop(bb)
         im.save(os.path.join(OUT, 'ships', f'{name}.png'))
+        lightmaps.save(render_maps(fn, h, bb, new_paint), os.path.join(OUT, 'ships'), name)
         hps, eng = hardpoints(p, bb, im.width, im.height)
         if p.mounts:                                   # preview with turrets fitted
             kit7.fit(p); pv = reduce(p).crop(bb); pv.save(os.path.join(OUT, 'preview', f'{name}.png'))

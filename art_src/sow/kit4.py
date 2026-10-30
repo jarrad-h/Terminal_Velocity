@@ -16,7 +16,7 @@ def fuel(p, y0, L=16, x0=HX0, x1=HX1):
     L_ = np.array([-0.45, -0.45, 0.77]); L_ /= np.linalg.norm(L_)
     lam = np.clip(nx * L_[0] + ny * L_[1] + nz * L_[2], 0, 1)
     f = 0.5 + 0.62 * lam + 0.35 * np.clip(lam - 0.9, 0, 1) * 10
-    p.fill(d, np.clip(np.asarray((206, 208, 212), np.float32) * f[..., None], 0, 255))
+    p.fill(d, np.clip(np.asarray((206, 208, 212), np.float32) * p.lit(f, nx * 0.9, ny * 0.9, flat=0.95)[..., None], 0, 255))
     # equator belt and shading ring
     belt = d * (np.abs(np.hypot(p.X - cx, p.Y - cy) - r * 0.97) < 0.35)
     p.fill(belt, (70, 76, 90), 0.8, solid=False)
