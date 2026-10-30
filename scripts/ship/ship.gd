@@ -18,6 +18,12 @@ var hit_radius: float = 0.0
 ## V1: game.json art_scale, applied to sprite, hitbox, hardpoints and engines.
 var art_scale: float = 1.0
 var controller: Node = null
+## TR2: while set, the jump sequence flies the ship instead of its controller.
+var autopilot: JumpSequence = null
+## This physics frame's input, worked out once: the body, weapons and engine
+## glow all ask for it, and the autopilot must only step once per tick.
+var _input: FlightInput = FlightInput.new()
+var _input_frame: int = -1
 ## Government ID ("" = none). Set at spawn.
 var government: String = ""
 ## AI role from its pool ("trader", "warship", "pirate"); "" for the player and idle ships.
@@ -97,11 +103,30 @@ func set_controller(new_controller: Node) -> void:
 	add_child(controller)
 
 
-## Controller intent for this frame; nothing while disabled (C7: drifts).
+## Controller intent for this physics frame; nothing while disabled (C7:
+## drifts). Computed once per physics tick and cached, so callers outside
+## physics (engine glow) see the latest tick's input.
 func get_flight_input() -> FlightInput:
-	if controller == null or not can_act():
+	var frame: int = Engine.get_physics_frames()
+	if frame != _input_frame:
+		_input_frame = frame
+		_input = _compute_flight_input()
+	return _input
+
+
+func _compute_flight_input() -> FlightInput:
+	if not can_act():
+		return FlightInput.new()
+	if autopilot != null:
+		return autopilot.step(body.state, body.stats, get_physics_process_delta_time())
+	if controller == null:
 		return FlightInput.new()
 	return controller.get_flight_input()
+
+
+## Flight stats for this frame: the hull's, or the jump sequence's overdrive.
+func flight_stats() -> FlightStats:
+	return autopilot.flight_stats(body.stats) if autopilot != null else body.stats
 
 
 func can_act() -> bool:

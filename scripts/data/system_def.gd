@@ -13,6 +13,9 @@ var local_space: Array[LocalSpaceEntry] = []
 var edge_radius: float
 ## A6: seconds before replacing a ship that left or died.
 var respawn_delay: Vector2
+## TR2: a hyperlane jump needs the ship at least this far from the centre;
+## TR4: arrivals appear at this distance, px.
+var jump_radius: float
 
 
 static func parse(r: DefReader) -> SystemDef:
@@ -28,7 +31,20 @@ static func parse(r: DefReader) -> SystemDef:
 		d.local_space.append(LocalSpaceEntry.parse(e))
 	d.edge_radius = r.number("edge_radius", 6000.0, false, 100.0)
 	d.respawn_delay = r.range2("respawn_delay", Vector2(5.0, 15.0), 0.0)
+	d.jump_radius = r.number("jump_radius", 8000.0, false, 100.0)
 	return d
+
+
+## TR7: the government shown for the system on the map: the first landable
+## object's, else the first object's that has one, else "".
+func government() -> String:
+	for o: SystemObjectDef in objects:
+		if o.landable and o.government != "":
+			return o.government
+	for o: SystemObjectDef in objects:
+		if o.government != "":
+			return o.government
+	return ""
 
 
 func validate(_defs: Dictionary, errors: Array[String]) -> void:

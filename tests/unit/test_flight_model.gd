@@ -92,3 +92,14 @@ func test_flight_stats_come_from_ship_json() -> void:
 	for i: int in 600:
 		s = FlightModel.step(s, FlightInput.new(true), stats, DT)
 	assert_near(s.velocity.length(), float(raw["top_speed"]), "speed caps at the JSON top_speed")
+
+
+func test_disabled_ship_coasts_to_a_stop() -> void:
+	var v := Vector2(300, 400)  # 500 px/s
+	var after: Vector2 = FlightModel.coast(v, 30.0, 1.0)
+	assert_near(after.length(), 470.0, "C7: loses drag px/s each second")
+	assert_vec_near(after.normalized(), v.normalized(), "keeps its direction")
+	for i: int in 20:
+		after = FlightModel.coast(after, 30.0, 1.0)
+	assert_vec_near(after, Vector2.ZERO, "comes to rest, never reverses")
+	assert_vec_near(FlightModel.coast(v, 0.0, 1.0), v, "0 drag drifts forever")

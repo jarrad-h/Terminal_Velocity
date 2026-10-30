@@ -15,6 +15,12 @@ var description: String
 var landable: bool
 var government: String
 var min_record: float
+## TR8: landed ships can buy fuel here, at this many credits per unit.
+var sells_fuel: bool
+var refuel_price: float
+## TM2: days that pass on landing and on taking off.
+var landing_days: int
+var takeoff_days: int
 
 
 static func parse(r: DefReader) -> SystemObjectDef:
@@ -30,4 +36,8 @@ static func parse(r: DefReader) -> SystemObjectDef:
 	o.landable = r.boolean("landable", false)
 	o.government = r.ref("government", "governments")
 	o.min_record = r.number("min_record", -1000.0)
+	o.sells_fuel = r.boolean("sells_fuel", true)
+	o.refuel_price = r.number("refuel_price", 2.0, false, 0.0)
+	o.landing_days = r.integer("landing_days", 1, false, 0)
+	o.takeoff_days = r.integer("takeoff_days", 0, false, 0)
 	return o

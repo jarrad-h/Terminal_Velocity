@@ -1,0 +1,63 @@
+{
+  "id": "drift",
+  "name": "Drift",
+  "seed": 3005,
+  "edge_radius": 10000,
+  "jump_radius": 6000,
+  "objects": [
+    {
+      "id": "drift",
+      "type": "star",
+      "name": "Drift",
+      "position": [
+        0,
+        0
+      ],
+      "radius": 900,
+      "colour": "#ff9a70"
+    }
+  ],
+  "traffic": [
+    {
+      "pool": "pirate_raid",
+      "count": 1
+    }
+  ],
+  "backdrop": {
+    "parallax": 0.02,
+    "base_colour": "#04050a",
+    "stars": {
+      "density": 0.04,
+      "brightness": 0.6,
+      "size": 1.2,
+      "spacing": 16
+    },
+    "nebula": {
+      "coverage": 0.15,
+      "intensity": 0.3,
+      "softness": 0.4,
+      "gradient": [
+        "#040406",
+        "#140c10",
+        "#301818"
+      ]
+    },
+    "noise": {
+      "seed": 43,
+      "frequency": 0.005,
+      "octaves": 5,
+      "texture_size": 1024,
+      "scale": 2
+    }
+  },
+  "local_space": [
+    {
+      "scenery": "dust",
+      "density": 30
+    },
+    {
+      "scenery": "small_debris",
+      "density": 1
+    }
+  ]
+}

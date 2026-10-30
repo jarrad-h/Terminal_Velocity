@@ -1,0 +1,88 @@
+{
+  "id": "redhaven",
+  "name": "Redhaven",
+  "seed": 3010,
+  "edge_radius": 12000,
+  "jump_radius": 10000,
+  "objects": [
+    {
+      "id": "redhaven",
+      "type": "star",
+      "name": "Red Eye",
+      "position": [
+        0,
+        0
+      ],
+      "radius": 1500,
+      "colour": "#ff5050"
+    },
+    {
+      "id": "den",
+      "type": "planet",
+      "name": "The Den",
+      "position": [
+        -5600,
+        -4400
+      ],
+      "radius": 420,
+      "colour": "#804040",
+      "description": "A pirate port carved into a dead moon. Strangers are not welcome.",
+      "landable": true,
+      "government": "pirates",
+      "min_record": 10,
+      "refuel_price": 4
+    }
+  ],
+  "traffic": [
+    {
+      "pool": "pirate_raid",
+      "count": 3
+    }
+  ],
+  "backdrop": {
+    "parallax": 0.02,
+    "base_colour": "#04050a",
+    "stars": {
+      "density": 0.05,
+      "brightness": 0.8,
+      "size": 1.2,
+      "spacing": 16
+    },
+    "nebula": {
+      "coverage": 0.6,
+      "intensity": 0.7,
+      "softness": 0.4,
+      "gradient": [
+        "#080204",
+        "#300810",
+        "#802030"
+      ]
+    },
+    "noise": {
+      "seed": 48,
+      "frequency": 0.005,
+      "octaves": 5,
+      "texture_size": 1024,
+      "scale": 2
+    }
+  },
+  "local_space": [
+    {
+      "scenery": "dust",
+      "density": 30
+    },
+    {
+      "scenery": "derelict_hull",
+      "density": 2,
+      "region": {
+        "shape": "ring",
+        "centre": [
+          0,
+          0
+        ],
+        "inner_radius": 2400,
+        "radius": 6400
+      }
+    }
+  ]
+}

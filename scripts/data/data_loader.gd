@@ -6,15 +6,19 @@ extends RefCounted
 ## collected as errors naming the file and field, never thrown.
 
 ## Definition type folders, in load order.
-const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery", "personalities"]
+const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery", "personalities", "galaxy"]
 
 const SETTINGS_FILE: String = "game.json"
 
 ## Global settings defaults; documented in data/README.md.
 const SETTINGS_DEFAULTS: Dictionary = {
 	"player_ship": "shuttle",
-	"system": "test_nebula",
+	"galaxy": "test_cluster",
 	"art_scale": 1.0,
+	"calendar": {"start_date": "3200-01-01"},
+	"hyperspace": {"stop_speed": 2.0, "align_tolerance": 1.0, "thrust_angle": 20.0,
+		"overdrive_accel_factor": 6.0, "engage_speed_factor": 4.0, "arrival_speed_fraction": 0.5,
+		"arrival_grace_seconds": 2.0},
 	"mounts": {"arc": {"pivot": 30.0, "turret": 360.0}, "traverse": {"pivot": 180.0, "turret": 360.0},
 		"fire_tolerance": 5.0, "turret_sprites": {"small": "", "medium": "", "large": "", "point_defence": ""}},
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
@@ -22,7 +26,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"rescue_fee_pct": 10.0, "rescue_days": [2.0, 5.0], "pod_speed": 600.0, "pod_time": 3.0},
 	"landing": {"max_speed": 60.0, "radius_fraction": 0.6, "repair_cost_per_point": 0.0},
 	"boarding": {"range": 60.0, "max_speed": 40.0, "time": 2.0, "assist_armor_pct": 50.0},
-	"combat": {"friendly_fire_pct": 100.0},
+	"combat": {"friendly_fire_pct": 100.0, "disabled_drag": 30.0},
 	"local_space": {"chunk_size": 1024.0},
 	"ai": {"thrust_angle": 35.0,
 		"standoff_fraction": 0.4, "think_interval": 0.25, "disengage_factor": 1.5,
@@ -34,6 +38,8 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
 		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
 	"engine_glow": {"idle": 0.25, "response": 6.0},
+	"galaxy_map": {"colours": {"background": "#050810", "lane": "#3a5070", "route": "#ffee40",
+		"current": "#ffffff", "selected": "#ffee40", "unexplored": "#6a7080", "label": "#d8e0f0", "jump_radius": "#5a7aa0"}},
 	"messages": {"show_seconds": 4.0, "fade_seconds": 1.0, "max_lines": 3, "colours": {
 		"info": "#d8e0f0", "combat": "#ffb060", "standing": "#ff7a7a", "credits": "#ffe070"}},
 	"hud": {"colours": {"shield": "#59a0ff", "armor": "#e69a4d", "schematic_full": "#40e070",
@@ -115,6 +121,8 @@ static func _parse(type: String, reader: DefReader) -> Def:
 			return SceneryDef.parse(reader)
 		"personalities":
 			return PersonalityDef.parse(reader)
+		"galaxy":
+			return GalaxyDef.parse(reader)
 	assert(false, "unknown definition type " + type)
 	return null
 
@@ -123,7 +131,19 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var errors: Array[String] = []
 	var reader := DefReader.new(data_set.settings, SETTINGS_FILE, errors)
 	reader.ref("player_ship", "ships")
-	reader.ref("system", "systems")
+	reader.ref("galaxy", "galaxy")
+	var calendar: DefReader = reader.object("calendar")
+	if not Calendar.is_valid_date(calendar.string("start_date")):
+		calendar.error("start_date", "expected a date like \"3200-01-01\"")
+	var hyperspace: DefReader = reader.object("hyperspace")
+	for key: String in SETTINGS_DEFAULTS["hyperspace"]:
+		hyperspace.number(key, 0.0, false, 0.0)
+	if hyperspace.number("arrival_speed_fraction", 0.0, false, 0.0) > 1.0:
+		hyperspace.error("arrival_speed_fraction", "must be at most 1")
+	if hyperspace.has("overdrive_accel_factor") and float(hyperspace.data["overdrive_accel_factor"]) <= 0.0:
+		hyperspace.error("overdrive_accel_factor", "must be more than 0 (or the ship never reaches hyperdrive speed)")
+	if hyperspace.has("engage_speed_factor") and float(hyperspace.data["engage_speed_factor"]) <= 1.0:
+		hyperspace.error("engage_speed_factor", "must be more than 1 (the hyperdrive engages beyond top speed)")
 	if reader.number("art_scale", 1.0, false, 0.0) <= 0.0:
 		reader.error("art_scale", "must be more than 0")
 	var mounts: DefReader = reader.object("mounts")
@@ -163,7 +183,9 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		boarding.error("time", "must be more than 0")
 	if boarding.has("assist_armor_pct") and float(boarding.data["assist_armor_pct"]) > 100.0:
 		boarding.error("assist_armor_pct", "must be at most 100")
-	reader.object("combat").number("friendly_fire_pct", 100.0, false, 0.0)
+	var combat: DefReader = reader.object("combat")
+	combat.number("friendly_fire_pct", 100.0, false, 0.0)
+	combat.number("disabled_drag", 0.0, false, 0.0)
 	var ai: DefReader = reader.object("ai")
 	for key: String in SETTINGS_DEFAULTS["ai"]:
 		if SETTINGS_DEFAULTS["ai"][key] is Array:
@@ -186,6 +208,9 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var message_colours: DefReader = messages.object("colours")
 	for key: String in SETTINGS_DEFAULTS["messages"]["colours"]:
 		message_colours.colour(key)
+	var map_colours: DefReader = reader.object("galaxy_map").object("colours")
+	for key: String in SETTINGS_DEFAULTS["galaxy_map"]["colours"]:
+		map_colours.colour(key)
 	var hud_colours: DefReader = reader.object("hud").object("colours")
 	for key: String in SETTINGS_DEFAULTS["hud"]["colours"]:
 		hud_colours.colour(key)
@@ -233,4 +258,4 @@ static func _merged(base: Dictionary, over: Dictionary) -> Dictionary:
 static func _singular(type: String) -> String:
 	return {"ships": "ship", "weapons": "weapon", "governments": "government",
 		"ai_pools": "AI pool", "systems": "system", "scenery": "scenery",
-		"personalities": "personality"}[type]
+		"personalities": "personality", "galaxy": "galaxy"}[type]

@@ -147,9 +147,16 @@ func _build() -> void:
 	box.add_child(system_row)
 	_system_select = _make_select()
 	system_row.add_child(_system_select)
-	system_row.add_child(_make_button("Switch system", func() -> void:
+	system_row.add_child(_make_button("Go to system", func() -> void:
 		DebugCommands.switch_system(_system_select.get_item_text(_system_select.selected))
 		_fill_selects()))
+	system_row.add_child(_make_button("Reveal", func() -> void:
+		DebugCommands.reveal_system(_system_select.get_item_text(_system_select.selected))))
+	system_row.add_child(_make_button("Refuel", DebugCommands.refuel))
+	var days_row := HBoxContainer.new()
+	box.add_child(days_row)
+	for days: int in [1, 7, 30]:
+		days_row.add_child(_make_button("+%d day%s" % [days, "" if days == 1 else "s"], func() -> void: DebugCommands.advance_days(days)))
 	_fill_selects()
 
 	box.add_child(HSeparator.new())
@@ -275,7 +282,7 @@ func _on_panel_toggled(panel_visible: bool) -> void:
 func _fill_selects() -> void:
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
 	_fill(_ship_select, DataRegistry.ids("ships"), player.def.id if player != null else "")
-	_fill(_system_select, DataRegistry.ids("systems"), DebugCommands.current_system_id())
+	_fill(_system_select, DataRegistry.galaxy().system_ids, DebugCommands.current_system_id())
 	var governments: Array[String] = ["(no government)"]
 	governments.append_array(DataRegistry.ids("governments"))
 	var current_pool: String = "" if _pool_select.selected < 0 else _pool_select.get_item_text(_pool_select.selected)

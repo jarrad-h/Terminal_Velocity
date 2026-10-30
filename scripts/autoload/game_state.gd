@@ -1,6 +1,7 @@
 extends Node
-## Player state that survives scene changes: credits (H1) and the legal record
-## with each government (G2–G3).
+## Player state that survives scene changes: credits (H1), the legal record
+## with each government (G2–G3), the date (TM1) and travel (TR1, TR7, TR8).
+## Everything here is plain values with to_dict / from_dict for saves (SV1).
 
 signal record_changed(government: String, record: float)
 signal credits_changed(credits: int)
@@ -8,14 +9,46 @@ signal credits_changed(credits: int)
 ## "combat", "standing", "credits"; game.json messages.colours).
 signal message_posted(text: String, kind: String)
 
+## TM3: one galaxy step per day passed (persistent entities, system memory,
+## price events and deadlines connect here in later milestones).
+signal day_passed(day: int)
+
 var credits: int = 0
 var _records: Dictionary = {}
+var clock := DayClock.new()
+var travel := TravelState.new()
 
 
 func _ready() -> void:
+	clock.day_passed.connect(func(day: int) -> void: day_passed.emit(day))
 	if DataRegistry.load_errors.is_empty():
-		var player: Dictionary = DataRegistry.settings["player"]
-		credits = int(player["credits"])
+		_start_new()
+
+
+func _start_new() -> void:
+	credits = int(DataRegistry.settings["player"]["credits"])
+	clock.day = 0
+	travel = TravelState.new()
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	travel.current_system = galaxy.start_system
+	travel.mark_explored(galaxy.start_system)
+	var ship: ShipDef = DataRegistry.get_ship(DataRegistry.settings["player_ship"])
+	travel.fuel = ship.fuel
+
+
+## TM2: actions advance the date; each day steps the galaxy in order (TM3).
+func advance_days(days: int) -> void:
+	clock.advance(days)
+
+
+## TM1: "14 Mar 3200".
+func date_text() -> String:
+	return Calendar.date_text(DataRegistry.settings["calendar"]["start_date"], clock.day)
+
+
+## TR8: fuel never goes above the ship's capacity or below 0.
+func set_fuel(value: float, capacity: float) -> void:
+	travel.fuel = clampf(value, 0.0, capacity)
 
 
 func get_record(government: String) -> float:
@@ -63,7 +96,20 @@ func add_credits(amount: int) -> void:
 ## Fresh start (restart after "lost with all hands").
 func reset() -> void:
 	_records.clear()
-	credits = int(DataRegistry.settings["player"]["credits"])
+	_start_new()
+	credits_changed.emit(credits)
+
+
+## SV1: everything above as plain values (the saves milestone stores this).
+func to_dict() -> Dictionary:
+	return {"credits": credits, "records": _records.duplicate(), "day": clock.day, "travel": travel.to_dict()}
+
+
+func from_dict(data: Dictionary) -> void:
+	credits = int(data.get("credits", 0))
+	_records = (data.get("records", {}) as Dictionary).duplicate()
+	clock.day = int(data.get("day", 0))
+	travel = TravelState.from_dict(data.get("travel", {}))
 	credits_changed.emit(credits)
 
 

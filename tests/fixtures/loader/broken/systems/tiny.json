@@ -1,1 +1,1 @@
-{"name": "Tiny", "edge_radius": 5, "respawn_delay": [10, 2]}
+{"name": "Tiny", "edge_radius": 5, "jump_radius": 5, "respawn_delay": [10, 2]}

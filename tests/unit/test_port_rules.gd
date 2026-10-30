@@ -67,3 +67,15 @@ func test_repair_cost() -> void:
 	assert_true(PortRules.repair_cost(150.0, 0.0) == 0, "free by default (S3)")
 	assert_true(PortRules.repair_cost(150.0, 2.0) == 300, "per point")
 	assert_true(PortRules.repair_cost(-5.0, 2.0) == 0, "nothing missing")
+
+
+func test_refuel_buys_what_you_can_afford() -> void:
+	var full: Dictionary = PortRules.refuel(100.0, 300.0, 2.0, 1000)
+	assert_near(full["units"], 200.0, "TR8: fills the tank")
+	assert_true(full["cost"] == 400, "at the price per unit")
+	var part: Dictionary = PortRules.refuel(100.0, 300.0, 2.0, 151)
+	assert_near(part["units"], 75.0, "as much as the credits pay for")
+	assert_true(part["cost"] == 150, "never more than you have")
+	assert_near(PortRules.refuel(300.0, 300.0, 2.0, 1000)["units"], 0.0, "already full")
+	assert_true(PortRules.refuel(0.0, 300.0, 0.0, 0)["cost"] == 0, "free fuel")
+	assert_near(PortRules.refuel(0.0, 300.0, 2.0, 0)["units"], 0.0, "no credits, no fuel")

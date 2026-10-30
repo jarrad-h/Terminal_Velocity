@@ -4,6 +4,98 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Phase 2 Milestone 1: Galaxy, hyperlanes and the day clock (30 Oct 2026)
+
+Playtest confirmed by Jarrad on 30 Oct 2026; merged to `main`. Branch `p2m1-galaxy-hyperlanes`, built in a cloud session (Godot 4.7.2 headless; checked by unit tests, the scenario test, and screenshots rendered under a virtual display). Design agreed with Jarrad first: see `docs/decisions.md` "P2M1 scope" and the updated TR2, TR4, TR7, TR8 and TM2.
+
+### Built
+
+- **TR1 galaxy:** new `galaxy` data type (`data/galaxy/test_cluster.json`): systems with map positions and a starting map state, two-way hyperlanes, a start system. `game.json` `galaxy` replaces `system`.
+- **Test cluster (10 systems):**
+  - Lawful core loop: Test Nebula (start), Test Graveyard, Lumen, Aster.
+  - Chokepoint: Aster → Drift (empty transit) → Brink.
+  - Frontier: Brink, Solace, Ember (independent traders).
+  - Pirate haven: Redhaven, reached via Ember, or via Hollow, an empty transit system that starts **hidden**.
+  - Every system with a planet sells fuel; both transit systems are one jump from fuel.
+- **TR2 jump sequence:**
+  - J with a destination checks the jump radius and fuel, then locks the controls.
+  - The ship flies the jump itself with its own turn rate and thrust (`JumpSequence`): stop, turn to the destination's map bearing, countdown, then overdrive past the speed cap until the hyperdrive speed.
+  - J or firing cancels; so does being disabled. Hits don't cancel.
+  - Ship data: `jump_countdown`. `game.json` `hyperspace`: stop speed, align tolerance, thrust angle, overdrive ×6 acceleration, engage at ×4 top speed.
+- **TR4 arrival:** at the destination's `jump_radius`, on the side facing the origin, moving inward at 0.5 × top speed, with a flash. Every arrival is a fresh visit until persistence (P2M3).
+- **TR7 galaxy map (M, pauses):**
+  - Shows systems and lanes. Explored systems are drawn in their government's colour; unexplored ones are labelled "Unexplored"; hidden ones and their lanes aren't drawn or routable.
+  - Shows your system and the plotted route with its jumps, days and fuel, plus a warning when the fuel won't cover the route.
+  - Click a system to plot the fewest-days route. Each arrival selects the next leg.
+  - Side panel: a stylised system view drawn from the system data (star, planets, stations, landable rings, the dashed jump radius), for explored systems only.
+- **TR8 fuel:**
+  - Ships have `fuel` and `jump_fuel`: flat per jump for now, with the rule in one function (`Hyperlanes.jump_fuel`).
+  - Refuel on the landed screen buys as much as you can afford, at the port's `refuel_price`.
+  - Starting credits are 1000, so the first refuels are possible.
+- **TM1–TM3 day clock:**
+  - The date comes from a day count from `calendar.start_date` (3200-01-01), shown "3 Jan 3200" on the HUD and the landed screen.
+  - Days pass on jumps (lane length ÷ ship `jump_speed`, rounded up, at least 1), on landing (`landing_days` 1), on take-off (`takeoff_days` 0) and for days adrift after an escape-pod rescue.
+  - `DayClock` steps one day at a time and `GameState.day_passed` fires for each day. Nothing listens yet (TM3).
+- **HUD:** date, fuel, the destination ("Jump to Aster +1 more (J)") and the jump status ("Hyperspace in 2.7").
+- **D11 debug:**
+  - console: `goto <system>` (no fuel or days), `days <n>`, `route <system>`, `reveal <system>` and `fuel`;
+  - panel: Go to system, Reveal, Refuel, +1/+7/+30 days.
+- **Saves groundwork:** `TravelState` (current system, fuel, route, map changes) and `GameState.to_dict` / `from_dict` hold everything new as plain values.
+- **Tests:**
+  - unit: loader rules for galaxy, ship, system, stellar and settings fields; `Hyperlanes`, `JumpSequence`, `Calendar`, `DayClock`, `TravelState` round trip, `MapLayout` and `PortRules.refuel`;
+  - scenario: map open and close, route plotting, every jump refusal and cancel, a full jump (phases, days, fuel, arrival point and speed, next leg), landing days, refuel, rescue days and D11;
+  - smoke: visits all 10 systems.
+
+### 2026-10-30 — Playtest notes (Jarrad)
+
+- **Feels good:** the jump sequence, the jump radius and the countdown length.
+- **Tuning: the high-speed run before the jump is too short and doesn't land** (wanted about 1 s more).
+  - `game.json` `hyperspace.engage_speed_factor` 4 → 8 and `overdrive_accel_factor` 6 → 5.
+  - The shuttle's run goes from 0.8 s to 1.9 s and it leaves at twice the speed (2080 px/s).
+  - Other ships: courier 1.7 s, raider 1.7 s, corvette 1.85 s, freighter 2.6 s.
+  - Jarrad then retuned it on his PC: `overdrive_accel_factor` 3, `engage_speed_factor` 12. The shuttle's run is now about 4.7 s and it leaves at 3120 px/s. These are the values merged.
+- **Bug (H2): radar scenery popped in at about 2–3k px** (derelict hulls in Hollow).
+  - Cause: radar-visible scenery came only from loaded chunks, which reach just past the screen edge, while the radar reaches 6000 px (since M6).
+  - Fix: `LocalSpace.distant_radar_points` generates radar-visible placements for unloaded chunks inside radar range from the same seed, without building nodes. Destroyed objects and drift are respected.
+  - Scenario check: distant hulls show, and they sit where the chunk later loads them.
+- **Design change, confirmed and built (TR4):** arrivals appear `hyperspace.arrival_grace_seconds` (2) of inward travel outside the jump radius, so J works straight away for the next leg. The shuttle arrives 260 px out. Spec and decisions updated; scenario checks the distance and that J works on arrival.
+- **Design change, confirmed and built (C7):** disabled ships, the player's included, coast to a stop at `combat.disabled_drag` (30 px/s²). A raider at full speed stops in about 11 s. `FlightModel.coast` has a unit test; the scenario checks a disabled ship slows and stops.
+
+### Review (godot-reviewer) and fixes
+
+- **Fixed before handover:**
+  - **The countdown ran about 3× fast.** Ship body, weapons and engine glow each called `get_flight_input()`, and each call stepped the autopilot. Input is now computed once per physics tick and cached (`Ship.get_flight_input`). The scenario now checks the countdown lasts its data time.
+  - Jumping, landing and boarding now refuse each other.
+  - The map won't open mid-jump.
+  - `hyperspace.overdrive_accel_factor` must be more than 0.
+  - Fuel is clamped when the ship changes.
+  - `goto` to the current system refills its traffic.
+- **Left for later:**
+  - The arrival flash's colour, size and length are hard-coded, as the AI's jump flash already is. They could move to data with the next effects pass.
+  - The map remembers whether the game was paused when it opened, so a debug console `pause`/`resume` while it's open is undone on close (same as Dialog).
+  - The saves milestone should check that loaded system IDs exist, and should only save while landed: a jump in progress isn't saved.
+
+### Key values
+
+- **Shuttle:** fuel 300, 100 per jump (3 jumps), countdown 3 s, jump speed 150.
+- **Other ships:** courier 400 / 2 s / 200; freighter 500 / 5 s / 100.
+- **Lanes:** 130–162 map units, so the shuttle takes 1–2 days per jump. Test Nebula to Redhaven is 5 jumps and 7 days.
+- **Systems:** jump radius 10000 in most systems (6000 in the transit systems, 11000 in Graveyard).
+- **Fuel price:** refuel price 2 (the pirate port 4), so a full shuttle tank is 600 cr.
+
+### Stopped at / Next step
+
+Stopped at: P2M1 merged to `main` (30 Oct 2026). Next step: Phase 2 milestone 2 (gates, TR5–TR6) on `p2m2-<slug>` when Jarrad says go; Jarrad also has art-asset work to slot into Phase 2 (see the conversation's answer: decide where before starting).
+
+### Known gaps and questions
+
+- No windowed run on a PC yet: screenshots under a virtual display showed the map, the countdown and the arrival, but feel needs Jarrad's playtest.
+- Gates on the map (TR7 "gate links") come with P2M2.
+- Reveal sources (map purchases, intel, found gates, missions) come in later milestones; until then `reveal` is debug-only.
+- Hold-to-aim (F5) and the other carried-over items are unchanged.
+
+---
+
 ### 2026-10-30 — session wrap-up (cloud session)
 Branch: main (M6 `m6-art` and M7 `m7-hud-tuning` both merged after confirmed playtests; Jarrad's Phase 2 spec and hardpoint editor, PRs #2 and #3, merged in)
 Done:

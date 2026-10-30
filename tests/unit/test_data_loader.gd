@@ -211,6 +211,43 @@ func test_field_errors_name_file_and_field() -> void:
 	_expect_error(set, ["bad_ring.json", "local_space[1].region.inner_radius", "smaller than radius"])
 
 
+## TR1, TR7: galaxy validation; TR2, TR8, TM2: travel fields on systems, stellars, ships, game.json.
+func test_travel_errors_name_file_and_field() -> void:
+	var set: DataSet = _load([BROKEN])
+	_expect_error(set, ["tangled.json", "start_system", "starts hidden"])
+	_expect_error(set, ["tangled.json", "systems[2].system", "no system definition with id 'nowhere'"])
+	_expect_error(set, ["tangled.json", "hyperlanes[1]", "already listed"])
+	_expect_error(set, ["tangled.json", "hyperlanes[2]", "two different systems"])
+	_expect_error(set, ["tangled.json", "hyperlanes[3]", "'elsewhere' is not in this galaxy"])
+	_expect_error(set, ["lost.json", "systems[0].map_state", "lost"])
+	_expect_error(set, ["lost.json", "systems[1].system", "listed twice"])
+	_expect_error(set, ["stray.json", "start_system", "not in this galaxy"])
+	_expect_error(set, ["no_drive.json", "jump_speed", "more than 0"])
+	_expect_error(set, ["no_drive.json", "fuel", "at least 0"])
+	_expect_error(set, ["tiny.json", "jump_radius", "at least 100"])
+	_expect_error(set, ["sys.json", "objects[0].landing_days", "at least 0"])
+	_expect_error(set, ["sys.json", "objects[0].refuel_price", "expected a number"])
+	_expect_error(set, ["game.json", "galaxy", "no galaxy definition with id 'no_such_galaxy'"])
+	_expect_error(set, ["game.json", "calendar.start_date", "expected a date"])
+	_expect_error(set, ["game.json", "hyperspace.engage_speed_factor", "more than 1"])
+	_expect_error(set, ["game.json", "hyperspace.overdrive_accel_factor", "more than 0"])
+	_expect_error(set, ["game.json", "hyperspace.arrival_speed_fraction", "at most 1"])
+
+
+func test_travel_defaults() -> void:
+	var set: DataSet = _load([BASE])
+	var ship: ShipDef = set.get_def("ships", "alpha")
+	assert_near(ship.fuel, 300.0, "fuel default")
+	assert_near(ship.jump_fuel, 100.0, "jump_fuel default")
+	assert_near(ship.jump_countdown, 3.0, "jump_countdown default")
+	assert_near(ship.jump_speed, 150.0, "jump_speed default")
+	var home: SystemDef = set.get_def("systems", "home")
+	assert_near(home.jump_radius, 8000.0, "jump_radius default")
+	var galaxy: GalaxyDef = set.get_def("galaxy", "tiny")
+	assert_true(galaxy.start_states["away"] == "unexplored", "map_state default")
+	assert_true(set.settings["calendar"]["start_date"] == "3200-01-01", "calendar default")
+
+
 func test_invalid_files_are_not_registered() -> void:
 	var set: DataSet = _load([BROKEN])
 	assert_true(set.get_def("ships", "typo") == null, "invalid ship skipped")
@@ -227,7 +264,10 @@ func test_real_game_data_is_valid() -> void:
 	assert_true(set.ids("ai_pools").size() == 3, "3 AI pools")
 	assert_true(set.ids("scenery").size() == 5, "5 scenery types")
 	assert_true(set.ids("personalities").size() == 5, "5 personalities")
-	assert_true(set.ids("systems") == ["test_graveyard", "test_nebula"], "2 test systems")
+	assert_true(set.ids("systems").size() == 10, "the 10-system test cluster")
+	var galaxy: GalaxyDef = set.get_def("galaxy", "test_cluster")
+	assert_true(galaxy != null and galaxy.system_ids.size() == 10, "every test system is on the map")
+	assert_true(galaxy.lanes.size() == 12, "12 hyperlanes")
 
 
 ## V3: the art-led loadouts (docs/art/hardpoints.md, decisions 2026-10-29).

@@ -1,0 +1,58 @@
+{
+  "id": "hollow",
+  "name": "Hollow",
+  "seed": 3009,
+  "edge_radius": 10000,
+  "jump_radius": 6000,
+  "objects": [
+    {
+      "id": "hollow",
+      "type": "star",
+      "name": "Hollow",
+      "position": [
+        0,
+        0
+      ],
+      "radius": 700,
+      "colour": "#c08070"
+    }
+  ],
+  "traffic": [],
+  "backdrop": {
+    "parallax": 0.02,
+    "base_colour": "#04050a",
+    "stars": {
+      "density": 0.03,
+      "brightness": 0.5,
+      "size": 1.2,
+      "spacing": 16
+    },
+    "nebula": {
+      "coverage": 0.1,
+      "intensity": 0.2,
+      "softness": 0.4,
+      "gradient": [
+        "#020203",
+        "#08080c",
+        "#141420"
+      ]
+    },
+    "noise": {
+      "seed": 47,
+      "frequency": 0.005,
+      "octaves": 5,
+      "texture_size": 1024,
+      "scale": 2
+    }
+  },
+  "local_space": [
+    {
+      "scenery": "dust",
+      "density": 30
+    },
+    {
+      "scenery": "derelict_hull",
+      "density": 0.3
+    }
+  ]
+}

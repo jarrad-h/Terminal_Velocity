@@ -75,3 +75,13 @@ static func rescue_port(objects: Array[SystemObjectDef], from: Vector2, records:
 ## S3: repair cost for the missing shield and armour points.
 static func repair_cost(missing_points: float, cost_per_point: float) -> int:
 	return ceili(maxf(missing_points, 0.0) * maxf(cost_per_point, 0.0))
+
+
+## TR8: refuelling when landed buys up to a full tank, as much as `credits`
+## pays for at `price` per unit. Returns {"units": float, "cost": int}.
+static func refuel(fuel: float, capacity: float, price: float, credits: int) -> Dictionary:
+	var missing: float = maxf(capacity - fuel, 0.0)
+	if price <= 0.0:
+		return {"units": missing, "cost": 0}
+	var units: float = minf(missing, floorf(maxf(float(credits), 0.0) / price))
+	return {"units": units, "cost": ceili(units * price - 0.0001)}
