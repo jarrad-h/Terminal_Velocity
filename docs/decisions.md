@@ -165,3 +165,14 @@ Rejected: keeping prose hardpoint documentation as the contract.
 ## 2026-10-30 — Prepare for player-built ships; art phase before Phase 3
 Every ship is saved as a design plus instance state (SV1), and art is kept as individual part assets with their own manifests (category, attachment points, paint mask, cosmetic flag), so a late-game ship designer and player shipyards stay possible without rework. An art phase between Phase 2 and Phase 3 builds the expanded asset library.
 Why: Jarrad wants player stations and ship manufacturing late game; these choices are cheap now and expensive to retrofit.
+
+## 2026-10-30 — P2M1 scope: the jump flies itself; separate day costs; three map states (TR2, TR4, TR7, TR8, TM2)
+- **Jump sequence (TR2):** pressing J with a valid destination locks the controls and the ship flies the jump with its own turn rate and thrust: stop (turn and burn against velocity), turn to the destination's galaxy-map bearing, then the countdown (only once stopped and facing), then a hard acceleration past the speed cap to the hyperdrive speed, where it leaves. Overdrive acceleration and hyperdrive speed are data. Fire or J cancels until the hyperdrive engages; disabled cancels; hits don't.
+- **Arrival (TR4):** at the destination's jump radius, on the side facing the origin, moving inward at a data fraction of top speed.
+- **Day costs (TM2):** landing 1 (per stellar), take-off 0 (per stellar), landed activities 0 until activities exist, each with its own cost. Jump days = lane length on the map ÷ ship jump speed, rounded up, at least 1.
+- **Fuel (TR8):** flat `jump_fuel` per jump for now, computed by one function that takes ship, lane and distance, so a distance or lane-based rule needs no format change.
+- **Map states (TR7):** explored, unexplored (shown, labelled "Unexplored") and hidden (not drawn or routable until revealed by a map purchase, intel, a found gate or a mission). Galaxy data sets each system's starting state; reveals are game state. Selecting a system shows a stylised system view (star, planets, stations from system data) for explored systems.
+- **Calendar (TM1):** a real calendar from a data start date (placeholder 1 Jan 3200), shown "14 Mar 3200", until the setting decides.
+- **Keys:** J jump/cancel, M map, click a system to plot the shortest route.
+- **Stranding:** every system with a planet sells fuel and the empty transit systems are one jump from fuel; hailing for fuel and rescue come later.
+Why: Jarrad's direction, 30 Oct 2026 (normal ship movement into the jump reads as flying, not a teleport; separate day costs leave room for activities; hidden systems leave room for discovery).
