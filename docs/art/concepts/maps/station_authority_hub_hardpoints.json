@@ -1,0 +1,58 @@
+[
+ {
+  "id": "T1",
+  "size": "medium",
+  "mount": "turret",
+  "x": 37.1,
+  "y": 37.1
+ },
+ {
+  "id": "T2",
+  "size": "medium",
+  "mount": "turret",
+  "x": -37.1,
+  "y": 37.1
+ },
+ {
+  "id": "T3",
+  "size": "medium",
+  "mount": "turret",
+  "x": -37.1,
+  "y": -37.1
+ },
+ {
+  "id": "T4",
+  "size": "medium",
+  "mount": "turret",
+  "x": 37.1,
+  "y": -37.1
+ },
+ {
+  "id": "T5",
+  "size": "small",
+  "mount": "turret",
+  "x": 0.0,
+  "y": -134.8
+ },
+ {
+  "id": "T6",
+  "size": "small",
+  "mount": "turret",
+  "x": 0.0,
+  "y": 134.8
+ },
+ {
+  "id": "T7",
+  "size": "small",
+  "mount": "turret",
+  "x": -134.8,
+  "y": 0.0
+ },
+ {
+  "id": "T8",
+  "size": "small",
+  "mount": "turret",
+  "x": 134.8,
+  "y": 0.0
+ }
+]
