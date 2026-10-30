@@ -86,7 +86,8 @@
       "selected": "#ffee40",
       "unexplored": "#6a7080",
       "label": "#d8e0f0",
-      "jump_radius": "#5a7aa0"
+      "jump_radius": "#5a7aa0",
+      "gate_link": "#d9a05a"
     }
   },
   "messages": {

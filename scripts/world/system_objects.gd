@@ -25,6 +25,10 @@ func _draw() -> void:
 				for i: int in 4:
 					draw_circle(c, obj.radius * (1.0 + 0.25 * (4 - i)), Color(obj.colour, 0.06))
 				draw_circle(c, obj.radius, obj.colour)
+			"gate":
+				draw_arc(c, obj.radius, 0.0, TAU, 64, obj.colour, 24.0)
+				var field: Color = Color(0.55, 0.45, 0.9, 0.35) if GateRules.is_open(obj.open_condition, GameState.flags) else Color(0.2, 0.2, 0.25, 0.3)
+				draw_circle(c, obj.radius - 12.0, field)
 			"station":
 				draw_circle(c, obj.radius, obj.colour.darkened(0.6))
 				draw_arc(c, obj.radius, 0.0, TAU, 48, obj.colour, 4.0)

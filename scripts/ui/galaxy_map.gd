@@ -188,6 +188,14 @@ func _draw_map() -> void:
 		var on_route: bool = route_pairs.has(_pair(lane["from"], lane["to"]))
 		_map.draw_line(screen[lane["from"]], screen[lane["to"]],
 			Color.html(_colours["route"] if on_route else _colours["lane"]), 3.0 if on_route else 1.5, true)
+	# TR7: gate links, dashed; dimmed while either gate is closed (TR6).
+	for link: Dictionary in galaxy.gate_links:
+		if not screen.has(link["from"]) or not screen.has(link["to"]):
+			continue
+		var colour := Color.html(_colours["gate_link"])
+		if not (_gate_open(link["from"]) and _gate_open(link["to"])):
+			colour.a *= 0.3
+		_map.draw_dashed_line(screen[link["from"]], screen[link["to"]], colour, 2.0, 8.0, true, true)
 	for id: String in screen:
 		var p: Vector2 = screen[id]
 		var explored: bool = travel.map_state(galaxy, id) == "explored"
@@ -237,13 +245,22 @@ func _draw_view() -> void:
 			"station":
 				_view.draw_rect(Rect2(p - Vector2(4, 4), Vector2(8, 8)), o.colour)
 				r = 6.0
+			"gate":
+				r = 6.0
+				_view.draw_arc(p, r, 0.0, TAU, 24, Color.html(_colours["gate_link"]), 2.5, true)
 			_:
 				_view.draw_circle(p, r, o.colour)
-		if o.landable:
+		if o.landable or o.type == "gate":
 			_view.draw_arc(p, r + 4.0, 0.0, TAU, 24, Color.html(_colours["label"]), 1.0, true)
 		if o.type != "star":
 			_view.draw_string(font, p + Vector2(r + 7.0, 5.0), o.name, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE - 2,
 				Color.html(_colours["label"]))
+
+
+static func _gate_open(system_id: String) -> bool:
+	var system: SystemDef = DataRegistry.get_system(system_id)
+	var gate: SystemObjectDef = system.gate() if system != null else null
+	return gate != null and GateRules.is_open(gate.open_condition, GameState.flags)
 
 
 static func _pair(a: String, b: String) -> String:
