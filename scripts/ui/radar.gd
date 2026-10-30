@@ -51,6 +51,8 @@ func _draw() -> void:
 		for scenery: Scenery in scene.local_space.radar_objects():
 			if is_instance_valid(scenery):
 				_dot(centre, _to_radar(scenery.global_position - origin), 1.5, _colours["scenery"])
+		for at: Vector2 in scene.local_space.distant_radar_points(origin, _range):
+			_dot(centre, _to_radar(at - origin), 1.5, _colours["scenery"])
 	var target: Ship = player.get_target()
 	for node: Node in get_tree().get_nodes_in_group(&"ships"):
 		var ship: Ship = node

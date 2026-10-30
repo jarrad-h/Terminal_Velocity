@@ -16,6 +16,9 @@ var _chunks: Dictionary = {}
 var _depth_objects: Dictionary = {}
 ## H2: loaded scenery whose definition sets radar: true.
 var _radar_objects: Array[Scenery] = []
+## H2: chunk -> radar-visible placements (start positions) for chunks that
+## aren't loaded, so the radar sees its full range without building nodes.
+var _radar_cache: Dictionary = {}
 var destroyed: DestroyedScenery = DestroyedScenery.new()
 ## Game seconds since this system was entered (scaled time, stops when paused).
 var elapsed: float = 0.0
@@ -49,6 +52,7 @@ func reset_visit() -> void:
 
 
 func clear() -> void:
+	_radar_cache.clear()
 	for node: Node2D in _chunks.values():
 		node.queue_free()
 	_chunks.clear()
@@ -68,6 +72,48 @@ func loaded_chunks() -> Array:
 ## The node holding a loaded chunk's scenery, or null.
 func chunk_node(chunk: Vector2i) -> Node2D:
 	return _chunks.get(chunk)
+
+
+## H2: where radar-visible scenery in unloaded chunks is now, within `radius`
+## of `centre`. Generated from the seed like the chunks themselves (L2), so
+## each object appears on the radar where it will be when its chunk loads.
+func distant_radar_points(centre: Vector2, radius: float) -> Array[Vector2]:
+	var result: Array[Vector2] = []
+	if system == null:
+		return result
+	if _radar_cache.size() > 1024:
+		_radar_cache.clear()
+	var lo: Vector2i = SceneryGen.chunk_of(centre - Vector2(radius, radius), chunk_size)
+	var hi: Vector2i = SceneryGen.chunk_of(centre + Vector2(radius, radius), chunk_size)
+	for x: int in range(lo.x, hi.x + 1):
+		for y: int in range(lo.y, hi.y + 1):
+			var chunk := Vector2i(x, y)
+			if _chunks.has(chunk):
+				continue
+			if not _radar_cache.has(chunk):
+				_radar_cache[chunk] = _radar_placements(chunk)
+			for p: SceneryPlacement in _radar_cache[chunk]:
+				if destroyed.has(p.chunk, p.scenery_id, p.index):
+					continue
+				var at: Vector2 = p.position + p.velocity * elapsed
+				if at.distance_squared_to(centre) <= radius * radius:
+					result.append(at)
+	return result
+
+
+## Radar-visible placements of one chunk at their start positions; velocity
+## kept only for solid scenery, which is the only kind that drifts on (L4).
+func _radar_placements(chunk: Vector2i) -> Array[SceneryPlacement]:
+	var result: Array[SceneryPlacement] = []
+	for entry: LocalSpaceEntry in system.local_space:
+		var def: SceneryDef = DataRegistry.get_scenery(entry.scenery)
+		if not def.radar:
+			continue
+		for p: SceneryPlacement in SceneryGen.generate(system.system_seed, chunk, chunk_size, entry, def):
+			if not def.solid:
+				p.velocity = Vector2.ZERO
+			result.append(p)
+	return result
 
 
 func object_count() -> int:

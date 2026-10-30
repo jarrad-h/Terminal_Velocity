@@ -576,6 +576,21 @@ func _run() -> void:
 	_check(hulls > 0, "graveyard ring has derelict hulls")
 	var radar_list: Array[Scenery] = local_space.radar_objects()
 	_check(radar_list.size() > 0 and radar_list.all(func(sc: Scenery) -> bool: return sc.def.radar), "radar lists only radar: true scenery (H2)")
+	# H2: radar scenery shows out to the full radar range, not just loaded chunks.
+	var radar_range: float = float(DataRegistry.settings["radar"]["range"])
+	await _teleport(player, Vector2(9000.0, 0.0))
+	var far_points: Array[Vector2] = local_space.distant_radar_points(player.global_position, radar_range)
+	_check(far_points.size() > 0, "H2: distant hulls in radar range show before their chunks load")
+	_check(far_points.all(func(at: Vector2) -> bool: return at.distance_to(player.global_position) <= radar_range), "only within radar range")
+	if far_points.size() > 0:
+		var probe: Vector2 = far_points[0]
+		await _teleport(player, probe)
+		var nearest: float = INF
+		for sc: Scenery in local_space.radar_objects():
+			nearest = minf(nearest, sc.global_position.distance_to(probe))
+		_check(nearest < 2.0, "H2: a distant radar point is where the hull is once loaded (%.1f px)" % nearest)
+		_check(not local_space.distant_radar_points(probe, 600.0).has(probe), "loaded chunks aren't counted twice")
+	await _teleport(player, Vector2(2200.0, 0.0))
 	hud = scene_root.hud
 	_check(hud.radar != null and hud.radar.player == player, "radar follows the player (H2)")
 	_check(not _debug.switch_system("nowhere"), "unknown system is refused")
