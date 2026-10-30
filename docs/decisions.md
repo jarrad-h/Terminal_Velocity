@@ -190,3 +190,9 @@ Why: Jarrad's playtest — a disabled raider at top speed was impossible to catc
 ## 2026-10-30 — Lit ships join milestone 2; light maps for every sprite; shared UI theme (V6–V9, H5, D14, OF7)
 Milestone 2 becomes "Gates and lighting": gates already touch stellar and system data, and lighting needs both (the star stellar is the key light, ambient is per system). New IDs V6–V9 (lit hulls and turrets, star and ambient light from data, weapon and engine lights, lit stellars), H5 (new screens use one shared `Theme`) and D14 (lighting debug). Every sprite in the art pipeline ships albedo, normal and emission maps; the OF7 hull manifest lists them. Gate, station and planet art is made in parallel on an `art/*` branch and does not block the milestone. The Amber Glass HUD restyle and the pirate raider's light maps go on the review list.
 Why: Jarrad's direction, 30 Oct 2026, after the light maps landed (PR #4).
+
+## 2026-10-30 — Milestone 2 art wiring; station weapons in Phase 3; cast shadows on the review list (V6, V9, OF7)
+- **Stellar art in data:** each stellar names an art set (`art`); the set's manifest beside the sprites gives sizes, layers and anchors, and the game derives scale from the stellar's radius. Station looks are chosen per station, not by government. PR #5's first-pass art is merged.
+- **Lighting:** things with maps are shaded; things without (dust, shots, beams, flashes) keep their brightness. Planet city lights are masked to the night side (a small shader, in V9).
+- **Not now:** cast shadows go on the review list as a visual uplift if cheap; station weapons are agreed for Phase 3 (the art already carries mounts); named anchors and compound stellar hit shapes join OF7 and the hardpoint editor in milestone 6; a large turret sprite and pirate turrets go on the review list.
+Why: Jarrad's answers to the art session's questions, 30 Oct 2026.

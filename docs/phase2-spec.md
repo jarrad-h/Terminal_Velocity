@@ -89,7 +89,7 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
 - OF4: Items sell back at a data-set fraction of their price; mission-granted items can be flagged unsellable.
 - OF5: Every number an outfit changes uses one modifier system, so a new outfit type is data unless it needs new behaviour.
 - OF6: The trader escape kit is the design target for a non-combat player: afterburner, hyperspace tuning, sensor range, and cargo jettison as a decoy that pirates break off to collect.
-- OF7: Hull geometry (sprite, scale, hit shape, hardpoints, engines, part sprites) lives in one manifest per hull, `hull.json`. Ship data names its hull and holds only stats and a loadout by hardpoint ID; hardpoints the loadout leaves empty are upgrade slots. A check validates every manifest and every loadout against its hull; generated spec sheets are for review only. The manifest also carries, so player-built ships stay possible later: a size class and displacement; a hit shape made of one or more primitives (capsules at any angle, circles, boxes), replacing the single along-the-hull capsule that cannot fit wide hulls; sprite layers (several sprites at offsets and depths, as turrets already are), each listing its albedo, normal and emission map paths alongside the sprite (V6); and, for generated hulls, the list of parts each was built from. Schema 1 is what `tools/hardpoint-editor` writes today; OF7 extends it.
+- OF7: Hull geometry (sprite, scale, hit shape, hardpoints, engines, part sprites) lives in one manifest per hull, `hull.json`. Ship data names its hull and holds only stats and a loadout by hardpoint ID; hardpoints the loadout leaves empty are upgrade slots. A check validates every manifest and every loadout against its hull; generated spec sheets are for review only. The manifest also carries, so player-built ships stay possible later: a size class and displacement; a hit shape made of one or more primitives (capsules at any angle, circles, boxes), replacing the single along-the-hull capsule that cannot fit wide hulls; sprite layers (several sprites at offsets and depths, as turrets already are), each listing its albedo, normal and emission map paths alongside the sprite (V6); and, for generated hulls, the list of parts each was built from. Schema 1 is what `tools/hardpoint-editor` writes today; OF7 extends it, and the editor gains named anchor points (a gate's `jump_point`, docking ports) and compound hit shapes for stellars as well as hulls.
 - OF8: A shipyard sets the largest hull size class it builds or sells, as well as its tech level, so small yards offer only small hulls.
 - OF9: A hull's base stats pass through the same modifier system as outfits (OF5), so a later phase can derive the base from a ship's parts without changing flight or combat code.
 
@@ -111,10 +111,10 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
 
 **Lighting and look (V, H continued; art direction "Amber Glass", see `docs/art/lighting.md`)**
 
-- V6: Hulls and turrets that have light maps are lit live: albedo and normal map as one `CanvasTexture`, emission as an additive, unshaded overlay sprite. A sprite without maps (the pirate raider for now) falls back to its baked sprite. The lit flank stays on the star side at every heading.
+- V6: Hulls and turrets that have light maps are lit live: albedo and normal map as one `CanvasTexture`, emission as an additive, unshaded overlay sprite. A sprite without maps (the pirate raider for now) falls back to its baked sprite. The lit flank stays on the star side at every heading. Things with maps are shaded (a dark side away from the star); things without maps (dust, shots, beams, flashes) keep their normal brightness. No cast shadows (review list).
 - V7: The system's star is the key light: its direction comes from the star stellar's position, and its colour, energy and height come from system data with documented defaults. Each system also sets an ambient level that darkens the unlit side. The backdrop and the HUD are neither lit nor darkened.
 - V8: Shots, beams and impacts carry short-lived point lights that light nearby hulls; engine exits (from the hull's engine points) carry dim lights that follow thrust. Light colours, radii and energies are data, and a cap on simultaneous lights keeps performance unchanged.
-- V9: Planets, stations and gates are drawn from their sprites when they have one, and lit the same way (V6) when the sprite has maps; flat placeholders until the art lands.
+- V9: Planets, stations, gates and the star are drawn from an art set named per stellar in system data (`art`), lit the same way (V6) where the set has maps; flat placeholders where a stellar names none. A closed gate (TR6) hides its ring emission. Planet city lights show only on the side away from the star. Scenery types point at their sprite sets in data and are lit where the sprites have maps.
 - H5: New screens (gate list, trade, shipyard and later) take their colours and fonts from one shared `Theme` resource, so the later Amber Glass HUD restyle is a one-place change.
 
 **Debug (D, continued)**
@@ -206,7 +206,18 @@ Debug tools land with the milestone that needs them: D11 in 1, D14 in 2, D13 in 
 
 **Art requests for milestone 2** (for the parallel art session; all images follow `docs/art/lighting.md`: `<name>.png` plus `_albedo`, `_n` and `_e`, pixel-aligned, at 1:1 × `art_scale`)
 
-- *To be filled in when milestone 2's plan is agreed: sizes, the gate's jump anchor point, and any state frames.*
+Delivered in PR #5 (`art/stellars`, first-pass stand-ins; details in `docs/art/stellars.md`). Each stellar names its art set in system data (`art`); the set's `.json` beside the sprites gives sizes, layers and anchors.
+
+| Art set | Size at 1:1 | Scale in game | Layers | Anchors |
+|---|---|---|---|---|
+| Gate `gate_halo` | 600 × 600 (radius 300) | `sprite_scale` 1 | baked, `_albedo`, `_n`, `_e` (beacons, always on), `_e_ring` (ring and field; hidden when the gate is closed) | `jump_point` [0, 0] |
+| Stations `station_authority_ring`, `station_trader_yard`, `station_pirate_rock` | 480 × 480 (radius 240) | 1 | baked, `_albedo`, `_n`, `_e` | turret `hardpoints` (empty rings; stations don't fire in Phase 2) |
+| Planets `planet_terran`, `_ocean`, `_desert`, `_ice`, `_volcanic`, `_barren`, `_rust`, `_gas_giant` | 1024 canvas, 900 px disc | radius × 2 / 900, Linear filtering | in order: `_rings` + `_rings_n` (gas giant, 1900 px canvas), `_albedo` + `_n`, `_e` (additive, unshaded; city lights masked to the night side), `_clouds` + `_clouds_n` (may turn slowly), `_atmo` + `_atmo_n` (additive, lit) | none |
+| Star `star` | 1024 canvas, 460 px disc | radius × 2 / 460 | `star_e` only: greyscale, tinted by the star's data colour, additive, not lit | none |
+| Map icons `icons/icon_*` | 64 px | system view (TR7) | baked; `icon_star` greyscale, tinted | none |
+| Scenery `asteroid_*`, `debris_*`, `wreck_sow_*`, `buoy_*` | at the top of each type's size range | scaled down to the object's size | baked, `_albedo`, `_n`, `_e` | none |
+
+No animation frames are needed in milestone 2; a later gate pass may animate the ring.
 
 ## Art phase (between Phase 2 and Phase 3)
 
@@ -243,6 +254,7 @@ An art phase follows Phase 2 to build an expanded asset library, so Phase 3 cont
 - **Currents:** another faction's travel. One-way subspace streams found with that faction's sensor or knowledge, near-free and fast, with routes that shift with the calendar.
 - **War front:** territory control, off-screen battles shaping the galaxy, gates closing in war, government fleets the player can join or follow, built on the Phase 2 persistence foundation.
 - **Ownership:** stations, player-built gates, capture keeping the ship.
+- **Station weapons:** stations fire from the turret mounts their art already carries, reusing WeaponMounts and Health; needs station AI, targeting rules and what attacking a station does to the record.
 - **Ship manufacturing and design:** player-owned shipyards with capacity tiers, an in-game ship designer built on the parts library, and stats derived from parts. Phase 2 prepares for it through OF7–OF9, the design-plus-instance save rule (SV1) and part manifests in the art phase.
 
 **To review later**
@@ -252,6 +264,8 @@ An art phase follows Phase 2 to build an expanded asset library, so Phase 3 cont
 - Contraband scanning, escorts, hailing and bribes, AI finishing off disabled ships, point defence (C13).
 - HUD restyle to Amber Glass (dark scene, translucent panels, amber accents); until then new screens use the shared `Theme` (H5).
 - Light maps for the pirate raider (its painter bakes light per plate; needs plate facings as normals and its hot parts as glow).
+- Cast shadows (ships and stations blocking starlight onto each other, Godot light occluders) as a visual uplift, if the performance cost is small.
+- A large turret sprite, and a pirate turret style.
 
 **Carried over from the prototype devlog**
 
