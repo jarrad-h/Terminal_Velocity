@@ -201,3 +201,12 @@ Why: Jarrad's answers to the art session's questions, 30 Oct 2026.
 - **Engine lights (V8):** each ship carries one engine light that is not counted against `lighting.max_lights`; the cap covers shots, beams and impacts, the part that grows with fire. Engine lights grow only with ship count (system traffic is a handful of ships), and a 10-ship fight measured the same frame time with lighting on and off. Revisit with a separate cap if systems get crowded.
 - **1-day routes (TR5):** days are whole numbers with a minimum of 1, so a gate link between systems one 1-day jump apart can't be faster; the loader allows it to equal the lane route there and requires it to be strictly fewer days on any longer route. To confirm with Jarrad at playtest.
 Why: found by the godot-reviewer at the milestone 2 handover.
+
+## 2026-10-30 — Milestone 2 playtest: star-coloured, distance-scaled starlight; gates give light; AI jumps and gate traffic in milestone 3 (V7, V9)
+- **Starlight colour:** taken from the star stellar's colour, blended towards white (`lighting.star.tint`), unless a system sets `lighting.star.colour`.
+- **Distance:** starlight energy scales from `near_factor` at the star's edge to `far_factor` at `far_radii` star radii (linear, clamped).
+- **Glare:** from `glare_start_radii` star radii inwards the light turns gradually overhead and the ambient brightens to white, so inside the star's radius ships are lit all over with no shadow, with no pop.
+- **Gate light:** an open gate's field is a point light (violet, the field's colour; `stellars.gate_light`), off when closed; outside the shot-light cap like engine lights.
+- **Moved to milestone 3:** AI ships flying the hyperspace sequence (PS3), and scheduled traffic through the gate network at hub systems.
+- 1-day gate links equal to 1-day hyperlane routes are confirmed fine; the Solace trader yard and Redhaven pirate rock stay.
+Why: Jarrad's playtest of milestone 2, 30 Oct 2026.
