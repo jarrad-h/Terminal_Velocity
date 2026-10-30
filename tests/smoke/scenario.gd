@@ -401,14 +401,25 @@ func _run() -> void:
 	_check(actions.try_land() == "refused", "refused below min_record (G4)")
 	GameState.set_record("local_authority", 0.0)
 	player.health.apply_damage(50.0, 30.0)
+	var day_before_landing: int = GameState.clock.day
+	GameState.travel.fuel = 50.0
+	GameState.set_credits(1000)
 	_check(actions.try_land() == "", "lands when close, slow and welcome (S2)")
+	_check(GameState.clock.day == day_before_landing + haven.landing_days, "TM2: landing costs its days")
 	_check(get_tree().paused and actions.dialog != null, "landed screen open, world paused (S3)")
 	_check(actions.dialog.has_choice("repair"), "repair offered when damaged (S3)")
 	actions.dialog.choose("repair")
 	_check(player.health.missing_points() == 0.0, "repair restores shield and armour (S3)")
+	_check(actions.dialog.has_choice("refuel"), "TR8: refuel offered when the tank isn't full")
+	actions.dialog.choose("refuel")
+	_check(is_equal_approx(GameState.travel.fuel, player.def.fuel), "TR8: refuelled to full")
+	_check(GameState.credits == 1000 - ceili((player.def.fuel - 50.0) * haven.refuel_price), "TR8: paid the port's price (%d)" % GameState.credits)
+	_check(not actions.dialog.has_choice("refuel"), "no refuel when full")
+	var day_before_takeoff: int = GameState.clock.day
 	actions.dialog.choose("take_off")
 	await _frames(2)
 	_check(not get_tree().paused and actions.dialog == null, "take off closes the screen and unpauses (S3)")
+	_check(GameState.clock.day == day_before_takeoff + haven.takeoff_days, "TM2: take-off costs its days (0 by default)")
 
 	# M5: boarding (C9).
 	await _teleport(player, Vector2(-4000.0, -4000.0))
@@ -493,6 +504,8 @@ func _run() -> void:
 	await _frames(roundi(float(DataRegistry.settings["player"]["pod_time"]) * 60.0) + 5)
 	_check(actions.dialog != null and get_tree().paused, "rescue report, paused (C10)")
 	_check(GameState.credits == 1000 - roundi(1000.0 * fee_pct / 100.0), "rescue fee charged (C10): %d" % GameState.credits)
+	var rescue_days: Array = DataRegistry.settings["player"]["rescue_days"]
+	_check(GameState.clock.day >= day_before_takeoff + roundi(rescue_days[0]), "TM2: days adrift pass on the calendar")
 	_check(not player.health.is_destroyed and player.health.missing_points() == 0.0, "insured: ship replaced and repaired (C10)")
 	_check(not is_instance_valid(wreck_before[0]), "days passed: wrecks cleared (C10)")
 	actions.dialog.choose("continue")

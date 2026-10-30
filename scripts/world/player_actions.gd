@@ -62,9 +62,11 @@ func try_land() -> String:
 	return ""
 
 
-## Puts the player down at `port` and opens the landed screen.
+## Puts the player down at `port` and opens the landed screen. Landing costs
+## the port's landing days (TM2).
 func land_at(port: SystemObjectDef, intro: String = "") -> void:
 	_end_boarding()
+	GameState.advance_days(port.landing_days)
 	var player: Ship = _player()
 	player.place(port.position, player.rotation)
 	player.set_target(null)
@@ -73,6 +75,7 @@ func land_at(port: SystemObjectDef, intro: String = "") -> void:
 
 
 func _take_off(port: SystemObjectDef) -> void:
+	GameState.advance_days(port.takeoff_days)  # TM2
 	var player: Ship = _player()
 	player.place(port.position, player.rotation)
 	GameState.post_message("Took off from %s" % port.name)
@@ -250,6 +253,7 @@ func _rescue(pod: EscapePod) -> void:
 	GameState.add_credits(-fee)
 	var days: Array = settings["rescue_days"]
 	var days_passed: int = _rng.randi_range(roundi(days[0]), roundi(days[1]))
+	GameState.advance_days(days_passed)  # TM2: the days adrift pass on the calendar
 	var objects: Array[SystemObjectDef] = scene.system.objects
 	var index: int = PortRules.rescue_port(objects, from, GameState.records(), float(settings["record"]))
 	var port: SystemObjectDef = objects[index] if index >= 0 else null
