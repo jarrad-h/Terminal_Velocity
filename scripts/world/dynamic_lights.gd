@@ -41,6 +41,7 @@ static func make(colour: Color, settings: Dictionary) -> PointLight2D:
 	light.energy = float(settings["energy"])
 	light.texture_scale = float(settings["radius"]) * 2.0 / TEXTURE_SIZE
 	light.height = float(settings["height"])
+	light.range_item_cull_mask = LitSprite.NEAR_LIGHT  # hulls, stations, gates, scenery; not planets
 	light.add_to_group(GROUP)
 	return light
 

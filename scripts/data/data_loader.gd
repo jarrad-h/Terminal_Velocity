@@ -43,7 +43,8 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
 		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
 	"engine_glow": {"idle": 0.25, "response": 6.0},
-	"stellars": {"cloud_spin": 0.6, "night_only_emission": ["planet_terran", "planet_ocean", "planet_rust"]},
+	"stellars": {"cloud_spin": 0.6, "night_only_emission": ["planet_terran", "planet_ocean", "planet_rust"],
+		"star_disc_cover": 0.97, "star_disc_colour": "#000000"},
 	"galaxy_map": {"colours": {"background": "#050810", "lane": "#3a5070", "route": "#ffee40",
 		"current": "#ffffff", "selected": "#ffee40", "unexplored": "#6a7080", "label": "#d8e0f0", "jump_radius": "#5a7aa0", "gate_link": "#d9a05a"}},
 	"messages": {"show_seconds": 4.0, "fade_seconds": 1.0, "max_lines": 3, "colours": {
@@ -202,6 +203,9 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var stellars: DefReader = reader.object("stellars")
 	stellars.number("cloud_spin", 0.0)
 	stellars.string_array("night_only_emission")
+	if stellars.number("star_disc_cover", 0.0, false, 0.0) > 1.0:
+		stellars.error("star_disc_cover", "must be at most 1")
+	stellars.colour("star_disc_colour")
 	var glow: DefReader = reader.object("engine_glow")
 	if glow.number("idle", 0.0, false, 0.0) > 1.0:
 		glow.error("idle", "must be at most 1")

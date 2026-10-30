@@ -87,7 +87,8 @@
     }
   },
   "engine_glow": {"idle": 0.25, "response": 6},
-  "stellars": {"cloud_spin": 0.6, "night_only_emission": ["planet_terran", "planet_ocean", "planet_rust"]},
+  "stellars": {"cloud_spin": 0.6, "night_only_emission": ["planet_terran", "planet_ocean", "planet_rust"],
+    "star_disc_cover": 0.97, "star_disc_colour": "#000000"},
   "galaxy_map": {
     "colours": {
       "background": "#050810",

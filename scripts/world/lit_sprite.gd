@@ -7,6 +7,12 @@ extends RefCounted
 ## sprite without maps falls back to its baked image, drawn unshaded so the
 ## ambient light doesn't darken it.
 
+## Light mask bits: every lit thing takes the star (bit 1); hulls, stations,
+## gates and scenery also take nearby point lights (bit 2, V8). Planets and
+## the star are far below the action, so weapon fire doesn't light them.
+const STAR_LIGHT: int = 1
+const NEAR_LIGHT: int = 2
+
 static var _unshaded: CanvasItemMaterial = null
 static var _emissive: CanvasItemMaterial = null
 
@@ -47,6 +53,7 @@ static func build(path: String) -> Sprite2D:
 		texture.diffuse_texture = load(map_path(path, "albedo"))
 		texture.normal_texture = load(map_path(path, "n"))
 		sprite.texture = texture
+		sprite.light_mask = STAR_LIGHT | NEAR_LIGHT
 		var glow_path: String = map_path(path, "e")
 		if ResourceLoader.exists(glow_path):
 			var glow := Sprite2D.new()

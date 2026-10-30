@@ -47,6 +47,21 @@ Branch `p2m2-gates-lighting`, built in a cloud session (Godot 4.7.2 headless; ch
   - unit: gate rules, plus the loader's gate, gate-link and art errors;
   - scenario: docking, every refusal, gate travel, flags, lit hulls and turrets, the raider fallback, star and ambient from data, every stellar drawn from its art with the right scale, planet layers, the night mask, gas giant rings, the closed-gate ring, lit rocks, the shot-light cap and release, and D14.
 
+### 2026-10-30 — Playtest notes (Jarrad)
+
+- **Bug (V8): laser fire made large highlights on planets.**
+  - Cause: shot lights lit everything with normal maps, including planets, which are huge and sit far below the action.
+  - Fix: light masks. Weapon and engine lights reach only hulls, stations, gates and scenery (`LitSprite.NEAR_LIGHT`); the star still lights everything.
+  - Checks: under a virtual display the planet's brightness under the line of fire is unchanged by firing; scenario checks the masks.
+- **Bug (V9): the nebula showed through the star.**
+  - Cause: the star art is additive emission, which brightens the backdrop without hiding it.
+  - Fix: an opaque disc just inside the limb sits under the glow (`stellars.star_disc_cover` 0.97, `star_disc_colour` black).
+  - Check: scenario checks the disc exists.
+- **Design questions raised:**
+  - AI ships still vanish at the edge instead of flying the hyperspace sequence;
+  - scheduled traffic transiting the gate network through hub systems;
+  - starlight hued by the star's colour.
+
 ### Review (godot-reviewer) and fixes
 
 - **Fixed before handover:**

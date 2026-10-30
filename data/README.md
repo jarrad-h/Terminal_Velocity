@@ -74,6 +74,7 @@ Fields marked **required** have no default.
 | `ai.spawn_keep_away_factor` | Traffic placed at system load starts beyond sensor range × this from the player | `1.2` |
 | `ai.inside_spawn_band` | …and between these fractions of the edge radius `[min, max]` | `[0.15, 0.7]` |
 | `stellars.cloud_spin` | V9: how fast planet cloud layers turn, degrees/s (negative turns the other way) | `0.6` |
+| `stellars.star_disc_cover`, `stellars.star_disc_colour` | V9: the star's emission is additive, so an opaque disc this fraction of its radius (0–1), in this colour, sits under it to hide the backdrop | `0.97`, `"#000000"` |
 | `stellars.night_only_emission` | V9: planet art sets whose emission (city lights) shows only on the night side; others (lava) glow everywhere | `["planet_terran", "planet_ocean", "planet_rust"]` |
 | `engine_glow.idle`, `engine_glow.response` | V5: glow strength at idle (0–1, share of full thrust) and how fast it changes (strength per second) | `0.25`, `6` |
 | `galaxy_map.colours` | TR7: galaxy map (M) colours: `background`, `lane` (hyperlanes), `route` (plotted route), `current` (ring round your system), `selected` (ring round the picked system), `unexplored` (unvisited systems), `label` (text), `jump_radius` (the dashed ring in the system view), `gate_link` (dashed gate links, TR5, and gate markers). Explored systems use their government's colour | see `game.json` |

@@ -58,6 +58,18 @@ static func build(obj: SystemObjectDef, settings: Dictionary) -> Node2D:
 	root.scale = Vector2.ONE * obj.radius * 2.0 / diameter_px(obj.art)
 	match obj.type:
 		"star":
+			# The emission is additive, so on its own the backdrop shows through
+			# the disc: an opaque disc just inside the limb hides it.
+			var disc := Polygon2D.new()
+			disc.name = "Disc"
+			var points := PackedVector2Array()
+			var r: float = diameter_px(obj.art) / 2.0 * float(settings["star_disc_cover"])
+			for i: int in 64:
+				points.append(Vector2.from_angle(TAU * i / 64.0) * r)
+			disc.polygon = points
+			disc.color = Color.html(settings["star_disc_colour"])
+			disc.material = LitSprite.unshaded_material()
+			root.add_child(disc)
 			var star := Sprite2D.new()
 			star.texture = load(base.get_basename() + "_e.png")
 			star.modulate = obj.colour
