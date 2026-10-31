@@ -55,7 +55,9 @@
   "traffic": [
     {
       "pool": "pirate_raid",
-      "count": 3
+      "count": 3,
+      "memory": "pirate_presence",
+      "per_point": 0.02
     }
   ],
   "backdrop": {

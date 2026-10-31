@@ -74,7 +74,9 @@
     },
     {
       "pool": "authority_patrol",
-      "count": 1
+      "count": 1,
+      "memory": "alert",
+      "per_point": 0.04
     }
   ],
   "backdrop": {

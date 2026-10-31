@@ -20,8 +20,8 @@
   "traffic": [
     {"pool": "gate_haulers", "count": 2, "via": "gate"},
     {"pool": "trader_traffic", "count": 4},
-    {"pool": "authority_patrol", "count": 2},
-    {"pool": "pirate_raid", "count": 1}
+    {"pool": "authority_patrol", "count": 2, "memory": "alert", "per_point": 0.04},
+    {"pool": "pirate_raid", "count": 1, "memory": "pirate_presence", "per_point": 0.02}
   ],
   "backdrop": {
     "parallax": 0.02,

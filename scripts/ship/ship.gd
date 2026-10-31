@@ -284,12 +284,14 @@ func _attacked_by_player() -> bool:
 
 func _on_disabled() -> void:
 	set_tint(DISABLED_TINT)
+	GameState.ship_lost(self, "disable")  # PS6
 	if _attacked_by_player():
 		GameState.report_player_act(self, "disable")
 		GameState.post_message("%s disabled" % def.name, "combat")  # H4
 
 
 func _on_destroyed() -> void:
+	GameState.ship_lost(self, "kill")  # PS6
 	if _attacked_by_player():
 		GameState.report_player_act(self, "kill")
 		if not _scuttled:

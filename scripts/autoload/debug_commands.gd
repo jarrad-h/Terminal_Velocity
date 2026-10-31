@@ -167,6 +167,13 @@ func _lighting() -> SystemLighting:
 	return scene.lighting if scene != null else null
 
 
+## D13: sets a memory value in the current system (takes effect on the next visit's traffic).
+func set_memory(name: String, value: float) -> void:
+	if OS.is_debug_build():
+		var here: String = GameState.travel.current_system
+		GameState.memory_add(here, name, value - GameState.memory_value(here, name))
+
+
 ## D14: live lighting (star, ambient, lit sprites, point lights) on or off.
 func set_lighting(enabled: bool) -> void:
 	var lighting: SystemLighting = _lighting()
@@ -379,7 +386,7 @@ func run_command(line: String) -> String:
 	var gov_arg: Callable = func(index: int) -> String: return w[index] if w.size() > index else ""
 	match w[0]:
 		"help":
-			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | flag <name> [n] | light on|off | star angle <deg>|auto | star height <0-1> | reload | " \
+			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | flag <name> [n] | memory [<value> <n>] | light on|off | star angle <deg>|auto | star height <0-1> | reload | " \
 				+ "time <scale> | pause | resume | step | invuln on|off | ai on|off | traffic on|off | radar all|range | " \
 				+ "kill | disable | clear | credits <n> | record <gov> <n> | overlay <name> on|off | ids <type> | pos"
 		"spawn", "pool":
@@ -408,6 +415,16 @@ func run_command(line: String) -> String:
 				return "Usage: flag <name> [value, default 1; 0 clears]"
 			set_flag(w[1], w[2].to_int() if w.size() > 2 else 1)
 			return "Flag %s = %d" % [w[1], GameState.flag(w[1])]
+		"memory":
+			var here: String = GameState.travel.current_system
+			if w.size() == 3 and w[1] in SystemDef.MEMORY_VALUES and ConsoleParser.is_number(w[2]):
+				set_memory(w[1], w[2].to_float())
+			elif w.size() != 1:
+				return "Usage: memory [alert|pirate_presence <value>]"
+			var parts: Array[String] = []
+			for name: String in SystemDef.MEMORY_VALUES:
+				parts.append("%s %.0f (base %.0f)" % [name, GameState.memory_value(here, name), float(GameState.memory_rule(here, name)["baseline"])])
+			return "%s: %s; wrecks remembered elsewhere: %d" % [here, ", ".join(parts), GameState.memory.wrecks.values().reduce(func(n: int, l: Array) -> int: return n + l.size(), 0)]
 		"light":
 			var on: int = ConsoleParser.parse_switch(w[1]) if w.size() > 1 else -1
 			if on == -1:

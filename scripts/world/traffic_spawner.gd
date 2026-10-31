@@ -50,6 +50,11 @@ func configure(p_system: SystemDef, fill: bool) -> void:
 		var entry := Entry.new()
 		entry.pool = DataRegistry.get_ai_pool(t["pool"])
 		entry.count = t["count"]
+		if t["memory"] != "":
+			# PS6: the system's memory shifts the population (more patrols on alert…).
+			var rule: Dictionary = GameState.memory_rule(system.id, t["memory"])
+			entry.count = SystemMemory.scaled_count(entry.count, GameState.memory_value(system.id, t["memory"]),
+				float(rule["baseline"]), float(t["per_point"]))
 		entry.via = t["via"]
 		var old_entry: Entry = keep.get(entry.pool.id)
 		if old_entry != null:
@@ -78,6 +83,14 @@ func clear_traffic(free_ships: bool = true) -> void:
 				ship.queue_free()
 		_extras.clear()
 	_entries.clear()
+
+
+## PS6: the population an entry aims for this visit (after system memory).
+func target_count(pool_id: String) -> int:
+	for entry: Entry in _entries:
+		if entry.pool.id == pool_id:
+			return entry.count
+	return -1
 
 
 ## Ships counting towards the population (not disabled).

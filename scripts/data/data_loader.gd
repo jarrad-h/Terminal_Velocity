@@ -44,6 +44,10 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
 		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
 	"engine_glow": {"idle": 0.25, "response": 6.0},
+	"memory": {"values": {"alert": {"baseline": 0.0, "recovery_per_day": 10.0, "max": 100.0},
+			"pirate_presence": {"baseline": 100.0, "recovery_per_day": 10.0, "max": 200.0}},
+		"alert_per_record": 2.0, "pirate_loss": {"disable": 5.0, "kill": 10.0},
+		"pirate_governments": [], "wreck_days": 5},
 	"stellars": {"cloud_spin": 0.6, "night_only_emission": ["planet_terran", "planet_ocean", "planet_rust"],
 		"star_disc_cover": 0.97, "star_disc_colour": "#000000",
 		"gate_light": {"colour": "#9a86ff", "energy": 1.6, "radius": 900.0, "height": 60.0}},
@@ -208,6 +212,18 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		var point: DefReader = lighting.object(kind)
 		for key: String in SETTINGS_DEFAULTS["lighting"][kind]:
 			point.number(key, 0.0, false, 0.0)
+	var memory: DefReader = reader.object("memory")
+	var memory_values: DefReader = memory.object("values")
+	for name: String in SystemDef.MEMORY_VALUES:
+		var v: DefReader = memory_values.object(name)
+		for key: String in ["baseline", "recovery_per_day", "max"]:
+			v.number(key, 0.0, false, 0.0)
+	memory.number("alert_per_record", 0.0, false, 0.0)
+	var losses: DefReader = memory.object("pirate_loss")
+	losses.number("disable", 0.0, false, 0.0)
+	losses.number("kill", 0.0, false, 0.0)
+	memory.ref_array("pirate_governments", "governments")
+	memory.integer("wreck_days", 5, false, 0)
 	var stellars: DefReader = reader.object("stellars")
 	stellars.number("cloud_spin", 0.0)
 	stellars.string_array("night_only_emission")

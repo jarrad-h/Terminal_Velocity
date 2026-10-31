@@ -20,11 +20,15 @@ var _records: Dictionary = {}
 var clock := DayClock.new()
 ## TR6 and later missions (MS1): named flags, name -> int (0 = not set).
 var flags: Dictionary = {}
+## PS6: what each system remembers between visits.
+var memory := SystemMemory.new()
 var travel := TravelState.new()
 
 
 func _ready() -> void:
-	clock.day_passed.connect(func(day: int) -> void: day_passed.emit(day))
+	clock.day_passed.connect(func(day: int) -> void:
+		memory.step_day(_memory_rules())  # TM3: systems recover a day at a time
+		day_passed.emit(day))
 	if DataRegistry.load_errors.is_empty():
 		_start_new()
 
@@ -32,6 +36,7 @@ func _ready() -> void:
 func _start_new() -> void:
 	flags.clear()
 	flags_changed.emit()
+	memory = SystemMemory.new()
 	credits = int(DataRegistry.settings["player"]["credits"])
 	clock.day = 0
 	travel = TravelState.new()
@@ -100,7 +105,49 @@ func report_player_act(target: Ship, act: String) -> void:
 		return
 	target.player_acts[act] = true
 	var gov: GovernmentDef = DataRegistry.get_government(target.government)
-	set_record(target.government, Relations.after_penalty(get_record(target.government), gov, act))
+	var before: float = get_record(target.government)
+	set_record(target.government, Relations.after_penalty(before, gov, act))
+	# PS6: crimes raise the system's alert level.
+	var lost: float = before - get_record(target.government)
+	if lost > 0.0:
+		memory_add(travel.current_system, "alert", lost * float(DataRegistry.settings["memory"]["alert_per_record"]))
+
+
+## PS6: a ship disabled or destroyed in the current system (`act` "disable" or
+## "kill"); pirate losses lower pirate presence. Remembered wrecks coming back
+## don't count again.
+func ship_lost(ship: Ship, act: String) -> void:
+	var settings: Dictionary = DataRegistry.settings["memory"]
+	if ship.is_player() or ship.has_meta("wreck") or not ship.government in settings["pirate_governments"]:
+		return
+	memory_add(travel.current_system, "pirate_presence", -float(settings["pirate_loss"][act]))
+
+
+## PS6: {"baseline", "recovery_per_day", "max"} for a value in a system.
+func memory_rule(system_id: String, name: String) -> Dictionary:
+	var rule: Dictionary = (DataRegistry.settings["memory"]["values"][name] as Dictionary).duplicate()
+	var system: SystemDef = DataRegistry.get_system(system_id)
+	if system != null:
+		rule.merge(system.memory.get(name, {}), true)
+	return rule
+
+
+func memory_value(system_id: String, name: String) -> float:
+	return memory.value(system_id, name, float(memory_rule(system_id, name)["baseline"]))
+
+
+func memory_add(system_id: String, name: String, delta: float) -> void:
+	var rule: Dictionary = memory_rule(system_id, name)
+	memory.add(system_id, name, delta, float(rule["baseline"]), float(rule["max"]))
+
+
+func _memory_rules() -> Dictionary:
+	var rules: Dictionary = {}
+	for system_id: String in memory.values:
+		rules[system_id] = {}
+		for name: String in SystemDef.MEMORY_VALUES:
+			rules[system_id][name] = memory_rule(system_id, name)
+	return rules
 
 
 ## H4: shows `text` on the message line.
@@ -121,7 +168,8 @@ func reset() -> void:
 
 ## SV1: everything above as plain values (the saves milestone stores this).
 func to_dict() -> Dictionary:
-	return {"credits": credits, "records": _records.duplicate(), "day": clock.day, "travel": travel.to_dict(), "flags": flags.duplicate()}
+	return {"credits": credits, "records": _records.duplicate(), "day": clock.day, "travel": travel.to_dict(), "flags": flags.duplicate(),
+		"memory": memory.to_dict()}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -130,6 +178,7 @@ func from_dict(data: Dictionary) -> void:
 	clock.day = int(data.get("day", 0))
 	travel = TravelState.from_dict(data.get("travel", {}))
 	flags = (data.get("flags", {}) as Dictionary).duplicate()
+	memory = SystemMemory.from_dict(data.get("memory", {}))
 	flags_changed.emit()
 	credits_changed.emit(credits)
 

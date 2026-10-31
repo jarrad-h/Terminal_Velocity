@@ -390,7 +390,7 @@ func _run() -> void:
 	await _frames(2)
 	var target_total: int = 0
 	for t: Dictionary in scene_root.system.traffic:
-		target_total += t["count"]
+		target_total += traffic.target_count(t["pool"])  # after system memory (PS6)
 	_check(traffic.live_count() == target_total, "traffic fills to the target population (A6): %d of %d" % [traffic.live_count(), target_total])
 	_debug.set_traffic_enabled(false)
 	await _frames(2)
@@ -575,6 +575,7 @@ func _run() -> void:
 	await _hyperspace_checks(player, scene_root)
 	await _gate_checks(player, scene_root)
 	await _ai_hyperspace_checks(player, scene_root)
+	_memory_checks(player, scene_root)
 	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
@@ -633,6 +634,48 @@ func _run() -> void:
 
 func actions_of(scene_root: Node) -> PlayerActions:
 	return scene_root.actions
+
+
+## P2M3: system memory (PS6).
+func _memory_checks(player: Ship, scene_root: Node) -> void:
+	_check(_debug.switch_system("test_nebula"), "to the start system")
+	var here: String = "test_nebula"
+	GameState.memory = SystemMemory.new()
+	var alert_base: float = GameState.memory_value(here, "alert")
+	var cop: Ship = _debug.spawn_ships("patrol_corvette", 1, "local_authority", player.global_position + Vector2(800.0, 0.0))[0]
+	GameState.report_player_act(cop, "kill")
+	_check(GameState.memory_value(here, "alert") > alert_base, "PS6: crimes raise the system's alert (%.0f)" % GameState.memory_value(here, "alert"))
+	GameState.set_record("local_authority", 0.0)
+	var presence_base: float = GameState.memory_value(here, "pirate_presence")
+	var pirate: Ship = _debug.spawn_ships("pirate_raider", 1, "pirates", player.global_position + Vector2(-900.0, 300.0))[0]
+	pirate.health.force_disable()
+	var disable_loss: float = float(DataRegistry.settings["memory"]["pirate_loss"]["disable"])
+	_check(is_equal_approx(GameState.memory_value(here, "pirate_presence"), presence_base - disable_loss), "PS6: pirate losses lower pirate presence")
+	pirate.looted = true
+	var wreck_at: Vector2 = pirate.global_position
+	_check(_debug.switch_system("aster") and _debug.switch_system("test_nebula"), "leave and come back")
+	var found: Ship = null
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		var ship: Ship = node
+		if ship.def.id == "pirate_raider" and ship.global_position.distance_to(wreck_at) < 1.0:
+			found = ship
+	_check(found != null and found.health.is_disabled, "PS6: the disabled pirate is still there after leaving and coming back")
+	_check(found != null and found.looted, "PS6: ...and remembers it was looted")
+	_check(is_equal_approx(GameState.memory_value(here, "pirate_presence"), presence_base - disable_loss), "a returning wreck doesn't count as another loss")
+	_debug.set_memory("alert", 50.0)
+	_check(_debug.switch_system("aster") and _debug.switch_system("test_nebula"), "visit again")
+	var patrol_entry: Dictionary = scene_root.system.traffic.filter(func(t: Dictionary) -> bool: return t["pool"] == "authority_patrol")[0]
+	var expected_patrols: int = SystemMemory.scaled_count(patrol_entry["count"], 50.0, alert_base, patrol_entry["per_point"])
+	_check(scene_root.traffic.target_count("authority_patrol") == expected_patrols and expected_patrols > patrol_entry["count"], "PS6: high alert brings more patrols (%d)" % expected_patrols)
+	var recovery: float = float(GameState.memory_rule(here, "alert")["recovery_per_day"])
+	_debug.advance_days(2)
+	_check(is_equal_approx(GameState.memory_value(here, "alert"), 50.0 - 2.0 * recovery), "PS6: alert recovers day by day")
+	_check(_debug.switch_system("aster"), "leave the wreck behind")
+	_debug.advance_days(int(DataRegistry.settings["memory"]["wreck_days"]))
+	_check(GameState.memory.wrecks_in(here).is_empty(), "PS6: wrecks are scavenged after their days")
+	_check(_debug.run_command("memory").contains("alert"), "D13: memory via console")
+	GameState.memory = SystemMemory.new()
+	_check(_debug.switch_system("test_nebula"), "back to the start")
 
 
 ## P2M3: AI ships leave and arrive by hyperspace (A9).

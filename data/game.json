@@ -88,6 +88,16 @@
     }
   },
   "engine_glow": {"idle": 0.25, "response": 6},
+  "memory": {
+    "values": {
+      "alert": {"baseline": 0, "recovery_per_day": 10, "max": 100},
+      "pirate_presence": {"baseline": 100, "recovery_per_day": 10, "max": 200}
+    },
+    "alert_per_record": 2,
+    "pirate_loss": {"disable": 5, "kill": 10},
+    "pirate_governments": ["pirates"],
+    "wreck_days": 5
+  },
   "stellars": {"cloud_spin": 0.6, "night_only_emission": ["planet_terran", "planet_ocean", "planet_rust"],
     "star_disc_cover": 0.97, "star_disc_colour": "#000000",
     "gate_light": {"colour": "#9a86ff", "energy": 1.6, "radius": 900, "height": 60}},

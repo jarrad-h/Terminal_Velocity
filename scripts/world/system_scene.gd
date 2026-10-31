@@ -90,9 +90,11 @@ func load_system(system_id: String) -> bool:
 ## C10: as if the player left and came back — every other ship goes,
 ## destroyed scenery returns, and traffic refills.
 func reset_visit() -> void:
+	_record_wrecks()
 	_clear_ships_and_shots()
 	local_space.reset_visit()
 	traffic.configure(system, true)
+	_restore_wrecks()
 
 
 ## TR2, TR4: the player leaves this system for `system_id`, arriving at its
@@ -116,6 +118,7 @@ func enter_system_at(system_id: String, at: Vector2) -> void:
 
 
 func _enter(system_id: String, arrival: FlightState) -> void:
+	_record_wrecks()
 	_clear_ships_and_shots()
 	var same_system: bool = system != null and system.id == system_id
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
@@ -126,8 +129,51 @@ func _enter(system_id: String, arrival: FlightState) -> void:
 	local_space.reset_visit()
 	if same_system:
 		traffic.configure(system, true)  # D11 goto here: refill like a fresh visit
+	_restore_wrecks()
 	if player != null:
 		Flash.spawn(world, player.global_position, player.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
+
+
+## PS6: disabled ships the player leaves behind are remembered for
+## memory.wreck_days days (from when each was first left).
+func _record_wrecks() -> void:
+	if system == null:
+		return
+	var today: int = GameState.clock.day
+	var wreck_days: int = int(DataRegistry.settings["memory"]["wreck_days"])
+	var list: Array = []
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		var ship: Ship = node
+		if ship.is_player() or not ship.health.is_disabled or ship.health.is_destroyed or ship.docked:
+			continue
+		var expires: int = int(ship.get_meta("wreck_expires", today + wreck_days))
+		if expires <= today:
+			continue
+		list.append({"ship": ship.def.id, "government": ship.government,
+			"position": [ship.global_position.x, ship.global_position.y], "rotation": ship.global_rotation,
+			"credits": ship.credits_aboard, "looted": ship.looted, "acts": ship.player_acts.keys(),
+			"days_left": expires - today})
+	GameState.memory.set_wrecks(system.id, list)
+
+
+## PS6: the system's remembered wrecks are back where they were, still disabled.
+func _restore_wrecks() -> void:
+	var today: int = GameState.clock.day
+	for wreck: Dictionary in GameState.memory.wrecks_in(system.id):
+		var at := Vector2(wreck["position"][0], wreck["position"][1])
+		var ship: Ship = spawn_ship(wreck["ship"], at, wreck["government"])
+		if ship == null:
+			continue
+		ship.set_meta("wreck", true)
+		ship.set_meta("wreck_expires", today + int(wreck["days_left"]))
+		ship.place(at, float(wreck["rotation"]))
+		ship.set_controller(IdleController.new())
+		ship.credits_aboard = int(wreck["credits"])
+		ship.looted = bool(wreck["looted"])
+		for act: Variant in wreck["acts"]:
+			ship.player_acts[str(act)] = true
+		ship.health.force_disable()
+	GameState.memory.set_wrecks(system.id, [])
 
 
 func _clear_ships_and_shots() -> void:
