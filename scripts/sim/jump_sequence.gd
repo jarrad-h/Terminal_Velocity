@@ -71,9 +71,24 @@ func flight_stats(base: FlightStats) -> FlightStats:
 	return base
 
 
-func cancel() -> void:
+## A voluntary cancel (J, firing): refused once the countdown has ended
+## and the ship is committed to the jump. Returns whether it cancelled.
+func cancel() -> bool:
+	if not can_cancel():
+		return false
+	phase = Phase.CANCELLED
+	return true
+
+
+## Being disabled stops the jump at any point before the hyperdrive engages.
+func abort() -> void:
 	if is_active():
 		phase = Phase.CANCELLED
+
+
+## TR2: the player can call the jump off until the countdown ends.
+func can_cancel() -> bool:
+	return phase == Phase.STOPPING or phase == Phase.ALIGNING or phase == Phase.COUNTDOWN
 
 
 func is_active() -> bool:

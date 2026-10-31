@@ -211,3 +211,16 @@ Why: found by the godot-reviewer at the milestone 2 handover.
 - 1-day gate links equal to 1-day hyperlane routes are confirmed fine; the Solace trader yard and Redhaven pirate rock stay.
 Why: Jarrad's playtest of milestone 2, 30 Oct 2026.
 - (Same day, while building it) **Glare without blowout:** in the glare the ambient rises to the star light's colour, not white, and the directional light fades to `lighting.star.glare_energy` (0.15), so a ship inside the star is lit evenly in the star's hue with its detail intact; white ambient plus doubled starlight blew hulls out to white.
+
+## 2026-10-31 — Milestone 3 plan: persistence answers; jump commitment (PS2–PS7, A9, A10, TR2)
+- **Grudge:** a pirate captain the player damages or disables (and who survives) gets a grudge for a data number of days and switches to "follow the player" orders, travelling by the same rules; it ends when it expires or he dies.
+- **Death:** a destroyed named entity is gone for good and makes the news; fleets lose ships one by one. Procedurally generated characters and fleets may come later so the cast isn't exhausted.
+- **Off-screen fights:** only persistent entities fight off-screen; generic patrols and pirates come from system memory.
+- **News:** the last 10 days galaxy-wide, newest first, up to 8 items (data).
+- **Alert:** raised by any act that costs the player record with a government, in that system. **Wrecks:** disabled ships left behind stay 5 days (data), then are scavenged.
+- **Gates for entities:** allowed when the gate is open and its government isn't hostile to the entity's.
+- **AI hyperspace:** fleeing ships fly the full sequence; hits don't cancel.
+- **Jump commitment (TR2):** once the countdown ends, J and firing no longer cancel the jump; being disabled still does. Why: Jarrad noticed a jump could be used as a quick in-system dash and then cancelled.
+- **Arrival timing within a day:** proposed (arrival and departure offsets in seconds relative to the player's entry, from data per entity), to confirm before building persistent entities.
+- **Mid-milestone check-in** after A9, A10 and PS6.
+Why: Jarrad's answers, 31 Oct 2026.

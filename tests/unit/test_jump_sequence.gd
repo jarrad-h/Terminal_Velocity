@@ -64,8 +64,9 @@ func test_overdrive_lifts_the_cap_only_while_overdriving() -> void:
 	var boosted: FlightStats = seq.flight_stats(_stats())
 	assert_near(boosted.top_speed, 1200.0, "cap lifted to the hyperdrive speed")
 	assert_near(boosted.accel, 1200.0, "overdrive acceleration")
-	seq.cancel()
-	assert_near(seq.flight_stats(_stats()).top_speed, 300.0, "cancelling restores the cap")
+	assert_false(seq.cancel(), "TR2: committed once the countdown ends")
+	seq.abort()
+	assert_near(seq.flight_stats(_stats()).top_speed, 300.0, "being disabled stops it and restores the cap")
 
 
 func test_cancel_stops_the_sequence() -> void:
@@ -75,4 +76,9 @@ func test_cancel_stops_the_sequence() -> void:
 	assert_false(seq.is_engaged(), "never engages")
 	seq.phase = JumpSequence.Phase.ENGAGED
 	seq.cancel()
-	assert_true(seq.is_engaged(), "too late to cancel once engaged")
+	seq.abort()
+	assert_true(seq.is_engaged(), "too late to stop once engaged")
+	for phase: JumpSequence.Phase in [JumpSequence.Phase.STOPPING, JumpSequence.Phase.ALIGNING, JumpSequence.Phase.COUNTDOWN]:
+		var early := JumpSequence.new(Vector2.UP, 3.0, SETTINGS, _stats())
+		early.phase = phase
+		assert_true(early.cancel(), "TR2: can cancel before the countdown ends (%d)" % phase)

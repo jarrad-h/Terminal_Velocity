@@ -3,7 +3,8 @@ extends Node
 ## The player's hyperlane jump (TR2–TR4, TR8, TM2) and the galaxy map (TR7,
 ## M). J checks the jump and
 ## hands the ship to a JumpSequence (controls locked); J again or firing
-## cancels, and so does being disabled. When the hyperdrive engages, fuel and
+## cancels until the countdown ends (then the ship is committed), and being
+## disabled cancels at any point. When the hyperdrive engages, fuel and
 ## days are spent and the next system loads with the player at its jump radius.
 
 var scene: Node  # SystemScene
@@ -86,10 +87,26 @@ func try_jump() -> String:
 	return ""
 
 
+## TR2: a voluntary cancel (J, firing, debug goto). Once the countdown has
+## ended the jump is committed and this does nothing.
 func cancel(text: String) -> void:
 	if sequence == null:
 		return
-	sequence.cancel()
+	if not sequence.cancel():
+		GameState.post_message("Hyperdrive committed: can't cancel now")
+		return
+	_stop(text)
+
+
+## Being disabled stops the jump even when committed.
+func abort(text: String) -> void:
+	if sequence == null:
+		return
+	sequence.abort()
+	_stop(text)
+
+
+func _stop(text: String) -> void:
 	sequence = null
 	var player: Ship = _player()
 	if player != null:
@@ -102,7 +119,7 @@ func _physics_process(_delta: float) -> void:
 		return
 	var player: Ship = _player()
 	if player == null or not player.can_act():
-		cancel("Jump cancelled: ship disabled")
+		abort("Jump cancelled: ship disabled")
 	elif sequence.is_engaged():
 		_complete(player)
 

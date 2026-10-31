@@ -137,7 +137,7 @@ func switch_system(system_id: String) -> bool:
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
 	if scene == null or DataRegistry.get_system(system_id) == null or not DataRegistry.galaxy().has_system(system_id):
 		return false
-	scene.hyperspace.cancel("Jump cancelled")
+	scene.hyperspace.abort("Jump cancelled")
 	var origin: String = GameState.travel.current_system
 	GameState.travel.route.clear()
 	scene.hyperspace.arrive(system_id, origin)

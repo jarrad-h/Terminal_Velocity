@@ -880,6 +880,7 @@ func _hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	Input.action_release(&"thrust")
 	_check(actions_of(scene_root).try_land() == "none" and actions_of(scene_root).try_board() == "none", "no landing or boarding mid-jump")
 	_check(hyper.open_map() == null, "map locked mid-jump")
+	var committed_checked: bool = false
 	var phases: Array[int] = []
 	var countdown_ticks: int = 0
 	for i: int in 60 * 40:
@@ -887,6 +888,10 @@ func _hyperspace_checks(player: Ship, scene_root: Node) -> void:
 			break
 		if phases.is_empty() or phases[-1] != hyper.sequence.phase:
 			phases.append(hyper.sequence.phase)
+		if hyper.sequence.phase == P.OVERDRIVE and not committed_checked:
+			committed_checked = true
+			hyper.cancel("test")
+			_check(hyper.is_active(), "TR2: J can't cancel once the countdown has ended")
 		if hyper.sequence.phase == P.COUNTDOWN:
 			countdown_ticks += 1
 			_check(player.get_velocity().is_zero_approx(), "TR2: stopped during the countdown")
