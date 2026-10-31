@@ -125,8 +125,9 @@ func _spawn(entry: Entry, mode: String) -> void:
 			start_planet = planets[_rng.randi() % planets.size()]
 			at = start_planet.position
 		"arrive":
-			var dir: Vector2 = Vector2.from_angle(_rng.randf() * TAU)
-			at = dir * system.edge_radius
+			# A9: in from a real neighbour, at the jump radius on its side (TR4).
+			var dir: Vector2 = arrival_side()
+			at = dir * system.jump_radius
 			heading = Aim.rotation_of(-dir)
 			direction = -dir
 			speed_fraction = _ai("arrival_speed_fraction")
@@ -137,6 +138,25 @@ func _spawn(entry: Entry, mode: String) -> void:
 		entry.ships.append(ship)
 		if mode == "arrive":
 			Flash.spawn(ship.get_parent(), at, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
+
+
+## A9: unit vector from the centre to where an arriving ship appears: the
+## side facing a random neighbouring system (any direction if none).
+func arrival_side() -> Vector2:
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	var options: Array[String] = Hyperlanes.neighbours(galaxy, system.id) if galaxy != null and galaxy.has_system(system.id) else []
+	if options.is_empty():
+		return Vector2.from_angle(_rng.randf() * TAU)
+	var origin: String = options[_rng.randi() % options.size()]
+	return -Hyperlanes.bearing(galaxy, origin, system.id)
+
+
+## Spawns one arrival of `pool` now (A9; also used by tests).
+func spawn_arrival(pool: AiPoolDef) -> Ship:
+	var entry := Entry.new()
+	entry.pool = pool
+	_spawn(entry, "arrive")
+	return entry.ships[0] if not entry.ships.is_empty() else null
 
 
 ## `direction` × `speed_fraction` of the picked ship's top speed is its starting velocity.

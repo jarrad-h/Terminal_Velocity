@@ -71,7 +71,7 @@ Fields marked **required** have no default.
 | `ai.object_patrol_chance` | Chance a warship's next waypoint is near a system object (else anywhere in `roam_band`) | `0.6` |
 | `ai.object_patrol_offset_factor` | Warship waypoints sit object radius + sensor range × this from the object | `0.3` |
 | `ai.roam_band` | Roaming waypoints lie between these fractions of the edge radius `[min, max]` | `[0.1, 0.6]` |
-| `ai.jump_out_factor` | Leaving ships head for edge radius × this before jumping out (at least 1) | `1.05` |
+| `ai.jump_out_factor` | A9: leaving ships head for a point at jump radius × this on the bearing to a neighbouring system, then fly the hyperspace sequence (at least 1) | `1.05` |
 | `ai.planet_spawn_chance` | For pools with `spawn_from_planets`: chance a replacement takes off from a planet rather than jumping in at the edge | `0.5` |
 | `ai.arrival_speed_fraction` | Ships jumping in at the edge start at this fraction of their top speed | `0.5` |
 | `ai.spawn_keep_away_factor` | Traffic placed at system load starts beyond sensor range × this from the player | `1.2` |
@@ -236,7 +236,7 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `traffic` | `[{"pool": <AI pool ID>, "count": n}]` target population; each pool at most once | `[]` |
 | `backdrop` | Distant stars and nebula (see below) | all defaults |
 | `local_space` | `[{"scenery": <scenery ID>, "density": d, "region": {…}}]` | `[]` |
-| `edge_radius` | Traffic arrives and leaves this far from the system centre, px (A6) | `6000` |
+| `edge_radius` | Size of the system for traffic: roaming waypoints and ships placed at load use fractions of it (`ai.roam_band`, `ai.inside_spawn_band`), px (A6). Arrivals and departures use `jump_radius` (A9) | `6000` |
 | `respawn_delay` | Seconds before replacing a ship that left or died `[min, max]` | `[5, 15]` |
 | `lighting` | V7: `{"ambient": "#rrggbb", "star": {"colour": "#rrggbb", "energy": n, "height": 0–1}}`, any key optional; overrides `game.json` `lighting` for this system | `{}` |
 | `jump_radius` | TR2: hyperlane jumps need the ship at least this far from the centre, px; TR4: arrivals appear at this distance | `8000` |

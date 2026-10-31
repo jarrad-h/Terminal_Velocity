@@ -574,6 +574,7 @@ func _run() -> void:
 	_debug.clear_ships()
 	await _hyperspace_checks(player, scene_root)
 	await _gate_checks(player, scene_root)
+	await _ai_hyperspace_checks(player, scene_root)
 	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
@@ -632,6 +633,44 @@ func _run() -> void:
 
 func actions_of(scene_root: Node) -> PlayerActions:
 	return scene_root.actions
+
+
+## P2M3: AI ships leave and arrive by hyperspace (A9).
+func _ai_hyperspace_checks(player: Ship, scene_root: Node) -> void:
+	var traffic: TrafficSpawner = scene_root.traffic
+	var system: SystemDef = scene_root.system
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	var arrival: Ship = traffic.spawn_arrival(DataRegistry.get_ai_pool("pirate_raid"))
+	_check(arrival != null and absf(arrival.global_position.length() - system.jump_radius) < 1.0, "A9: arrivals appear at the jump radius")
+	var from_neighbour: bool = false
+	for n: String in Hyperlanes.neighbours(galaxy, system.id):
+		if arrival.global_position.normalized().dot(-Hyperlanes.bearing(galaxy, n, system.id)) > 0.999:
+			from_neighbour = true
+	_check(from_neighbour, "A9: ...on the side facing a real neighbouring system")
+	_check(arrival.get_velocity().dot(-arrival.global_position) > 0.0, "...moving inward")
+	arrival.remove_from_group(&"ships")
+	arrival.queue_free()
+	var leaver: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), Vector2(system.jump_radius * 0.9, 0.0))
+	await _frames(2)
+	var ai: AIController = leaver.controller
+	ai.depart()
+	_check(ai.exit_system in Hyperlanes.neighbours(galaxy, system.id), "A9: leaving for a real neighbour (%s)" % ai.exit_system)
+	var started: bool = false
+	var gone: bool = false
+	for i: int in 60 * 40:
+		await get_tree().physics_frame
+		if not is_instance_valid(leaver):
+			gone = true
+			break
+		if ai.state == AIController.State.JUMPING:
+			if not started:
+				started = true
+				_check(leaver.global_position.length() >= system.jump_radius, "A9: the jump starts beyond the jump radius")
+				_check(leaver.autopilot != null, "A9: the ship flies the hyperspace sequence")
+			if leaver.autopilot != null and leaver.autopilot.phase == JumpSequence.Phase.COUNTDOWN:
+				_check(leaver.get_velocity().is_zero_approx(), "A9: stopped for the countdown")
+				_check(Steering.aligned(leaver.rotation, ai.exit_bearing, 1.5), "A9: facing the exit system's bearing")
+	_check(started and gone, "A9: jumped out after the sequence")
 
 
 ## P2M2: docking with gates, the destination list and gate travel (TR5, TR6).

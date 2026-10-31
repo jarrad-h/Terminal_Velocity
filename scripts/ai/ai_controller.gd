@@ -7,10 +7,11 @@ extends Node
 ##
 ## Decisions run every ai.think_interval seconds; steering runs every frame.
 
-enum State { TRAVEL, DOCKED, PATROL, ATTACK, FLEE, LEAVE }
+enum State { TRAVEL, DOCKED, PATROL, ATTACK, FLEE, LEAVE, JUMPING }
 const STATE_NAMES: Dictionary = {
 	State.TRAVEL: "travelling", State.DOCKED: "docked", State.PATROL: "patrolling",
 	State.ATTACK: "attacking", State.FLEE: "fleeing", State.LEAVE: "leaving",
+	State.JUMPING: "jumping",
 }
 
 var pool: AiPoolDef
@@ -22,6 +23,10 @@ var target: Ship = null
 var destination: Vector2 = Vector2.ZERO
 ## Planet for TRAVEL, DOCKED and planet-bound FLEE (null when heading elsewhere).
 var planet: SystemObjectDef = null
+## A9: the neighbouring system a leaving ship jumps to ("" = none known), and
+## the map bearing towards it.
+var exit_system: String = ""
+var exit_bearing: Vector2 = Vector2.ZERO
 
 var _stops_left: int = 0
 var _timer: float = 0.0
@@ -79,6 +84,9 @@ func get_state_label() -> String:
 
 
 func _physics_process(delta: float) -> void:
+	if state == State.JUMPING:
+		_update_jump()
+		return
 	if DebugCommands.ai_paused or not ship.can_act():
 		_input = FlightInput.new()
 		return
@@ -120,12 +128,12 @@ func _think(elapsed: float) -> void:
 			elif ship.global_position.distance_to(destination) < pool.sensor_range * _ai("waypoint_reached_fraction"):
 				_new_waypoint()
 		State.LEAVE, State.FLEE:
-			if planet == null and ship.global_position.length() >= system.edge_radius:
-				_jump_out()
+			if planet == null and ship.global_position.length() >= system.jump_radius:
+				_start_jump()
 
 
 func _on_attacked(attacker: Ship) -> void:
-	if state == State.FLEE or state == State.LEAVE or state == State.DOCKED:
+	if state == State.FLEE or state == State.LEAVE or state == State.DOCKED or state == State.JUMPING:
 		return
 	if not ship.is_hostile_to(attacker) or not ship.can_act():
 		return
@@ -160,7 +168,7 @@ func _start_flee() -> void:
 	state = State.FLEE
 	planet = _nearest_landable() if pool.behaviour == "trader" else null
 	if planet == null:
-		destination = _edge_point_away_from_centre()
+		_pick_exit()
 
 
 ## C9 Assist: a recovered ship heads for the edge and leaves.
@@ -173,7 +181,44 @@ func depart() -> void:
 func _start_leave() -> void:
 	state = State.LEAVE
 	planet = null
-	destination = _edge_point_away_from_centre()
+	_pick_exit()
+
+
+## A9: a real neighbouring system to leave for, and a point beyond the jump
+## radius on its bearing; with no neighbours, straight out from the centre.
+func _pick_exit() -> void:
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	var options: Array[String] = Hyperlanes.neighbours(galaxy, system.id) if galaxy != null and galaxy.has_system(system.id) else []
+	if options.is_empty():
+		exit_system = ""
+		destination = _edge_point_away_from_centre()
+		return
+	exit_system = options[_rng.randi() % options.size()]
+	exit_bearing = Hyperlanes.bearing(galaxy, system.id, exit_system)
+	destination = exit_bearing * system.jump_radius * _ai("jump_out_factor")
+
+
+## A9: beyond the jump radius, hand the ship to the same jump sequence the
+## player flies (TR2); hits don't stop it, being disabled does.
+func _start_jump() -> void:
+	state = State.JUMPING
+	target = null
+	ship.set_target(null)
+	var bearing: Vector2 = exit_bearing if exit_system != "" else ship.global_position.normalized()
+	ship.autopilot = JumpSequence.new(bearing, ship.def.jump_countdown, DataRegistry.settings["hyperspace"], ship.body.stats)
+
+
+func _update_jump() -> void:
+	if ship.autopilot == null:
+		return
+	if not ship.can_act():
+		ship.autopilot.abort()
+		ship.autopilot = null
+		state = State.FLEE
+		return
+	if ship.autopilot.is_engaged():
+		ship.autopilot = null
+		_jump_out()
 
 
 func _travel_to_next_planet() -> void:
@@ -338,7 +383,7 @@ func _edge_point_away_from_centre() -> Vector2:
 	var dir: Vector2 = ship.global_position.normalized()
 	if dir.is_zero_approx():
 		dir = Vector2.from_angle(_rng.randf() * TAU)
-	return dir * system.edge_radius * _ai("jump_out_factor")
+	return dir * system.jump_radius * _ai("jump_out_factor")
 
 
 func _ai(key: String) -> float:
