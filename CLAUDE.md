@@ -54,7 +54,8 @@ tests/
   unit/       GUT tests (test_*.gd) for scripts/sim and the data loader
   fixtures/   Data folders the loader tests read
   smoke/      smoke.tscn (boot + spawn every ship, must print no errors) and scenario.tscn (scripted end-to-end checks)
-tools/        check.py (one health check), hooks/post_edit.py (edit hook), hardpoint-editor/ (browser tool that writes hull.json)
+tools/        check.py (one health check), hooks/post_edit.py (edit hook), hardpoint-editor/ (browser tool that writes hull.json),
+              ship-designer/ (browser tool: compose hulls from a parts kit, writes .design.json and hull.json), shared/ (marker code both tools load)
 docs/         phase2-spec.md (current), spec.md (Phase 1), decisions.md, devlog.md
 ```
 
