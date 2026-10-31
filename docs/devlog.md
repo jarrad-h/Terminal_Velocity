@@ -4,6 +4,33 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Phase 2 Milestone 3: Persistence foundation (in progress, from 31 Oct 2026)
+
+Branch `p2m3-persistence`, cloud session. The plan was agreed with Jarrad, with a mid-milestone check-in after the first half (A9, A10, PS6). Persistent entities, encounters and news (PS2–PS5, PS7) come after the check-in. Decisions: `docs/decisions.md`, 31 Oct.
+
+### First half (check-in)
+
+- **TR2 change:** a jump is committed once its countdown ends. J and firing no longer cancel during the high-speed run, so a jump can't be used as an in-system dash. Being disabled still aborts it.
+- **A9 AI hyperspace:**
+  - Leaving and fleeing AI ships pick a real neighbouring system, fly out on its map bearing past the jump radius, and fly the same jump sequence as the player (stop, align, countdown, overdrive).
+  - Hits don't stop the jump; being disabled does.
+  - Arrivals appear at the jump radius on the side facing a real neighbour.
+  - A fleeing pirate now has to stop and count down, so it can be caught.
+- **A10 gate traffic:**
+  - Traffic entries take `via: "gate"`. Those ships appear at the gate with a flash, call at one or two ports, then fly back and dock with the gate.
+  - The new `gate_haulers` pool (independent freighters and couriers) runs 2 at a time in each core system.
+- **PS6 system memory:**
+  - Alert (baseline 0) rises by 2 per point of record you lose in a system.
+  - Pirate presence (baseline 100) drops by 5 per pirate disabled and 10 per pirate destroyed, by anyone.
+  - Both recover by 10 a day towards their baseline.
+  - Authority patrols gain one per 25 alert; pirate raids lose one per 50 presence lost.
+  - Disabled ships you leave behind are there again when you come back, still disabled and remembering whether you looted or assisted them, for 5 days. Then they're scavenged.
+  - Memory is saved in GameState (`to_dict`).
+  - D13: `memory` console command (`memory alert 50` sets a value in the current system).
+- **Tests:** unit tests for `SystemMemory` (values, recovery, traffic scaling, wreck ageing, round trip) and the loader's `via` rules; scenario checks for the committed jump, AI departure and arrival by hyperspace, gate arrival and departure, and the whole memory loop.
+
+---
+
 ## Phase 2 Milestone 2: Gates and lighting (30 Oct 2026)
 
 Playtest confirmed by Jarrad on 30 Oct 2026; merged to `main`. Branch `p2m2-gates-lighting`, built in a cloud session (Godot 4.7.2 headless; checked by unit tests and the scenario test, plus measurements and screenshots rendered under a virtual display). Scope widened on 30 Oct to fold in lit ships after the light maps landed (PR #4); first-pass stellar art (PR #5) merged into `main` and wired in here. Decisions: `docs/decisions.md`, 30 Oct entries on lighting and milestone 2.
