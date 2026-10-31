@@ -233,7 +233,7 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `name` | Display name | **required** |
 | `seed` | Seeds local-space generation; same seed, same scenery | `0` |
 | `objects` | Stars, planets, stations (see below); drawn from milestone 5 | `[]` |
-| `traffic` | `[{"pool": <AI pool ID>, "count": n}]` target population; each pool at most once | `[]` |
+| `traffic` | `[{"pool": <AI pool ID>, "count": n, "via": "hyperspace" \| "gate"}]` target population; each pool at most once. `via` `"gate"` (A10) ships arrive through the system's gate, call at planets and leave through it (the system needs a gate); `"hyperspace"` ships jump in and out (A9) | `[]`; `via` `"hyperspace"` |
 | `backdrop` | Distant stars and nebula (see below) | all defaults |
 | `local_space` | `[{"scenery": <scenery ID>, "density": d, "region": {…}}]` | `[]` |
 | `edge_radius` | Size of the system for traffic: roaming waypoints and ships placed at load use fractions of it (`ai.roam_band`, `ai.inside_spawn_band`), px (A6). Arrivals and departures use `jump_radius` (A9) | `6000` |

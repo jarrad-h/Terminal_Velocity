@@ -9,6 +9,8 @@ extends Node
 class Entry:
 	var pool: AiPoolDef
 	var count: int
+	## A10: "gate" traffic arrives and leaves through the system's gate.
+	var via: String = "hyperspace"
 	## Every live ship from this entry, disabled ones included (so they can be
 	## freed on clear); only non-disabled ones count towards `count`.
 	var ships: Array = []
@@ -48,6 +50,7 @@ func configure(p_system: SystemDef, fill: bool) -> void:
 		var entry := Entry.new()
 		entry.pool = DataRegistry.get_ai_pool(t["pool"])
 		entry.count = t["count"]
+		entry.via = t["via"]
 		var old_entry: Entry = keep.get(entry.pool.id)
 		if old_entry != null:
 			entry.ships.assign(old_entry.ships)
@@ -98,7 +101,10 @@ func _physics_process(delta: float) -> void:
 		if entry.cooldown <= 0.0:
 			var from_planet: bool = entry.pool.spawn_from_planets and not _landable().is_empty() \
 				and _rng.randf() < _ai("planet_spawn_chance")
-			_spawn(entry, "takeoff" if from_planet else "arrive")
+			if entry.via == "gate":
+				_spawn(entry, "gate")
+			else:
+				_spawn(entry, "takeoff" if from_planet else "arrive")
 			entry.cooldown = _respawn_roll()
 
 
@@ -124,6 +130,10 @@ func _spawn(entry: Entry, mode: String) -> void:
 			var planets: Array[SystemObjectDef] = _landable()
 			start_planet = planets[_rng.randi() % planets.size()]
 			at = start_planet.position
+		"gate":
+			# A10: out of the gate's field, stopped.
+			var gate: SystemObjectDef = system.gate()
+			at = gate.position + StellarArt.jump_point(gate)
 		"arrive":
 			# A9: in from a real neighbour, at the jump radius on its side (TR4).
 			var dir: Vector2 = arrival_side()
@@ -133,10 +143,10 @@ func _spawn(entry: Entry, mode: String) -> void:
 			speed_fraction = _ai("arrival_speed_fraction")
 		_:
 			at = _inside_point(entry.pool)
-	var ship: Ship = _make(entry.pool, at, heading, direction, speed_fraction, mode, start_planet)
+	var ship: Ship = _make(entry.pool, at, heading, direction, speed_fraction, mode, start_planet, "", null, entry.via == "gate")
 	if ship != null:
 		entry.ships.append(ship)
-		if mode == "arrive":
+		if mode == "arrive" or mode == "gate":
 			Flash.spawn(ship.get_parent(), at, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
 
 
@@ -151,6 +161,15 @@ func arrival_side() -> Vector2:
 	return -Hyperlanes.bearing(galaxy, origin, system.id)
 
 
+## Spawns one gate arrival of `pool` now (A10; tests).
+func spawn_gate_arrival(pool: AiPoolDef) -> Ship:
+	var entry := Entry.new()
+	entry.pool = pool
+	entry.via = "gate"
+	_spawn(entry, "gate")
+	return entry.ships[0] if not entry.ships.is_empty() else null
+
+
 ## Spawns one arrival of `pool` now (A9; also used by tests).
 func spawn_arrival(pool: AiPoolDef) -> Ship:
 	var entry := Entry.new()
@@ -161,7 +180,7 @@ func spawn_arrival(pool: AiPoolDef) -> Ship:
 
 ## `direction` × `speed_fraction` of the picked ship's top speed is its starting velocity.
 func _make(pool: AiPoolDef, at: Vector2, heading: float, direction: Vector2, speed_fraction: float, mode: String, start_planet: SystemObjectDef,
-		government_override: String = "", personality: PersonalityDef = null) -> Ship:
+		government_override: String = "", personality: PersonalityDef = null, via_gate: bool = false) -> Ship:
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
 	var ship_id: String = pool.ships[WeightedPick.pick(_weights(pool.ships), _rng.randf())]["ship"]
 	var ship: Ship = scene.spawn_ship(ship_id, at, government_override if government_override != "" else pool.government)
@@ -170,6 +189,7 @@ func _make(pool: AiPoolDef, at: Vector2, heading: float, direction: Vector2, spe
 	ship.place(at, heading, direction * ship.body.stats.top_speed * speed_fraction)
 	var controller := AIController.new()
 	controller.setup(pool, personality if personality != null else _pick_personality(pool), system, mode, start_planet, _rng.randi())
+	controller.via_gate = via_gate
 	ship.set_controller(controller)
 	return ship
 

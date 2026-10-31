@@ -671,6 +671,21 @@ func _ai_hyperspace_checks(player: Ship, scene_root: Node) -> void:
 				_check(leaver.get_velocity().is_zero_approx(), "A9: stopped for the countdown")
 				_check(Steering.aligned(leaver.rotation, ai.exit_bearing, 1.5), "A9: facing the exit system's bearing")
 	_check(started and gone, "A9: jumped out after the sequence")
+	# A10: gate traffic (the start system has a gate).
+	_check(_debug.switch_system("test_nebula"), "to a gate system")
+	system = scene_root.system
+	_check(system.traffic.any(func(t: Dictionary) -> bool: return t["via"] == "gate"), "A10: the hub lists gate traffic")
+	var hauler: Ship = traffic.spawn_gate_arrival(DataRegistry.get_ai_pool("gate_haulers"))
+	var gate: SystemObjectDef = system.gate()
+	_check(hauler != null and hauler.global_position.distance_to(gate.position + StellarArt.jump_point(gate)) < 1.0, "A10: gate traffic arrives at the gate")
+	await _frames(2)
+	var hauler_ai: AIController = hauler.controller
+	_check(hauler_ai.via_gate and hauler_ai.state == AIController.State.TRAVEL and hauler_ai.planet != null and hauler_ai.planet.type in ["planet", "station"], "A10: ...and heads for a port")
+	hauler.place(gate.position, 0.0)
+	hauler_ai.depart()
+	_check(hauler_ai.planet == gate, "A10: leaves through the gate, not by hyperspace")
+	await _frames(5)
+	_check(not is_instance_valid(hauler), "A10: docked with the gate and gone")
 
 
 ## P2M2: docking with gates, the destination list and gate travel (TR5, TR6).
@@ -734,6 +749,9 @@ func _gate_checks(player: Ship, scene_root: Node) -> void:
 ## P2M2: lit hulls and turrets (V6), star and ambient light from data (V7).
 func _lighting_checks(player: Ship, scene_root: Node) -> void:
 	var lighting: SystemLighting = scene_root.lighting
+	player.place(Vector2(3000.0, 0.0), 0.0)  # well clear of the star's glare
+	await get_tree().process_frame
+	await get_tree().process_frame
 	_check(lighting != null and lighting.star_light.enabled, "V7: the star light is on")
 	var expected: Dictionary = SystemLighting.settings_for(scene_root.system, DataRegistry.settings["lighting"])
 	_check(lighting.ambient.color.is_equal_approx(expected["ambient"]), "V7: ambient from data")

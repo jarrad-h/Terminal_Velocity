@@ -27,6 +27,9 @@ var planet: SystemObjectDef = null
 ## the map bearing towards it.
 var exit_system: String = ""
 var exit_bearing: Vector2 = Vector2.ZERO
+## A10: this ship travels the gate network: it leaves by docking with the
+## system's gate instead of jumping.
+var via_gate: bool = false
 
 var _stops_left: int = 0
 var _timer: float = 0.0
@@ -180,8 +183,9 @@ func depart() -> void:
 
 func _start_leave() -> void:
 	state = State.LEAVE
-	planet = null
-	_pick_exit()
+	planet = system.gate() if via_gate else null
+	if planet == null:
+		_pick_exit()
 
 
 ## A9: a real neighbouring system to leave for, and a point beyond the jump
@@ -242,6 +246,9 @@ func _new_waypoint() -> void:
 
 
 func _land() -> void:
+	if planet.type == "gate":
+		_jump_out()  # A10: through the gate
+		return
 	var fleeing: bool = state == State.FLEE
 	ship.place(planet.position, ship.rotation)
 	ship.set_docked(true)
@@ -284,7 +291,7 @@ func _steer(delta: float) -> void:
 			_input = FlightInput.new()
 		State.ATTACK:
 			_steer_attack(s, stats, delta)
-		State.TRAVEL, State.FLEE when planet != null:
+		State.TRAVEL, State.FLEE, State.LEAVE when planet != null:
 			_input = Steering.toward_velocity(s, stats, Steering.arrive_velocity(s, stats, planet.position), thrust_angle, delta)
 			var landing: Dictionary = DataRegistry.settings["landing"]
 			if PortRules.landing_check(s.position.distance_to(planet.position), planet.radius, float(landing["radius_fraction"]),

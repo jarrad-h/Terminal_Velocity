@@ -18,6 +18,7 @@
      "description": "A gas giant.", "landable": false, "art": "planet_gas_giant"}
   ],
   "traffic": [
+    {"pool": "gate_haulers", "count": 2, "via": "gate"},
     {"pool": "trader_traffic", "count": 4},
     {"pool": "authority_patrol", "count": 2},
     {"pool": "pirate_raid", "count": 1}

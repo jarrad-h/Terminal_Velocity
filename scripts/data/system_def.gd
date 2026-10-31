@@ -6,7 +6,9 @@ var name: String
 var system_seed: int
 var objects: Array[SystemObjectDef] = []
 ## [{"pool": String, "count": int}]
+## [{"pool": String, "count": int, "via": "hyperspace" | "gate"}] (A10).
 var traffic: Array[Dictionary] = []
+const VIA: Array[String] = ["hyperspace", "gate"]
 var backdrop: BackdropDef
 var local_space: Array[LocalSpaceEntry] = []
 ## A6: traffic arrives and leaves at this distance from the system centre, px.
@@ -28,7 +30,8 @@ static func parse(r: DefReader) -> SystemDef:
 	for o: DefReader in r.objects("objects"):
 		d.objects.append(SystemObjectDef.parse(o))
 	for t: DefReader in r.objects("traffic"):
-		d.traffic.append({"pool": t.ref("pool", "ai_pools", "", true), "count": t.integer("count", 1, false, 0)})
+		d.traffic.append({"pool": t.ref("pool", "ai_pools", "", true), "count": t.integer("count", 1, false, 0),
+			"via": t.choice("via", VIA, "hyperspace")})
 	d.backdrop = BackdropDef.parse(r.object("backdrop"))
 	for e: DefReader in r.objects("local_space"):
 		d.local_space.append(LocalSpaceEntry.parse(e))
@@ -90,4 +93,6 @@ func validate(_defs: Dictionary, errors: Array[String]) -> void:
 		var pool_id: String = traffic[i]["pool"]
 		if pools.has(pool_id):
 			errors.append("%s: field 'traffic[%d].pool': '%s' is already listed; use one entry with a higher count" % [file, i, pool_id])
+		if traffic[i]["via"] == "gate" and gate() == null:
+			errors.append("%s: field 'traffic[%d].via': gate traffic needs a gate in the system" % [file, i])
 		pools[pool_id] = true

@@ -67,6 +67,7 @@
     }
   ],
   "traffic": [
+    {"pool": "gate_haulers", "count": 2, "via": "gate"},
     {
       "pool": "trader_traffic",
       "count": 3
