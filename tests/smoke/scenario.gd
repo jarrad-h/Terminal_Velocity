@@ -647,7 +647,7 @@ func _memory_checks(player: Ship, scene_root: Node) -> void:
 	_check(GameState.memory_value(here, "alert") > alert_base, "PS6: crimes raise the system's alert (%.0f)" % GameState.memory_value(here, "alert"))
 	GameState.set_record("local_authority", 0.0)
 	var presence_base: float = GameState.memory_value(here, "pirate_presence")
-	var pirate: Ship = _debug.spawn_ships("pirate_raider", 1, "pirates", player.global_position + Vector2(-900.0, 300.0))[0]
+	var pirate: Ship = _debug.spawn_pool("pirate_raid", 1, "", player.global_position + Vector2(-900.0, 300.0))[0]
 	pirate.health.force_disable()
 	var disable_loss: float = float(DataRegistry.settings["memory"]["pirate_loss"]["disable"])
 	_check(is_equal_approx(GameState.memory_value(here, "pirate_presence"), presence_base - disable_loss), "PS6: pirate losses lower pirate presence")
@@ -662,6 +662,11 @@ func _memory_checks(player: Ship, scene_root: Node) -> void:
 	_check(found != null and found.health.is_disabled, "PS6: the disabled pirate is still there after leaving and coming back")
 	_check(found != null and found.looted, "PS6: ...and remembers it was looted")
 	_check(is_equal_approx(GameState.memory_value(here, "pirate_presence"), presence_base - disable_loss), "a returning wreck doesn't count as another loss")
+	_check(found != null and found.controller is AIController, "PS6: a remembered wreck keeps its AI, so Assist sends it on its way (C9)")
+	if found != null:
+		found.health.force_destroy()
+		var kill_loss: float = float(DataRegistry.settings["memory"]["pirate_loss"]["kill"])
+		_check(is_equal_approx(GameState.memory_value(here, "pirate_presence"), presence_base - disable_loss - kill_loss), "PS6: destroying a remembered pirate wreck counts as a loss")
 	_debug.set_memory("alert", 50.0)
 	_check(_debug.switch_system("aster") and _debug.switch_system("test_nebula"), "visit again")
 	var patrol_entry: Dictionary = scene_root.system.traffic.filter(func(t: Dictionary) -> bool: return t["pool"] == "authority_patrol")[0]
@@ -693,6 +698,18 @@ func _ai_hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	_check(arrival.get_velocity().dot(-arrival.global_position) > 0.0, "...moving inward")
 	arrival.remove_from_group(&"ships")
 	arrival.queue_free()
+	# A9: a fleeing ship makes for the neighbour on its own side of the system.
+	var neighbours: Array[String] = Hyperlanes.neighbours(galaxy, system.id)
+	var side: Vector2 = Hyperlanes.bearing(galaxy, system.id, neighbours[-1])
+	var runner: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), side * system.jump_radius * 0.5)
+	await _frames(2)
+	(runner.controller as AIController)._start_flee()
+	var best: float = -2.0
+	for n: String in neighbours:
+		best = maxf(best, Hyperlanes.bearing(galaxy, system.id, n).dot(side))
+	_check(is_equal_approx((runner.controller as AIController).exit_bearing.dot(side), best), "A9: fleeing ships make for the nearest-side neighbour")
+	runner.remove_from_group(&"ships")
+	runner.queue_free()
 	var leaver: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), Vector2(system.jump_radius * 0.9, 0.0))
 	await _frames(2)
 	var ai: AIController = leaver.controller
@@ -724,6 +741,14 @@ func _ai_hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	await _frames(2)
 	var hauler_ai: AIController = hauler.controller
 	_check(hauler_ai.via_gate and hauler_ai.state == AIController.State.TRAVEL and hauler_ai.planet != null and hauler_ai.planet.type in ["planet", "station"], "A10: ...and heads for a port")
+	var condition: String = gate.open_condition
+	gate.open_condition = "!test_gate_shut"
+	GameState.set_flag("test_gate_shut", 1)
+	hauler_ai.depart()
+	_check(hauler_ai.planet == null and hauler_ai.exit_system != "", "A10, TR6: with the gate closed, it leaves by hyperspace instead")
+	GameState.set_flag("test_gate_shut", 0)
+	gate.open_condition = condition
+	hauler_ai.via_gate = true
 	hauler.place(gate.position, 0.0)
 	hauler_ai.depart()
 	_check(hauler_ai.planet == gate, "A10: leaves through the gate, not by hyperspace")

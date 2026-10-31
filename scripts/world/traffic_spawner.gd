@@ -114,8 +114,10 @@ func _physics_process(delta: float) -> void:
 		if entry.cooldown <= 0.0:
 			var from_planet: bool = entry.pool.spawn_from_planets and not _landable().is_empty() \
 				and _rng.randf() < _ai("planet_spawn_chance")
-			if entry.via == "gate":
+			if entry.via == "gate" and _gate_open():
 				_spawn(entry, "gate")
+			elif entry.via == "gate":
+				_spawn(entry, "arrive")  # gate closed (TR6): they come by hyperspace
 			else:
 				_spawn(entry, "takeoff" if from_planet else "arrive")
 			entry.cooldown = _respawn_roll()
@@ -161,6 +163,11 @@ func _spawn(entry: Entry, mode: String) -> void:
 		entry.ships.append(ship)
 		if mode == "arrive" or mode == "gate":
 			Flash.spawn(ship.get_parent(), at, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
+
+
+func _gate_open() -> bool:
+	var gate: SystemObjectDef = system.gate()
+	return gate != null and GateRules.is_open(gate.open_condition, GameState.flags)
 
 
 ## A9: unit vector from the centre to where an arriving ship appears: the

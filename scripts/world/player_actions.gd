@@ -117,8 +117,9 @@ func _dock_at_gate(gate: SystemObjectDef, player: Ship) -> String:
 func _travel_by_gate(gate: SystemObjectDef, system_id: String, days: int) -> void:
 	GameState.add_credits(-gate.fee)
 	dialog.close()
-	scene.hyperspace.arrive_at_gate(system_id)
+	scene.record_wrecks()  # PS6: left now; the trip's days pass before arriving
 	GameState.advance_days(days)
+	scene.hyperspace.arrive_at_gate(system_id)
 	GameState.post_message("Through %s to %s after %d day%s" % [gate.name, Hyperspace.system_name(system_id), days, "" if days == 1 else "s"])
 
 
@@ -290,12 +291,13 @@ func _rescue(pod: EscapePod) -> void:
 	GameState.add_credits(-fee)
 	var days: Array = settings["rescue_days"]
 	var days_passed: int = _rng.randi_range(roundi(days[0]), roundi(days[1]))
+	scene.record_wrecks()  # PS6: wrecks age while the pod drifts
 	GameState.advance_days(days_passed)  # TM2: the days adrift pass on the calendar
 	var objects: Array[SystemObjectDef] = scene.system.objects
 	var index: int = PortRules.rescue_port(objects, from, GameState.records(), float(settings["record"]))
 	var port: SystemObjectDef = objects[index] if index >= 0 else null
-	# Days pass: like leaving and coming back (every other ship, wrecks
-	# included, destroyed scenery, then fresh traffic).
+	# Days pass: like leaving and coming back. Every other ship goes, destroyed
+	# scenery returns and traffic refills; remembered wrecks still in date stay (PS6).
 	scene.reset_visit()
 	# Insured: like for like. Uninsured: a basic hull.
 	var insured: bool = bool(settings["insured"])

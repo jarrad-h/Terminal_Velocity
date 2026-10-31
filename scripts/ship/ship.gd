@@ -96,6 +96,7 @@ func setup(ship_def: ShipDef, keep_health: bool = false) -> void:
 
 
 func set_controller(new_controller: Node) -> void:
+	autopilot = null  # a new controller never inherits a jump in progress
 	if controller != null:
 		controller.queue_free()
 	controller = new_controller

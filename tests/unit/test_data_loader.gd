@@ -249,6 +249,19 @@ func test_lighting_errors() -> void:
 	_expect_error(set, ["dim_lit.json", "lighting.star.height", "at most 1"])
 
 
+## PS6: memory settings, per-system overrides and traffic memory scaling.
+func test_memory_errors() -> void:
+	var set: DataSet = _load([BROKEN])
+	_expect_error(set, ["game.json", "memory.values.alert.recovery_per_day", "at least 0"])
+	_expect_error(set, ["game.json", "memory.wreck_days", "at least 0"])
+	_expect_error(set, ["game.json", "memory.pirate_governments[0]", "nobody"])
+	_expect_error(set, ["forgetful.json", "memory.alert.baseline", "at least 0"])
+	_expect_error(set, ["forgetful.json", "traffic[0].per_point", "required when 'memory' is set"])
+	_expect_error(set, ["forgetful.json", "traffic[1].memory", "fear"])
+	var lit: SystemDef = _load([BASE]).get_def("systems", "lit")
+	assert_near(float(lit.memory["alert"]["baseline"]), 20.0, "system memory override parsed")
+
+
 func test_system_lighting_overrides() -> void:
 	var set: DataSet = _load([BASE])
 	var defaults: Dictionary = set.settings["lighting"]

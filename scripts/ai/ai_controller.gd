@@ -87,10 +87,13 @@ func get_state_label() -> String:
 
 
 func _physics_process(delta: float) -> void:
+	if DebugCommands.ai_paused:
+		_input = FlightInput.new()
+		return
 	if state == State.JUMPING:
 		_update_jump()
 		return
-	if DebugCommands.ai_paused or not ship.can_act():
+	if not ship.can_act():
 		_input = FlightInput.new()
 		return
 	_think_left -= delta
@@ -183,9 +186,15 @@ func depart() -> void:
 
 func _start_leave() -> void:
 	state = State.LEAVE
-	planet = system.gate() if via_gate else null
+	planet = _open_gate() if via_gate else null
 	if planet == null:
 		_pick_exit()
+
+
+## A10, TR6: the system's gate if it's open, else null.
+func _open_gate() -> SystemObjectDef:
+	var gate: SystemObjectDef = system.gate()
+	return gate if gate != null and GateRules.is_open(gate.open_condition, GameState.flags) else null
 
 
 ## A9: a real neighbouring system to leave for, and a point beyond the jump
@@ -198,6 +207,12 @@ func _pick_exit() -> void:
 		destination = _edge_point_away_from_centre()
 		return
 	exit_system = options[_rng.randi() % options.size()]
+	var outward: Vector2 = ship.global_position.normalized()
+	if state == State.FLEE and not outward.is_zero_approx():
+		# Fleeing: the neighbour whose side of the system the ship is already on.
+		for option: String in options:
+			if Hyperlanes.bearing(galaxy, system.id, option).dot(outward) > Hyperlanes.bearing(galaxy, system.id, exit_system).dot(outward):
+				exit_system = option
 	exit_bearing = Hyperlanes.bearing(galaxy, system.id, exit_system)
 	destination = exit_bearing * system.jump_radius * _ai("jump_out_factor")
 
@@ -214,6 +229,7 @@ func _start_jump() -> void:
 
 func _update_jump() -> void:
 	if ship.autopilot == null:
+		_start_flee()
 		return
 	if not ship.can_act():
 		ship.autopilot.abort()
@@ -247,7 +263,11 @@ func _new_waypoint() -> void:
 
 func _land() -> void:
 	if planet.type == "gate":
-		_jump_out()  # A10: through the gate
+		if _open_gate() != null:
+			_jump_out()  # A10: through the gate
+		else:
+			via_gate = false  # closed while on the way (TR6): leave by hyperspace
+			_start_leave()
 		return
 	var fleeing: bool = state == State.FLEE
 	ship.place(planet.position, ship.rotation)

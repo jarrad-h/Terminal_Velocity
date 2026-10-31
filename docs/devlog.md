@@ -24,9 +24,22 @@ Branch `p2m3-persistence`, cloud session. The plan was agreed with Jarrad, with 
   - Pirate presence (baseline 100) drops by 5 per pirate disabled and 10 per pirate destroyed, by anyone.
   - Both recover by 10 a day towards their baseline.
   - Authority patrols gain one per 25 alert; pirate raids lose one per 50 presence lost.
-  - Disabled ships you leave behind are there again when you come back, still disabled and remembering whether you looted or assisted them, for 5 days. Then they're scavenged.
+  - Disabled ships you leave behind are there again when you come back, for 5 days counted from when you left them. They're still disabled, with their armour, credits and whether you looted them, and they keep their AI, so Assist sends them on their way. Then they're scavenged.
   - Memory is saved in GameState (`to_dict`).
   - D13: `memory` console command (`memory alert 50` sets a value in the current system).
+- **Review (godot-reviewer) and fixes:**
+  - **Fixed:**
+    - Gate traffic used gates even when closed. Now closed gates send haulers by hyperspace instead.
+    - Remembered wrecks came back without their AI, so Assist left them stuck. They now keep their pool, personality and armour.
+    - Fleeing ships could pick a neighbour across the system. They now make for the neighbour on their own side.
+    - The trip's days now pass before you arrive, so wrecks and memory recover correctly; the rescue flow too.
+    - Destroying a remembered pirate wreck now counts as a pirate loss.
+    - `ai off` freezes jumping ships, and a new controller clears any jump in progress.
+    - Loader tests added for the memory settings and the `per_point` rule.
+  - **Later:**
+    - The current system's wrecks exist only as ships while you're there, so saves (milestone 4) must record them before writing.
+    - A system's memory baseline isn't checked against the global max.
+  - **To ask Jarrad:** should AI traffic use hidden lanes?
 - **Tests:** unit tests for `SystemMemory` (values, recovery, traffic scaling, wreck ageing, round trip) and the loader's `via` rules; scenario checks for the committed jump, AI departure and arrival by hyperspace, gate arrival and departure, and the whole memory loop.
 
 ---

@@ -5,7 +5,6 @@ extends Def
 var name: String
 var system_seed: int
 var objects: Array[SystemObjectDef] = []
-## [{"pool": String, "count": int}]
 ## [{"pool": String, "count": int, "via": "hyperspace" | "gate" (A10),
 ##   "memory": "" | memory value name, "per_point": float (PS6)}].
 var traffic: Array[Dictionary] = []
@@ -40,6 +39,8 @@ static func parse(r: DefReader) -> SystemDef:
 		d.traffic.append({"pool": t.ref("pool", "ai_pools", "", true), "count": t.integer("count", 1, false, 0),
 			"via": t.choice("via", VIA, "hyperspace"),
 			"memory": t.choice("memory", TRAFFIC_MEMORY, ""), "per_point": t.number("per_point", 0.0)})
+		if d.traffic[-1]["memory"] != "" and not t.has("per_point"):
+			t.error("per_point", "is required when 'memory' is set")
 	if r.has("memory"):
 		var m: DefReader = r.object("memory")
 		for name: String in MEMORY_VALUES:

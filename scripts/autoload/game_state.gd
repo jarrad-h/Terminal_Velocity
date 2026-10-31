@@ -114,11 +114,11 @@ func report_player_act(target: Ship, act: String) -> void:
 
 
 ## PS6: a ship disabled or destroyed in the current system (`act` "disable" or
-## "kill"); pirate losses lower pirate presence. Remembered wrecks coming back
-## don't count again.
+## "kill"); pirate losses lower pirate presence. A remembered wreck being
+## restored doesn't count again (its later destruction does).
 func ship_lost(ship: Ship, act: String) -> void:
 	var settings: Dictionary = DataRegistry.settings["memory"]
-	if ship.is_player() or ship.has_meta("wreck") or not ship.government in settings["pirate_governments"]:
+	if ship.is_player() or ship.has_meta("restoring") or not ship.government in settings["pirate_governments"]:
 		return
 	memory_add(travel.current_system, "pirate_presence", -float(settings["pirate_loss"][act]))
 
