@@ -303,6 +303,7 @@ pre.json {
 </div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="../shared/hull-markers.js"></script>
 <script>
 (() => {
 'use strict';
@@ -317,12 +318,8 @@ const SAMPLE = {
   ],
   engines: [[-13.6, 79.4], [-4.5, 79.4], [4.5, 79.4], [13.6, 79.4]]
 };
-// Mount defaults mirror data/game.json "mounts".
-const ARC_DEFAULT = { fixed: 0, pivot: 30, turret: 360, launcher: 360 };
-const TRAV_DEFAULT = { pivot: 180, turret: 360 };
-const PREFIX = { fixed: 'G', pivot: 'P', turret: 'T', launcher: 'M' };
-const MOUNTS = ['fixed', 'pivot', 'turret', 'launcher'];
-const SIZES = ['small', 'medium', 'large'];
+// Marker conventions, drawing, hull.json output and checks are shared with tools/ship-designer.
+const { MOUNTS, SIZES, ARC_DEFAULT, TRAV_DEFAULT, PREFIX, round, css, mountColour, drawMarker, drawEngine, capsulePath } = TVHull;
 const STORE_KEY = 'tv-hardpoint-editor-v1';
 
 const $ = id => document.getElementById(id);
@@ -339,11 +336,8 @@ let drag = null;
 let cursor = null;
 
 // ---------- helpers ----------
-const round = v => Math.round(v * 100) / 100;
 const snapStep = () => parseFloat($('tSnap').value) || 0;
 const snap = v => { const s = snapStep(); return s ? Math.round(v / s) * s : round(v); };
-const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const mountColour = m => css('--m-' + m);
 function toast(msg) {
   const t = $('toast'); t.textContent = msg; t.hidden = false;
   clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, 2600);
@@ -440,14 +434,6 @@ function fitHit() {
 }
 
 // ---------- import ----------
-function normaliseMount(m, kind) {
-  if (!m) return kind === 'turret' ? 'turret' : kind === 'guided' ? 'launcher' : 'fixed';
-  m = String(m).toLowerCase();
-  if (m.includes('turret')) return 'turret';
-  if (m.includes('launch')) return 'launcher';
-  if (m.includes('pivot')) return 'pivot';
-  return MOUNTS.includes(m) ? m : 'fixed';
-}
 function normalise(src) {
   const s = blank();
   s.id = src.id || ''; s.name = src.name || ''; s.sprite = src.sprite ? String(src.sprite).split('/').pop() : '';
@@ -455,17 +441,7 @@ function normalise(src) {
   if (src.hit) { s.hit.size = src.hit.size || [16, 16]; s.hit.offset = src.hit.offset || [0, 0]; }
   else if (src.hit_size) { s.hit.size = src.hit_size; s.hit.offset = src.hit_offset || [0, 0]; }
   else if (src.size_px) { s.hit.size = [Math.min(...src.size_px), Math.max(...src.size_px)]; }
-  s.hardpoints = (src.hardpoints || []).map(h => {
-    const mount = normaliseMount(h.mount, h.kind);
-    const o = { id: h.id || '', size: SIZES.includes(h.size) ? h.size : 'small', mount, pos: [round(h.pos[0]), round(h.pos[1])] };
-    if (h.facing) o.facing = h.facing;
-    if (h.arc != null && (mount === 'pivot' || mount === 'turret') && h.arc !== ARC_DEFAULT[mount]) o.arc = h.arc;
-    if (h.traverse != null && (mount === 'pivot' || mount === 'turret')) o.traverse = h.traverse;
-    if (h.role === 'point_defence' || (typeof h.role === 'string' && h.role.includes('point'))) o.role = 'point_defence';
-    if (h.part) o.part = h.part;
-    if (h.cells && mount === 'launcher') o.cells = h.cells;
-    return o;
-  });
+  s.hardpoints = (src.hardpoints || []).map(TVHull.normaliseHardpoint);
   s.engines = (src.engines || []).map(e => [round(e[0]), round(e[1])]);
   return s;
 }
@@ -526,63 +502,6 @@ function zoomAt(f, sx, sy) {
 }
 
 // ---------- drawing ----------
-const SIZE_R = { small: 5, medium: 7, large: 9 };
-function drawMarker(c, hp, sx, sy, z, selected, forSheet) {
-  const col = mountColour(hp.mount), r = SIZE_R[hp.size] * (forSheet ? 1.4 : 1);
-  const face = ((hp.facing || 0) - 90) * Math.PI / 180;
-  // arc wedge
-  const arc = hp.arc != null ? hp.arc : ARC_DEFAULT[hp.mount];
-  if (hp.mount === 'pivot' || (hp.mount === 'turret' && arc < 360)) {
-    const R = Math.max(26, r * 5);
-    const a = arc * Math.PI / 180;
-    c.beginPath(); c.moveTo(sx, sy); c.arc(sx, sy, R, face - a / 2, face + a / 2); c.closePath();
-    c.globalAlpha = 0.18; c.fillStyle = col; c.fill(); c.globalAlpha = 0.7; c.strokeStyle = col; c.lineWidth = 1; c.stroke(); c.globalAlpha = 1;
-  } else if (hp.mount === 'turret') {
-    c.beginPath(); c.arc(sx, sy, Math.max(16, r * 3), 0, Math.PI * 2);
-    c.globalAlpha = 0.45; c.setLineDash([3, 3]); c.strokeStyle = col; c.lineWidth = 1; c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
-  }
-  // facing line for fixed
-  if (hp.mount === 'fixed') {
-    c.beginPath(); c.moveTo(sx, sy); c.lineTo(sx + Math.cos(face) * 30, sy + Math.sin(face) * 30);
-    c.strokeStyle = col; c.lineWidth = 1.5; c.globalAlpha = 0.85; c.stroke(); c.globalAlpha = 1;
-  }
-  // marker shape
-  c.beginPath();
-  if (hp.mount === 'fixed') {
-    c.moveTo(sx + Math.cos(face) * r * 1.3, sy + Math.sin(face) * r * 1.3);
-    c.lineTo(sx + Math.cos(face + 2.4) * r, sy + Math.sin(face + 2.4) * r);
-    c.lineTo(sx + Math.cos(face - 2.4) * r, sy + Math.sin(face - 2.4) * r);
-    c.closePath();
-  } else if (hp.mount === 'pivot') {
-    c.moveTo(sx, sy - r * 1.2); c.lineTo(sx + r * 1.2, sy); c.lineTo(sx, sy + r * 1.2); c.lineTo(sx - r * 1.2, sy); c.closePath();
-  } else if (hp.mount === 'turret') {
-    c.arc(sx, sy, r, 0, Math.PI * 2);
-  } else {
-    c.rect(sx - r, sy - r, r * 2, r * 2);
-  }
-  c.fillStyle = col; c.fill();
-  c.lineWidth = selected ? 2.5 : 1.25; c.strokeStyle = selected ? css('--ink') : css('--bench'); c.stroke();
-  if (hp.role === 'point_defence') {
-    c.beginPath(); c.arc(sx, sy, r * 0.4, 0, Math.PI * 2); c.fillStyle = css('--bench'); c.fill();
-  }
-  // label
-  c.font = `600 ${forSheet ? 15 : 12}px ${css('--font-mono')}`;
-  c.textAlign = 'left'; c.textBaseline = 'middle';
-  const lx = sx + r + 6, ly = sy - r - 4;
-  c.lineWidth = 3; c.strokeStyle = css('--bench'); c.strokeText(hp.id || '?', lx, ly);
-  c.fillStyle = selected ? css('--ink') : col; c.fillText(hp.id || '?', lx, ly);
-}
-function drawEngine(c, e, sx, sy, selected, scale = 1) {
-  const col = mountColour('engine');
-  c.beginPath(); c.moveTo(sx - 4 * scale, sy - 3 * scale); c.lineTo(sx + 4 * scale, sy - 3 * scale); c.lineTo(sx, sy + 9 * scale); c.closePath();
-  c.fillStyle = col; c.fill(); c.lineWidth = selected ? 2.5 : 1; c.strokeStyle = selected ? css('--ink') : css('--bench'); c.stroke();
-}
-function capsulePath(c, cx, cy, wpx, lpx) {
-  const r = wpx / 2, half = Math.max(0, lpx / 2 - r);
-  c.beginPath();
-  c.arc(cx, cy - half, r, Math.PI, 0); c.lineTo(cx + r, cy + half);
-  c.arc(cx, cy + half, r, 0, Math.PI); c.closePath();
-}
 function draw() {
   const d = window.devicePixelRatio || 1;
   ctx.setTransform(d, 0, 0, d, 0, 0);
@@ -648,19 +567,9 @@ function draw() {
 }
 
 // ---------- ids ----------
-function nextId(mount, taken = new Set(state.hardpoints.map(h => h.id))) {
-  const p = PREFIX[mount]; let n = 1;
-  while (taken.has(p + n)) n++;
-  return p + n;
-}
-function partnerOf(i) {
-  const a = state.hardpoints[i];
-  return state.hardpoints.findIndex((b, j) => j !== i && Math.abs(b.pos[0] + a.pos[0]) < 0.3 && Math.abs(b.pos[1] - a.pos[1]) < 0.3 && b.mount === a.mount && b.size === a.size && Math.abs(a.pos[0]) > 0.01);
-}
-function enginePartner(i) {
-  const a = state.engines[i];
-  return state.engines.findIndex((b, j) => j !== i && Math.abs(b[0] + a[0]) < 0.3 && Math.abs(b[1] - a[1]) < 0.3 && Math.abs(a[0]) > 0.01);
-}
+function nextId(mount, taken = new Set(state.hardpoints.map(h => h.id))) { return TVHull.nextId(mount, taken); }
+function partnerOf(i) { return TVHull.mirrorPartner(state.hardpoints, i, h => h.pos, TVHull.sameHardpointKind); }
+function enginePartner(i) { return TVHull.mirrorPartner(state.engines, i, e => e); }
 
 // ---------- hit testing ----------
 function pick(sx, sy) {
@@ -822,13 +731,7 @@ function syncSelection() {
     set('sArc', hp.arc != null ? hp.arc : ''); set('sTrav', hp.traverse != null ? hp.traverse : '');
     $('sCells').disabled = hp.mount !== 'launcher'; set('sCells', hp.cells != null ? hp.cells : '');
     set('sRole', hp.role || ''); set('sPart', hp.part || '');
-    const hints = {
-      fixed: 'Fires along the facing. Fixed mounts take no arc or traverse.',
-      pivot: 'Tracks the target within a narrow arc centred on the facing.',
-      turret: 'Rotates within its arc. The turret sprite pivots on this point; blank part uses the default for its size.',
-      launcher: 'Missiles launch here and turn onto any bearing.'
-    };
-    $('sHint').textContent = hints[hp.mount];
+    $('sHint').textContent = TVHull.HINTS[hp.mount];
   } else if (sel && sel.type === 'eng') {
     const e = state.engines[sel.i];
     $('selTitle').textContent = `Engine ${sel.i + 1}`;
@@ -867,34 +770,10 @@ function renderLists() {
 
 // ---------- validation ----------
 function validate() {
-  const out = [];
-  const E = (msg, target) => out.push({ lvl: 'e', msg, target });
-  const W = (msg, target) => out.push({ lvl: 'w', msg, target });
-  if (!state.id) E('Hull ID is empty.');
-  else if (!/^[a-z0-9_]+$/.test(state.id)) E('Hull ID must be lowercase snake_case (letters, digits, underscores).');
-  if (!state.name) W('Hull has no display name.');
-  if (!img) E(state.sprite ? `Sprite ${state.sprite} isn't open, so positions can't be checked.` : 'No sprite open.');
-  if (!(state.scale > 0)) E('Scale must be above 0.');
-  const [hw, hl] = state.hit.size;
-  if (!(hw > 0 && hl > 0)) E('Hit capsule needs a width and length above 0.');
-  else if (hw > hl) E('Hit capsule width must not exceed its length (the capsule runs along the hull).');
-  const seen = new Map();
-  state.hardpoints.forEach((hp, i) => {
-    const t = { type: 'hp', i }, name = hp.id || `#${i + 1}`;
-    if (!hp.id) E(`Hardpoint #${i + 1} has no ID.`, t);
-    else if (!/^[A-Za-z0-9_]+$/.test(hp.id)) E(`${name}: IDs use letters, digits and underscores only.`, t);
-    if (hp.id) { if (seen.has(hp.id)) E(`${name} is used twice.`, t); seen.set(hp.id, i); }
-    if (img && !inBounds(hp.pos[0], hp.pos[1])) E(`${name} sits outside the sprite.`, t);
-    else if (img && alphaAt(hp.pos[0], hp.pos[1]) < 16) W(`${name} sits on a transparent pixel. Is it on the hull?`, t);
-    if ((hp.mount === 'fixed' || hp.mount === 'launcher') && (hp.arc != null || hp.traverse != null)) E(`${name}: ${hp.mount} mounts can't override arc or traverse (the game refuses it).`, t);
-    if (hp.arc != null && !(hp.arc > 0 && hp.arc <= 360)) E(`${name}: arc must be between 1 and 360.`, t);
-    if (hp.cells != null && hp.mount !== 'launcher') W(`${name}: cells only apply to launchers.`, t);
-    if (hp.role === 'point_defence' && hp.mount !== 'turret') W(`${name}: point defence is meant for turret mounts.`, t);
+  return TVHull.validateHull(state, {
+    spriteError: img ? null : (state.sprite ? `Sprite ${state.sprite} isn't open, so positions can't be checked.` : 'No sprite open.'),
+    inBounds, alphaAt
   });
-  state.engines.forEach((e, i) => { if (img && !inBounds(e[0], e[1] - 0.01)) W(`Engine E${i + 1} sits outside the sprite.`, { type: 'eng', i }); });
-  if (!state.engines.length) W('No engine exhausts placed (no engine glow).');
-  if (!state.hardpoints.length) W('No hardpoints: this is an unarmed hull.');
-  return out;
 }
 function renderChecks() {
   const list = validate(), ul = $('checks'); ul.innerHTML = '';
@@ -914,28 +793,7 @@ function renderChecks() {
 }
 
 // ---------- output ----------
-function manifest() {
-  const m = {
-    schema: 1, id: state.id, name: state.name, sprite: state.sprite, size_px: state.size_px, scale: state.scale,
-    hit: { size: state.hit.size, offset: state.hit.offset },
-    hardpoints: state.hardpoints.map(h => {
-      const o = { id: h.id, size: h.size, mount: h.mount, pos: h.pos };
-      if (h.facing) o.facing = h.facing;
-      if (h.arc != null) o.arc = h.arc;
-      if (h.traverse != null) o.traverse = h.traverse;
-      if (h.role) o.role = h.role;
-      if (h.part) o.part = h.part;
-      if (h.cells != null && h.mount === 'launcher') o.cells = h.cells;
-      return o;
-    }),
-    engines: state.engines
-  };
-  return m;
-}
-function manifestText() {
-  // Compact arrays of numbers onto one line for readable diffs.
-  return JSON.stringify(manifest(), null, 2).replace(/\[\s+(-?[\d.]+),\s+(-?[\d.]+)\s+\]/g, '[$1, $2]');
-}
+const manifestText = () => TVHull.manifestText(state);
 function refresh(full = true) {
   if (sel && ((sel.type === 'hp' && !state.hardpoints[sel.i]) || (sel.type === 'eng' && !state.engines[sel.i]))) sel = null;
   draw();
@@ -944,27 +802,7 @@ function refresh(full = true) {
   else { $('json').textContent = manifestText(); }
 }
 
-async function saveFile(filename, data) {
-  try {
-    const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
-    if (!dl) {
-      // Opened as a local file (e.g. tools/hardpoint-editor in the repo): a normal browser download works there.
-      if (location.protocol !== 'file:') return false;
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type: 'application/json' }));
-      a.download = filename; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      toast(`Saved ${filename}.`);
-      return true;
-    }
-    await dl.save({ filename, data });
-    toast(`Saved ${filename}.`);
-    return true;
-  } catch (e) {
-    if (e && e.code === 'declined') { toast('Save cancelled.'); return true; }
-    return false;
-  }
-}
+const saveFile = (filename, data) => TVHull.saveFile(filename, data, toast);
 async function copyText(text) {
   try { await navigator.clipboard.writeText(text); toast('Copied hull.json to the clipboard.'); }
   catch (e) {

@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ship Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
+<style>
+/* Layout: parts palette on the left, the design canvas in the middle, the inspector on the right.
+   Colours and marker conventions match tools/hardpoint-editor (the --m-* variables feed the shared marker code). */
+:root {
+  --bg: #12161b; --panel: #181d23; --panel-2: #20262e; --line: #2d353f; --ink: #e3e7ec; --ink-2: #93a0ae;
+  --accent: #f0913a; --accent-ink: #1a1206; --bench: #0a0807; --check-a: #171c22; --check-b: #1d232a;
+  --good: #5cc28a; --warn: #e3a93c; --bad: #ff7a70; --sel: #f0913a; --link: #7fc8ff;
+  --m-fixed: #ffb040; --m-pivot: #b49bff; --m-turret: #5fd8ff; --m-launcher: #e6eaee; --m-engine: #ff7a45; --m-hit: #ff6fb8; --m-light: #9dff7a;
+  --font-ui: "IBM Plex Sans Condensed", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.4 var(--font-ui); overflow: hidden; }
+* { box-sizing: border-box; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr; }
+header.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; min-width: 0; flex: 1 1 220px; }
+.brand h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; }
+.brand .tag { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.btn:hover { border-color: var(--ink-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.sm { padding: 3px 7px; font-size: 12px; }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn:focus-visible, .seg button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+main.work { display: grid; grid-template-columns: 250px minmax(0, 1fr) 340px; min-height: 0; }
+
+/* palette */
+aside.palette { border-right: 1px solid var(--line); background: var(--panel); display: grid; grid-template-rows: auto 1fr; min-height: 0; }
+.palette .top { padding: 10px; border-bottom: 1px solid var(--line); display: grid; gap: 6px; }
+.palette input[type=search] { width: 100%; padding: 5px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); }
+.palette .kitname { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-2); }
+.palette .cats { overflow-y: auto; padding: 4px 8px 16px; }
+.palette details { border-bottom: 1px solid var(--line); }
+.palette summary { cursor: pointer; padding: 6px 2px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); }
+.palette summary .n { font-weight: 400; opacity: 0.7; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 2px 0 8px; }
+.tile { display: grid; grid-template-rows: 64px auto; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bench); cursor: grab; text-align: center; }
+.tile:hover { border-color: var(--accent); }
+.tile img { width: 100%; height: 64px; object-fit: contain; pointer-events: none; }
+.tile span { font-family: var(--font-mono); font-size: 10px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.palette .empty { padding: 14px 6px; color: var(--ink-2); font-size: 13px; }
+
+/* stage */
+.stage { position: relative; min-width: 0; min-height: 0; background: var(--bench); overflow: hidden; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
+.toolbar { position: absolute; left: 10px; top: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; pointer-events: none; }
+.toolbar > * { pointer-events: auto; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: transparent; padding: 5px 9px; cursor: pointer; font-size: 13px; border-right: 1px solid var(--line); white-space: nowrap; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg select, .seg input { border: 0; background: transparent; padding: 5px 7px; font-size: 13px; border-right: 1px solid var(--line); }
+.seg select:last-child, .seg input:last-child { border-right: 0; }
+.seg input[type=number] { width: 62px; font-family: var(--font-mono); }
+.seg label { display: inline-flex; align-items: center; gap: 4px; padding: 0 0 0 8px; font-size: 12px; color: var(--ink-2); }
+.kbd { font-family: var(--font-mono); font-size: 10.5px; opacity: 0.7; }
+.readout { position: absolute; left: 10px; bottom: 10px; display: flex; gap: 14px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); background: var(--panel); border: 1px solid var(--line); padding: 4px 10px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+.zoomctl { position: absolute; left: 10px; bottom: 44px; }
+.drop { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--bench) 75%, transparent); border: 2px dashed var(--accent); font-size: 18px; font-weight: 600; pointer-events: none; text-align: center; padding: 20px; }
+.preview { position: absolute; right: 10px; bottom: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; max-width: min(60%, 640px); max-height: 55%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.preview .ph { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 4px 8px; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); border-bottom: 1px solid var(--line); }
+.preview .pb { overflow: auto; display: flex; gap: 16px; align-items: flex-start; padding: 10px; background: var(--bench); }
+.preview figure { margin: 0; display: grid; gap: 4px; justify-items: center; }
+.preview figcaption { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-2); white-space: nowrap; }
+.preview canvas { image-rendering: pixelated; display: block; }
+.preview.collapsed .pb { display: none; }
+
+/* inspector */
+aside.inspector { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; min-width: 0; }
+section.blk { padding: 12px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 9px; }
+section.blk h2 { margin: 0; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 10px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px 10px; }
+.span2 { grid-column: span 2; } .span3 { grid-column: span 3; }
+label.f { display: grid; gap: 3px; font-size: 12px; color: var(--ink-2); min-width: 0; }
+label.f input, label.f select { width: 100%; min-width: 0; padding: 4px 7px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); }
+label.f select { font-family: var(--font-ui); font-size: 13px; }
+label.f input:disabled, label.f select:disabled { opacity: 0.5; }
+label.f input[type=color] { padding: 1px 3px; height: 28px; }
+label.cb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink); }
+.note { font-size: 12px; color: var(--ink-2); margin: 0; }
+.mono { font-family: var(--font-mono); }
+.btnrow { display: flex; flex-wrap: wrap; gap: 5px; }
+.list { display: grid; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; max-height: 300px; overflow-y: auto; }
+.row { display: grid; grid-template-columns: 46px 12px 1fr auto; gap: 8px; align-items: center; padding: 4px 9px; cursor: pointer; border-bottom: 1px solid var(--line); font-size: 12.5px; background: var(--bg); }
+.row:last-child { border-bottom: 0; }
+.row.sel { background: color-mix(in srgb, var(--accent) 18%, var(--bg)); }
+.row .id { font-family: var(--font-mono); font-weight: 500; }
+.row .pos { font-family: var(--font-mono); color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.empty { padding: 9px; font-size: 12.5px; color: var(--ink-2); background: var(--bg); }
+/* layers */
+.layer { display: grid; grid-template-columns: 22px 22px 30px 1fr auto; gap: 4px; align-items: center; padding: 2px 6px; border-bottom: 1px solid var(--line); background: var(--bg); font-size: 12.5px; cursor: pointer; }
+.layer:last-child { border-bottom: 0; }
+.layer.sel { background: color-mix(in srgb, var(--accent) 18%, var(--bg)); }
+.layer.dragover { box-shadow: inset 0 2px 0 var(--accent); }
+.layer.dragover.below { box-shadow: inset 0 -2px 0 var(--accent); }
+.layer.hiddenpart .nm { opacity: 0.45; text-decoration: line-through; }
+.layer .ic { border: 0; background: transparent; padding: 2px; cursor: pointer; color: var(--ink-2); font-size: 13px; line-height: 1; }
+.layer .ic.on { color: var(--accent); }
+.layer img { width: 28px; height: 22px; object-fit: contain; }
+.layer .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer .nm small { font-family: var(--font-mono); color: var(--ink-2); font-size: 10.5px; margin-left: 4px; }
+.layer .meta { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-2); white-space: nowrap; }
+.layer input { width: 100%; padding: 1px 4px; border: 1px solid var(--accent); background: var(--bg); font-size: 12.5px; }
+.checks { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.checks li { display: grid; grid-template-columns: 16px 1fr; gap: 6px; font-size: 12.5px; cursor: default; }
+.checks li[data-target] { cursor: pointer; }
+.checks li .ic { font-weight: 700; }
+.checks .e .ic { color: var(--bad); } .checks .w .ic { color: var(--warn); } .checks .ok .ic { color: var(--good); }
+.pill { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
+.pill.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+.pill.warn { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.pill.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+pre.json { margin: 0; max-height: 240px; overflow: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; font: 11.5px/1.45 var(--font-mono); white-space: pre; user-select: all; }
+details.out summary { cursor: pointer; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); }
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 4px; font-size: 13px; z-index: 30; max-width: 90vw; }
+.modal { position: fixed; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--bench) 70%, transparent); z-index: 25; padding: 16px; }
+.modal .card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px; width: min(460px, 100%); display: grid; gap: 12px; }
+.modal h3 { margin: 0; font-size: 16px; }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; font-size: 12.5px; max-height: 60vh; overflow: auto; }
+.keys kbd { font-family: var(--font-mono); font-size: 11.5px; color: var(--accent); white-space: nowrap; }
+@media (max-width: 1100px) { main.work { grid-template-columns: 200px minmax(0, 1fr) 300px; } .tiles { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px) {
+  body { overflow: auto; } .app { height: auto; }
+  main.work { grid-template-columns: minmax(0, 1fr); }
+  aside.palette { border-right: 0; border-bottom: 1px solid var(--line); max-height: 40vh; }
+  .stage { height: 65vh; }
+  aside.inspector { border-left: 0; border-top: 1px solid var(--line); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="brand"><h1>Ship Designer</h1><span class="tag" id="designTag"></span></div>
+    <div class="actions">
+      <button class="btn" id="bNew" type="button">New</button>
+      <button class="btn" id="bKitDir" type="button" title="Choose the kit folder (the one holding manifest.json, or any folder above it)">Open kit folder</button>
+      <button class="btn" id="bKitZip" type="button">Open kit zip</button>
+      <button class="btn" id="bKitAgain" type="button" hidden>Reopen kit</button>
+      <button class="btn" id="bOpen" type="button" title="Open a .design.json (Ctrl+O)">Open design</button>
+      <button class="btn" id="bUndo" type="button" title="Undo (Ctrl+Z)">Undo</button>
+      <button class="btn" id="bRedo" type="button" title="Redo (Ctrl+Shift+Z or Ctrl+Y)">Redo</button>
+      <button class="btn" id="bHull" type="button">Save hull.json</button>
+      <button class="btn" id="bPng" type="button">Save preview PNGs</button>
+      <button class="btn primary" id="bSave" type="button" title="Save the design file (Ctrl+S)">Save design</button>
+      <button class="btn" id="bKeys" type="button" title="Keys (?)">?</button>
+    </div>
+    <input type="file" id="fKitDir" webkitdirectory directory multiple hidden>
+    <input type="file" id="fKitZip" accept=".zip,application/zip" hidden>
+    <input type="file" id="fDesign" accept=".json,application/json" hidden>
+  </header>
+
+  <main class="work">
+    <aside class="palette" aria-label="Parts palette">
+      <div class="top">
+        <input type="search" id="search" placeholder="Search parts (id, category, note)" aria-label="Search parts">
+        <span class="kitname" id="kitName">No kit open</span>
+      </div>
+      <div class="cats" id="cats"></div>
+    </aside>
+
+    <div class="stage" id="stage">
+      <canvas id="cv" tabindex="0" aria-label="Design canvas. Drag parts here; click to select, drag to move."></canvas>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Tool">
+          <button type="button" data-tool="select" aria-pressed="true">Select <span class="kbd">V</span></button>
+          <button type="button" data-tool="hardpoint" aria-pressed="false">Hardpoint <span class="kbd">H</span></button>
+          <button type="button" data-tool="engine" aria-pressed="false">Engine <span class="kbd">E</span></button>
+          <button type="button" data-tool="light" aria-pressed="false">Light <span class="kbd">L</span></button>
+        </div>
+        <div class="seg" aria-label="New hardpoint">
+          <select id="tMount" aria-label="Mount for new hardpoints"></select>
+          <select id="tSize" aria-label="Size for new hardpoints"></select>
+        </div>
+        <div class="seg">
+          <button type="button" id="tMirror" aria-pressed="true" title="Mirror across the centre line (M)">Mirror <span class="kbd">M</span></button>
+          <button type="button" id="tGrid" aria-pressed="true" title="Show grid (G)">Grid <span class="kbd">G</span></button>
+          <button type="button" id="tSnap" aria-pressed="true" title="Snap to grid (S); hold Alt while dragging to place freely">Snap <span class="kbd">S</span></button>
+          <label for="tGridSize">size</label><input type="number" id="tGridSize" min="1" step="1" value="5" aria-label="Grid size in kit units">
+        </div>
+        <div class="seg">
+          <select id="tBg" aria-label="Canvas background" title="Canvas background (B)">
+            <option value="dark">Dark</option><option value="checker">Checker</option><option value="light">Light</option>
+          </select>
+          <button type="button" id="tMarkers" aria-pressed="true" title="Show markers">Markers</button>
+        </div>
+      </div>
+      <div class="seg zoomctl">
+        <button type="button" id="zOut" aria-label="Zoom out">−</button>
+        <button type="button" id="zFit" title="Fit the design (0)">Fit</button>
+        <button type="button" id="zIn" aria-label="Zoom in">+</button>
+      </div>
+      <div class="readout"><span id="rCursor">x –  y –</span><span id="rGame"></span><span id="rZoom">zoom –</span></div>
+      <div class="preview" id="preview">
+        <div class="ph"><span>Game size preview</span><button class="btn sm" type="button" id="pToggle">Hide</button></div>
+        <div class="pb">
+          <figure><canvas id="pv1"></canvas><figcaption id="pv1Cap">1:1</figcaption></figure>
+          <figure><canvas id="pv3"></canvas><figcaption id="pv3Cap">3×</figcaption></figure>
+        </div>
+      </div>
+      <div class="drop" id="drop" hidden>Drop a kit folder or zip, or a .design.json</div>
+    </div>
+
+    <aside class="inspector">
+      <section class="blk">
+        <h2>Design</h2>
+        <div class="grid2">
+          <label class="f">Hull ID <input id="dName" spellcheck="false" placeholder="sow_c_a_clamp"></label>
+          <label class="f">Kit <input id="dKit" disabled></label>
+          <label class="f span2">Display name <input id="dTitle" placeholder="SOW C-A Clamp"></label>
+          <label class="f">Units per game px <input id="dUnits" type="number" step="0.5" min="0.1"></label>
+          <label class="f">Sprite (game px) <input id="dSize" disabled></label>
+        </div>
+      </section>
+
+      <section class="blk" id="selBlk">
+        <h2><span id="selTitle">Selection</span><button class="btn sm" type="button" id="bDel" hidden>Delete</button></h2>
+        <p class="note" id="selNone">Drag a part from the palette, or click one to add it at the view centre. Click to select, Shift-click or drag a box to select more. Positions are kit units: x = 0 is the centre line, +y is aft.</p>
+        <div id="selPart" hidden>
+          <div class="grid3">
+            <label class="f span2">Label <input id="pLabel" spellcheck="false" placeholder="(part id)"></label>
+            <label class="f">Part <input id="pPart" disabled></label>
+            <label class="f">x <input id="pX" type="number" step="1"></label>
+            <label class="f">y <input id="pY" type="number" step="1"></label>
+            <label class="f">rot ° <input id="pRot" type="number" step="1" title="Counter-clockwise on screen"></label>
+            <label class="f">scale <input id="pScale" type="number" step="0.01" min="0.01"></label>
+            <label class="f">z <input id="pZ" type="number" step="1"></label>
+            <label class="f">shadow <input id="pShadow" type="number" step="0.05" min="0" max="1"></label>
+            <label class="f">glow <select id="pGlow"><option value="">none</option><option value="exit">exit</option></select></label>
+            <label class="cb"><input type="checkbox" id="pFlipX"> flip X</label>
+            <label class="cb"><input type="checkbox" id="pFlipY"> flip Y</label>
+          </div>
+          <p class="note" id="pInfo"></p>
+        </div>
+        <div id="selMulti" hidden>
+          <p class="note" id="mInfo"></p>
+          <div class="grid3">
+            <label class="f">shadow (all) <input id="mShadow" type="number" step="0.05" min="0" max="1"></label>
+            <label class="f">glow (all) <select id="mGlow"><option value="keep">—</option><option value="">none</option><option value="exit">exit</option></select></label>
+          </div>
+        </div>
+        <div id="partActions" class="btnrow" hidden>
+          <button class="btn sm" type="button" data-act="rotL" title="Rotate 90° counter-clockwise (Shift+R)">⟲ 90</button>
+          <button class="btn sm" type="button" data-act="rotR" title="Rotate 90° clockwise (R)">⟳ 90</button>
+          <button class="btn sm" type="button" data-act="flipH" title="Flip horizontally (F)">Flip H</button>
+          <button class="btn sm" type="button" data-act="flipV" title="Flip vertically (Shift+F)">Flip V</button>
+          <button class="btn sm" type="button" data-act="dup" title="Duplicate (Ctrl+D)">Duplicate</button>
+          <button class="btn sm" type="button" data-act="front" title="Bring to front (Shift+])">Front</button>
+          <button class="btn sm" type="button" data-act="fwd" title="Bring forward (])">Forward</button>
+          <button class="btn sm" type="button" data-act="back" title="Send backward ([)">Backward</button>
+          <button class="btn sm" type="button" data-act="bottom" title="Send to back (Shift+[)">Back</button>
+          <button class="btn sm" type="button" data-act="lock" title="Lock or unlock (Ctrl+L)">Lock</button>
+          <button class="btn sm" type="button" data-act="group" title="Group (Ctrl+G)">Group</button>
+          <button class="btn sm" type="button" data-act="ungroup" title="Ungroup (Ctrl+Shift+G)">Ungroup</button>
+          <button class="btn sm" type="button" data-act="unlink" title="Break the mirror link (U)">Break mirror link</button>
+          <button class="btn sm" type="button" data-act="mirror" title="Add a mirrored partner">Add mirror</button>
+        </div>
+        <div id="selHp" hidden>
+          <div class="grid3">
+            <label class="f">ID <input id="sId" spellcheck="false"></label>
+            <label class="f">Mount <select id="sMount"></select></label>
+            <label class="f">Size <select id="sSize"></select></label>
+            <label class="f">x <input id="sX" type="number" step="1"></label>
+            <label class="f">y <input id="sY" type="number" step="1"></label>
+            <label class="f">Facing ° <input id="sFacing" type="number" step="1"></label>
+            <label class="f">Arc ° <input id="sArc" type="number" step="1" min="1" max="360"></label>
+            <label class="f">Traverse °/s <input id="sTrav" type="number" step="1" min="1"></label>
+            <label class="f">Cells <input id="sCells" type="number" step="1" min="1"></label>
+            <label class="f">Role <select id="sRole"><option value="">Standard</option><option value="point_defence">Point defence</option></select></label>
+            <label class="f span2">Part sprite (optional) <input id="sPart" spellcheck="false" placeholder="default turret for size"></label>
+          </div>
+          <p class="note" id="sHint"></p>
+          <div class="btnrow"><button class="btn sm" type="button" id="bMirrorCopy">Add mirrored copy</button></div>
+        </div>
+        <div id="selEng" hidden>
+          <div class="grid2">
+            <label class="f">x <input id="eX" type="number" step="1"></label>
+            <label class="f">y <input id="eY" type="number" step="1"></label>
+            <label class="f">Direction ° <input id="eDir" type="number" step="1" title="Clockwise from the nose; 180 = straight aft"></label>
+            <label class="f">Size <input id="eSize" type="number" step="0.1" min="0.1"></label>
+          </div>
+        </div>
+        <div id="selLight" hidden>
+          <div class="grid2">
+            <label class="f">x <input id="lX" type="number" step="1"></label>
+            <label class="f">y <input id="lY" type="number" step="1"></label>
+            <label class="f">Colour <input id="lColour" type="color"></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="blk">
+        <h2>Layers <span class="pill good" id="layerCount">0</span></h2>
+        <div class="list" id="layers"></div>
+        <p class="note">Top of the list draws on top. Drag rows to reorder; double-click a name to rename it.</p>
+      </section>
+
+      <section class="blk">
+        <h2>Hardpoints <span id="hpCount" class="pill good">0</span></h2>
+        <div class="list" id="hpList"></div>
+        <h2>Engines <span id="engCount" class="pill good">0</span></h2>
+        <div class="list" id="engList"></div>
+        <h2>Lights <span id="lightCount" class="pill good">0</span></h2>
+        <div class="list" id="lightList"></div>
+      </section>
+
+      <section class="blk">
+        <h2>Hit capsule</h2>
+        <div class="grid2">
+          <label class="f">Width <input id="hW" type="number" step="1" min="1"></label>
+          <label class="f">Length <input id="hL" type="number" step="1" min="1"></label>
+          <label class="f">Centre x <input id="hOx" type="number" step="1"></label>
+          <label class="f">Centre y <input id="hOy" type="number" step="1"></label>
+        </div>
+        <div class="btnrow"><button class="btn sm" type="button" id="bFit">Fit to composed sprite</button></div>
+      </section>
+
+      <section class="blk">
+        <h2>Checks <span id="chkPill" class="pill good">OK</span></h2>
+        <ul class="checks" id="checks"></ul>
+      </section>
+
+      <section class="blk">
+        <details class="out"><summary>hull.json</summary>
+          <pre class="json" id="hullJson" tabindex="0"></pre>
+          <div class="btnrow" style="margin-top:6px"><button class="btn sm" type="button" id="bCopyHull">Copy hull.json</button></div>
+        </details>
+        <p class="note">Hand the design file to Claude for the art (albedo, normal, glow). hull.json positions are art px from the composed sprite's centre.</p>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<div class="modal" id="confirmModal" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle">Start a new design?</h3>
+    <p class="note">This clears the parts and markers. Undo can bring them back.</p>
+    <div class="btnrow"><button class="btn primary" type="button" id="confirmOk">Start new</button><button class="btn" type="button" id="confirmCancel">Cancel</button></div>
+  </div>
+</div>
+<div class="modal" id="keysModal" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="keysTitle" style="width:min(560px,100%)">
+    <h3 id="keysTitle">Keys</h3>
+    <div class="keys" id="keysList"></div>
+    <div class="btnrow"><button class="btn" type="button" id="keysClose">Close</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="../shared/hull-markers.js"></script>
+<script src="designer.js"></script>
+</body>
+</html>

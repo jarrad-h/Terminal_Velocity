@@ -24,4 +24,6 @@ Positions are art pixels from the sprite centre: +x starboard, +y towards the st
 
 The editor's checks mirror the loader's rules. When the manifest format changes (OF7: compound hit shapes, sprite layers, size class, built-from parts), update this tool in the same change.
 
-A published copy also exists as a claude.ai artifact; this file is the master.
+The marker code (mount defaults, marker drawing, mirror pairing, hull.json output and the checks) lives in `tools/shared/hull-markers.js`, which this page and `tools/ship-designer` both load. Change marker rules there, once; keep the folder layout so the relative `../shared/` path still resolves.
+
+A published copy also exists as a claude.ai artifact; this file is the master. Republishing it means publishing `hull-markers.js` with it and pointing the script tag at that copy.
