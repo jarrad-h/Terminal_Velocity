@@ -1,0 +1,75 @@
+{
+ "format": "tv-ship-design/1",
+ "name": "example_s_a_mini",
+ "kit": "sow",
+ "units_per_game_px": 12.5,
+ "parts": [
+  {
+   "part": "base_02",
+   "x": 0,
+   "y": -165,
+   "rot": 0,
+   "scale": 0.78,
+   "z": 1
+  },
+  {
+   "part": "base_20",
+   "x": 0,
+   "y": 50,
+   "rot": 0,
+   "scale": 0.9,
+   "z": 2,
+   "glow": "exit"
+  },
+  {
+   "part": "shuttle_upper",
+   "x": 0,
+   "y": -355,
+   "rot": 0,
+   "scale": 1.0,
+   "z": 3
+  },
+  {
+   "part": "base_00",
+   "x": 0,
+   "y": -555,
+   "rot": 0,
+   "scale": 1.0,
+   "z": 4
+  },
+  {
+   "part": "combat_10",
+   "x": 0,
+   "y": -40,
+   "rot": 0,
+   "scale": 0.5,
+   "z": 5
+  }
+ ],
+ "hardpoints": [
+  {
+   "id": "T1",
+   "size": "small",
+   "mount": "turret",
+   "x": 0,
+   "y": -40,
+   "arc": 360,
+   "facing": 0
+  }
+ ],
+ "engines": [
+  {
+   "x": -21,
+   "y": 254,
+   "size": 1.0,
+   "dir": 180
+  },
+  {
+   "x": 21,
+   "y": 254,
+   "size": 1.0,
+   "dir": 180
+  }
+ ],
+ "lights": []
+}

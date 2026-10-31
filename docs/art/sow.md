@@ -42,6 +42,10 @@ Armed hull sprites have **empty turret rings**; turrets are separate sprites (`p
 
 Every hull (civilian and armed) has its weapon hardpoints and engine exits in `assets/sprites/ships/sow/hardpoints.json`, summarised per ship in `docs/art/hardpoints.md` with mount type (fixed / turret / launcher) and size (small / medium / large), plus a labelled spec sheet image per hull in `docs/art/specs/`. Civilian turret segments also use empty rings now; no hull sprite has a baked-in turret.
 
+## Kit v2: illustrated parts (in progress)
+
+A second direction is under way: illustrated parts with ink outlines and painted grime, matched to Jarrad's reference shuttle. The parts library, the source sheets and the hull recipes are in `art_src/sow/kit_v2/` (see its README). Concept renders of the C and F hulls are in `docs/art/concepts/sow_kit_v2/`. The tool brief for laying out hulls by hand is `docs/art/ship-designer-brief.md`. Kit v2 isn't wired into the game yet, and the sprites above are still live.
+
 ## Kit standards
 
 - Standard hull plate is 46 px wide (wide plate 70 px). Segment lengths step in 7 px; a standard segment (SEG-16) is 28 px long.
