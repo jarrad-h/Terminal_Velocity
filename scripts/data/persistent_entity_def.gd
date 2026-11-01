@@ -26,6 +26,8 @@ var stay_days: Vector2i
 ## day [min, max]; negative = already there. Empty = game.json default.
 var arrival_offset: Vector2 = Vector2.ZERO
 var has_arrival_offset: bool = false
+## PS4: how its ships fly together: "none", "wedge" or "line" (Formation).
+var formation: String
 ## PS2: days it follows the player after the player damages it (0 = never).
 var grudge_days: int
 ## Exists while this condition holds ("" always, "flag", "!flag"; the
@@ -58,6 +60,7 @@ static func parse(r: DefReader) -> PersistentEntityDef:
 		d.arrival_offset = r.range2("arrival_offset")
 		d.has_arrival_offset = true
 	d.grudge_days = r.integer("grudge_days", 0, false, 0)
+	d.formation = r.choice("formation", Formation.TYPES, "none")
 	d.exists_if = r.string("exists_if")
 	if not GateRules.is_valid_condition(d.exists_if):
 		r.error("exists_if", "expected \"\", \"flag_name\" or \"!flag_name\" (lowercase snake_case)")

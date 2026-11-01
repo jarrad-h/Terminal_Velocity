@@ -85,6 +85,7 @@ Fields marked **required** have no default.
 | `entities.departure_window` | PS4: an entity due to leave on the day the player is there leaves this many seconds after the player's entry `[min, max]` | `[20, 150]` |
 | `entities.min_stay_seconds` | PS4: an entity arriving after the player stays at least this long before a same-day departure | `5` |
 | `entities.ship_spacing` | PS4: gap between an entity's ships when they appear, px | `160` |
+| `entities.formation_spacing`, `entities.formation_settle` | PS4: gap between slots in an entity's formation, px; and how close (px, and px/s of relative speed) a follower must be to its slot to count as in formation and face the leader's heading | `180`, `40` |
 | `entities.encounter` | PS5: off-screen fights: `randomness` (each side's strength × 1 ± this), `loser_losses` (share of the loser's ships lost, rounded up), `loser_damage` and `winner_damage` (hull fraction lost by survivors), `floor_hull` (survivors never drop below this; keep it above ships' disable %), `repair_per_day` (entities repair this much hull a day) | `0.3`, `0.5`, `0.3`, `0.15`, `0.4`, `0.1` |
 | `entities.news` | PS7: the landed screen shows news from the last `days` days, at most `max_items`; older than `keep_days` is dropped | `10`, `8`, `60` |
 | `stellars.cloud_spin` | V9: how fast planet cloud layers turn, degrees/s (negative turns the other way) | `0.6` |
@@ -254,6 +255,7 @@ Tracked across the galaxy at all times: a summary (location or transit, ships' s
 | `orders.route`, `orders.destination` | Systems for `patrol` and `travel` | `[]`, `""` |
 | `orders.stay_days` | Days it stays at each stop `[min, max]`; it passes straight through systems on the way | `[1, 2]` |
 | `arrival_offset` | PS4: when it arrives on the same day as the player, seconds from the player's entry `[min, max]`; negative = already there, positive = jumps in later (a fixed positive value scripts an ambush) | `game.json` `entities.arrival_offset` |
+| `formation` | PS4: how its ships fly together: `none` (each on its own), `wedge` (alternating right and left, a row back each pair) or `line` (one behind another). The first able ship leads; whichever member is attacked, the whole fleet fights or flees together, and when the leader jumps they all jump | `"none"` |
 | `grudge_days` | PS2: days it follows the player after the player damages one of its ships (0 = never) | `0` |
 | `exists_if` | `""` always, `"flag"` / `"!flag"`: it only exists (moves, appears, fights) while this holds | `""` |
 

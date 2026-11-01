@@ -36,6 +36,8 @@ var persistent: bool = false
 ## PS2: an entity holding a grudge hunts the player across the whole system,
 ## not just within sensor range.
 var hunt_player: bool = false
+## PS4: the entity's fleet this ship flies in (null = flies alone).
+var fleet: Fleet = null
 
 var _stops_left: int = 0
 var _timer: float = 0.0
@@ -122,10 +124,12 @@ func _think(elapsed: float) -> void:
 	if state == State.ATTACK and ship.global_position.distance_to(target.global_position) > pool.sensor_range * _ai("disengage_factor") \
 			and not (hunt_player and target.is_player()):
 		_end_attack()
+	if _is_follower() and state != State.ATTACK:
+		return  # formation: the leader decides (fights and flights come via the fleet)
 	if hunt_player and state in [State.PATROL, State.TRAVEL]:
 		var player: Ship = get_tree().get_first_node_in_group(&"player")
 		if _valid_target(player) and _armed():
-			_start_attack(player)
+			_attack_with_fleet(player)
 			return
 	if state != State.FLEE and state != State.LEAVE:
 		# A4: retreat below the (personality-shifted) shield threshold.
@@ -136,7 +140,7 @@ func _think(elapsed: float) -> void:
 		if state != State.ATTACK and Behaviour.starts_fights(pool.behaviour, personality.starts_fights) and _armed():
 			var enemy: Ship = _nearest_enemy()
 			if enemy != null and _odds_ok():
-				_start_attack(enemy)
+				_attack_with_fleet(enemy)
 				return
 	match state:
 		State.PATROL:
@@ -155,12 +159,51 @@ func _on_attacked(attacker: Ship) -> void:
 		return
 	if not ship.is_hostile_to(attacker) or not ship.can_act():
 		return
-	# A1, A7: fight back or run, by role and personality.
+	# A1, A7: fight back or run, by role and personality; in a fleet, every
+	# member follows that choice, whichever member was hit.
 	if Behaviour.fights_back(pool.behaviour, personality.when_attacked) and _armed():
-		if state != State.ATTACK:
+		if fleet != null:
+			fleet.engage(attacker)
+		elif state != State.ATTACK:
 			_start_attack(attacker)
+	elif fleet != null:
+		fleet.flee()
 	else:
 		_start_flee()
+
+
+func _attack_with_fleet(enemy: Ship) -> void:
+	if fleet != null:
+		fleet.engage(enemy)
+	else:
+		_start_attack(enemy)
+
+
+func _is_follower() -> bool:
+	return fleet != null and fleet.is_follower(ship)
+
+
+## Fleet: engage `attacker` with the rest of the fleet.
+func join_attack(attacker: Ship) -> void:
+	if state in [State.JUMPING, State.DOCKED, State.FLEE, State.LEAVE] or not _armed():
+		return
+	if state != State.ATTACK or target != attacker:
+		_start_attack(attacker)
+
+
+## Fleet: the leader runs (the others keep formation).
+func join_flee() -> void:
+	if state not in [State.FLEE, State.LEAVE, State.JUMPING]:
+		_start_flee()
+
+
+## Fleet: the leader is jumping; jump on the same bearing now.
+func jump_now(bearing: Vector2) -> void:
+	if state == State.JUMPING:
+		return
+	exit_bearing = bearing
+	exit_system = "(fleet)"
+	_start_jump()
 
 
 func _start_attack(enemy: Ship) -> void:
@@ -237,6 +280,8 @@ func _start_jump() -> void:
 	ship.set_target(null)
 	var bearing: Vector2 = exit_bearing if exit_system != "" else ship.global_position.normalized()
 	ship.autopilot = JumpSequence.new(bearing, ship.def.jump_countdown, DataRegistry.settings["hyperspace"], ship.body.stats)
+	if fleet != null and fleet.leader() == ship:
+		fleet.jump_with(ship, bearing)  # the fleet jumps together
 
 
 func _update_jump() -> void:
@@ -338,6 +383,9 @@ func _steer(delta: float) -> void:
 	var s: FlightState = ship.body.state
 	var stats: FlightStats = ship.body.stats
 	var thrust_angle: float = _ai("thrust_angle")
+	if _is_follower() and state != State.ATTACK:
+		_steer_formation(s, stats, thrust_angle, delta)
+		return
 	match state:
 		State.DOCKED:
 			_input = FlightInput.new()
@@ -355,6 +403,20 @@ func _steer(delta: float) -> void:
 			# LEAVE and edge-bound FLEE: full speed outward.
 			var out: Vector2 = (destination - s.position).normalized() * stats.top_speed
 			_input = Steering.toward_velocity(s, stats, out, thrust_angle, delta)
+
+
+## PS4: hold this ship's slot behind the fleet leader, matching its velocity;
+## once in the slot, face the way the leader faces.
+func _steer_formation(s: FlightState, stats: FlightStats, thrust_angle: float, delta: float) -> void:
+	var lead: Ship = fleet.leader()
+	var slot: Vector2 = fleet.slot_of(ship)
+	var lead_velocity: Vector2 = lead.get_velocity() if not lead.docked else Vector2.ZERO
+	var settle: float = float(DataRegistry.settings["entities"]["formation_settle"])
+	if s.position.distance_to(slot) < settle and (s.velocity - lead_velocity).length() < settle:
+		_input = Steering.face(s, stats, FlightModel.heading(lead.global_rotation), delta)
+		_input.thrust = (s.velocity - lead_velocity).length() > stats.accel * delta and Steering.aligned(s.rotation, lead_velocity - s.velocity, thrust_angle)
+		return
+	_input = Steering.toward_velocity(s, stats, Steering.arrive_velocity(s, stats, slot, lead_velocity), thrust_angle, delta)
 
 
 func _steer_attack(s: FlightState, stats: FlightStats, delta: float) -> void:

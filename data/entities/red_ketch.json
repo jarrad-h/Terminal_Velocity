@@ -4,9 +4,30 @@
   "government": "pirates",
   "pool": "pirate_raid",
   "personality": "aggressive",
-  "ships": [{"ship": "pirate_raider", "count": 2}],
+  "ships": [
+    {
+      "ship": "pirate_raider",
+      "count": 2
+    }
+  ],
   "start_system": "redhaven",
-  "orders": {"type": "patrol", "route": ["redhaven", "ember", "redhaven", "hollow"], "stay_days": [1, 3]},
-  "arrival_offset": [15, 60],
-  "grudge_days": 6
+  "orders": {
+    "type": "patrol",
+    "route": [
+      "redhaven",
+      "ember",
+      "redhaven",
+      "hollow"
+    ],
+    "stay_days": [
+      1,
+      3
+    ]
+  },
+  "arrival_offset": [
+    15,
+    60
+  ],
+  "grudge_days": 6,
+  "formation": "wedge"
 }

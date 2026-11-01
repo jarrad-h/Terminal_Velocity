@@ -49,6 +49,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"alert_per_record": 2.0, "pirate_loss": {"disable": 5.0, "kill": 10.0},
 		"pirate_governments": [], "wreck_days": 5},
 	"entities": {"arrival_offset": [-90.0, 120.0], "departure_window": [20.0, 150.0], "min_stay_seconds": 5.0, "ship_spacing": 160.0,
+		"formation_spacing": 180.0, "formation_settle": 40.0,
 		"encounter": {"randomness": 0.3, "loser_losses": 0.5, "loser_damage": 0.3, "winner_damage": 0.15, "floor_hull": 0.4,
 			"repair_per_day": 0.1},
 		"news": {"days": 10, "max_items": 8, "keep_days": 60}},
@@ -235,6 +236,8 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	entities.range2("departure_window", Vector2.ZERO, 0.0)
 	entities.number("min_stay_seconds", 0.0, false, 0.0)
 	entities.number("ship_spacing", 0.0, false, 0.0)
+	entities.number("formation_spacing", 0.0, false, 0.0)
+	entities.number("formation_settle", 0.0, false, 0.0)
 	var encounter: DefReader = entities.object("encounter")
 	for key: String in SETTINGS_DEFAULTS["entities"]["encounter"]:
 		if encounter.number(key, 0.0, false, 0.0) > 1.0 and key != "randomness":

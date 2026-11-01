@@ -658,6 +658,25 @@ func _entity_checks(player: Ship, scene_root: Node) -> void:
 	var patrol: Array[Ship] = _entity_ships("authority_patrol_group")
 	_check(patrol.size() == 2 and patrol.all(func(sh: Ship) -> bool: return sh.callsign == "Authority Patrol Group"), "PS4: it materialises as real ships, named")
 	if patrol.size() == 2:
+		var lead_ai: AIController = patrol[0].controller
+		var wing_ai: AIController = patrol[1].controller
+		_check(lead_ai.fleet != null and lead_ai.fleet == wing_ai.fleet and lead_ai.fleet.leader() == patrol[0], "PS4: the patrol flies as one fleet, first ship leading")
+		await _frames(600)
+		var gap: float = patrol[1].global_position.distance_to(lead_ai.fleet.slot_of(patrol[1]))
+		_check(gap < 150.0, "PS4: the wingman holds its formation slot (%.0f px off)" % gap)
+		# Hitting the wingman (not the leader) brings the whole fleet on you.
+		player.place(patrol[1].global_position + Vector2(0.0, 1200.0), 0.0)
+		_debug.set_player_invulnerable(true)
+		patrol[1].health.apply_damage(patrol[1].health.max_shield * 0.6, 0.0, player)
+		await _frames(30)
+		_check(lead_ai.state == AIController.State.ATTACK and lead_ai.target == player, "PS4: the leader joins when its wingman is attacked")
+		_check(wing_ai.state == AIController.State.ATTACK and wing_ai.target == player, "PS4: ...and so does the wingman")
+		_debug.set_player_invulnerable(false)
+		lead_ai.jump_now(Vector2.UP)
+		_check(wing_ai.state == AIController.State.JUMPING, "PS4: when the leader jumps, the fleet jumps with it")
+		patrol[0].autopilot = null
+		patrol[1].autopilot = null
+	if patrol.size() == 2:
 		patrol[0].health.armor = patrol[0].health.max_armor * 0.6
 		patrol[1].health.force_destroy()
 	await _frames(2)

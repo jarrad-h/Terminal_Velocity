@@ -211,6 +211,12 @@ func gov_def() -> GovernmentDef:
 
 ## G1, G3, A8: would this ship fight `other`? For the player, whether `other`
 ## treats the player as hostile.
+## PS4 fleets: treat `attacker` as hostile (a wingman of the ship it hit).
+func provoke(attacker: Ship) -> void:
+	if attacker != null and is_instance_valid(attacker) and attacker != self:
+		_aggressors[attacker] = true
+
+
 func is_hostile_to(other: Ship) -> bool:
 	if other == null or other == self or not is_instance_valid(other):
 		return false

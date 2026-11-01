@@ -4,7 +4,30 @@
   "government": "independent_traders",
   "pool": "trader_traffic",
   "personality": "steady",
-  "ships": [{"ship": "freighter", "count": 1}, {"ship": "courier", "count": 1}],
+  "ships": [
+    {
+      "ship": "freighter",
+      "count": 1
+    },
+    {
+      "ship": "courier",
+      "count": 1
+    }
+  ],
   "start_system": "test_nebula",
-  "orders": {"type": "patrol", "route": ["test_nebula", "aster", "drift", "brink", "solace"], "stay_days": [1, 2]}
+  "orders": {
+    "type": "patrol",
+    "route": [
+      "test_nebula",
+      "aster",
+      "drift",
+      "brink",
+      "solace"
+    ],
+    "stay_days": [
+      1,
+      2
+    ]
+  },
+  "formation": "line"
 }

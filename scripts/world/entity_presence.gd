@@ -106,6 +106,11 @@ func _materialise(s: EntityState, def: PersistentEntityDef, arriving: bool) -> v
 		centre = Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(band[0], band[1]) * system.edge_radius
 	var speed: float = 0.0 if by_gate else float(DataRegistry.settings["ai"]["arrival_speed_fraction"])
 	var spacing: float = float(DataRegistry.settings["entities"]["ship_spacing"])
+	var fleet: Fleet = null
+	if def.formation != "none" and s.ships.size() > 1:
+		fleet = Fleet.new()
+		fleet.formation = def.formation
+		fleet.spacing = float(DataRegistry.settings["entities"]["formation_spacing"])
 	for i: int in s.ships.size():
 		var summary: Dictionary = s.ships[i]
 		var at: Vector2 = centre + side.orthogonal() * (i - (s.ships.size() - 1) / 2.0) * spacing
@@ -120,7 +125,10 @@ func _materialise(s: EntityState, def: PersistentEntityDef, arriving: bool) -> v
 		ai.setup(pool, personality if personality != null else PersonalityDef.neutral(), system, "arrive" if arriving else "inside")
 		ai.persistent = true
 		ai.hunt_player = s.grudge_until >= GameState.clock.day
+		ai.fleet = fleet
 		ship.set_controller(ai)
+		if fleet != null:
+			fleet.members.append(ship)
 		_apply_summary(ship, summary)
 		ship.attacked.connect(_on_attacked.bind(s.id))
 		ship.tree_exiting.connect(_on_ship_gone.bind(s.id, ship))

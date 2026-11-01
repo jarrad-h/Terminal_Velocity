@@ -235,3 +235,7 @@ Why: Jarrad's answers at the milestone 3 check-in, 1 Nov 2026.
 - **Grudges (PS2):** a grudge cuts the entity's stay short (it sets off after the player the next day), and while it holds, the entity's ships hunt the player anywhere in the system, not only within sensor range.
 - **Disabled ships (PS4):** a ship still disabled when its fleet departs is abandoned: it becomes an ordinary wreck (PS6) and the fleet loses it. Destroyed named entities stay dead.
 Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (Red Ketch didn't follow or chase; pirates couldn't be made friendly).
+
+## 2026-11-01 — Entity fleets fly in formation and fight as one (PS4)
+Per-entity `formation` (`wedge`, `line`, `none`). The first able ship leads; followers hold slots (spacing in `game.json` `entities.formation_spacing`) matching the leader's velocity and heading. Any member attacked makes the fleet's choice: fight (every member treats the attacker as an enemy and engages) or flee (the leader runs, the rest keep formation), so attacking a wingman isn't a free hit (Jarrad's point). When the leader jumps, everyone jumps; the next able ship takes over if the leader is lost. Entities only for now; the same Fleet could drive ambient patrols and escorts later.
+Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (the patrol group should feel like a unified force); answers: always jump together, formation per entity in data, build it now.

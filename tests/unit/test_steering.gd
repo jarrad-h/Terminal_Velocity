@@ -51,3 +51,12 @@ func test_turn_does_not_overshoot() -> void:
 func test_aligned_for_firing() -> void:
 	assert_true(Steering.aligned(0.0, Vector2(0, -1), 8.0), "dead ahead")
 	assert_true(not Steering.aligned(0.0, Vector2(1, -1), 8.0), "45° off")
+
+
+func test_formation_slots() -> void:
+	assert_vec_near(Formation.offset(0, "wedge", 100.0), Vector2.ZERO, "the leader's own slot")
+	assert_vec_near(Formation.offset(1, "wedge", 100.0), Vector2(100, 100), "wedge: first follower behind right")
+	assert_vec_near(Formation.offset(2, "wedge", 100.0), Vector2(-100, 100), "second behind left")
+	assert_vec_near(Formation.offset(3, "wedge", 100.0), Vector2(200, 200), "next row back")
+	assert_vec_near(Formation.offset(2, "line", 100.0), Vector2(0, 200), "line: one behind another")
+	assert_vec_near(Formation.slot_position(1, "line", 100.0, Vector2(50, 50), PI / 2.0), Vector2(-50, 50), "rotates with the leader (facing right: behind is left)")

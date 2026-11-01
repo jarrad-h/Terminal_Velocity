@@ -4,7 +4,25 @@
   "government": "local_authority",
   "pool": "authority_patrol",
   "personality": "brave",
-  "ships": [{"ship": "patrol_corvette", "count": 2}],
+  "ships": [
+    {
+      "ship": "patrol_corvette",
+      "count": 2
+    }
+  ],
   "start_system": "aster",
-  "orders": {"type": "patrol", "route": ["aster", "test_nebula", "test_graveyard", "lumen"], "stay_days": [1, 2]}
+  "orders": {
+    "type": "patrol",
+    "route": [
+      "aster",
+      "test_nebula",
+      "test_graveyard",
+      "lumen"
+    ],
+    "stay_days": [
+      1,
+      2
+    ]
+  },
+  "formation": "wedge"
 }

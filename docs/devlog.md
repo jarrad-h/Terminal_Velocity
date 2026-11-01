@@ -107,7 +107,12 @@ Jarrad's check-in: the first half's building blocks are good; small values to tu
   - Destroyed named entities stay dead (confirmed).
   - Unit and scenario regression checks added.
 - **Design change, built: pirates can be won over (G3).** Governments get `start_record`. Pirates start the player at −60, hostile below −20, friendly from 25 (replacing the 1000 threshold). Assisting pirate ships raises the record; missions will later.
-- **Design question raised:** grouped entities like the patrol group should fly together as a fleet.
+- **Design change, confirmed and built: entity fleets fly in formation (PS4).**
+  - Each entity has a `formation` in its data: the patrol and Red Ketch fly a wedge, Mara Vell a line.
+  - The first able ship leads; the others hold slots 180 px apart.
+  - Whichever member is hit, the fleet fights or flees together. Jarrad spotted that hitting a wingman could otherwise be a free hit.
+  - When the leader jumps, the fleet jumps; if the leader is lost, the next ship leads.
+  - Checks: `Formation` maths unit-tested; scenario checks the slot is held, the whole fleet engages when the wingman is hit, and the fleet jumps together; a screenshot shows the patrol pair flying in formation.
 
 ---
 
