@@ -42,6 +42,45 @@ Branch `p2m3-persistence`, cloud session. The plan was agreed with Jarrad, with 
   - **To ask Jarrad:** should AI traffic use hidden lanes?
 - **Tests:** unit tests for `SystemMemory` (values, recovery, traffic scaling, wreck ageing, round trip) and the loader's `via` rules; scenario checks for the committed jump, AI departure and arrival by hyperspace, gate arrival and departure, and the whole memory loop.
 
+### Second half (after the check-in, 1 Nov 2026)
+
+Jarrad's check-in: the first half's building blocks are good; small values to tune in the JSON. Arrival offsets and AI use of hidden lanes confirmed.
+
+- **PS2 entities:**
+  - A new `entities/` data type. Each entity has a name, government, AI pool, personality and ships, a start system, orders, an arrival offset, grudge days and an existence condition.
+  - **Orders:** hold, patrol a route (looping), travel to a destination, or follow the player.
+  - `EntityRegistry` (pure, tested) steps every entity once a day.
+  - **Grudges:** hitting a grudge-holder makes it follow you for its grudge days.
+  - **Death:** a destroyed entity is gone for good and makes the news.
+- **PS3 travel:**
+  - Entities use your rules: hyperlane days by the slowest ship's jump speed, and gates that are open and not run by a hostile government (`EntityRouting`).
+  - They pass straight through systems on the way and stay their `stay_days` at stops.
+  - Departures are announced once per trip.
+- **PS4 in your system:**
+  - `EntityPresence` makes entities in your system real ships. They're named on the target panel, fly as their AI pool, and never wander off on their own.
+  - **Same-day arrivals:** they use the arrival offset, either already there or jumping in N seconds after you on the side they came from.
+  - **Same-day departures:** an entity due to leave today departs during your visit, by lane or gate.
+  - **Write-back:** damage and losses go back to the summary when you leave, when you land (days pass) and when all its ships have gone. On take-off the system is rebuilt from the registry.
+  - Ships removed without being destroyed aren't counted as lost. Entity ships aren't recorded as wrecks, and they repair 10% hull a day.
+- **PS5 off-screen encounters:** hostile entities sharing a system you're not in fight once a day.
+  - Each side's strength is its ships' strength × hull, × 1 ± 0.3 randomness.
+  - The loser loses half its ships (rounded up); survivors take damage, never below 40% hull.
+- **PS7 news:** departures, fights and deaths, shown on the landed screen. The last 10 days, newest first, up to 8 items.
+- **D13 console:**
+  - `entities`;
+  - `entity <id>`, `entity <id> move <system>` and `entity <id> grudge`;
+  - `memory` (from the first half).
+  - Debug "Traffic on" also covers entities.
+- **Test entities** (placeholder names):
+  - **Captain Mara Vell:** a freighter and courier on a trade route: Test Nebula, Aster, Drift, Brink, Solace.
+  - **Authority Patrol Group:** two corvettes looping Aster, Test Nebula, Test Graveyard and Lumen, using gates.
+  - **Red Ketch:** two pirate raiders circuiting Redhaven, Ember and Hollow. He holds grudges for 6 days and arrives 15–60 s after you.
+- **Checks:**
+  - unit tests: routing with and without gates, hold, patrol hop by hop, the pace set by the slowest ship, grudges, encounters (including no fight in your system), the existence condition, write-back, round trips and news;
+  - loader tests for entity data;
+  - scenario: materialise, write-back of damage and losses, grudge, a late arrival on the right side, departure during a visit, news, movement over days, D13;
+  - a 60-day dry run: all three move as ordered, and the news reads naturally.
+
 ---
 
 ## Phase 2 Milestone 2: Gates and lighting (30 Oct 2026)
