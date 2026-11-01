@@ -224,3 +224,8 @@ Why: Jarrad's playtest of milestone 2, 30 Oct 2026.
 - **Arrival timing within a day:** proposed (arrival and departure offsets in seconds relative to the player's entry, from data per entity), to confirm before building persistent entities.
 - **Mid-milestone check-in** after A9, A10 and PS6.
 Why: Jarrad's answers, 31 Oct 2026.
+
+## 2026-11-01 — Arrival offsets within a day; AI uses hidden lanes (PS4, A9)
+- **Arrival offsets (PS4):** confirmed as proposed: an entity due in a system the same day gets an offset in seconds relative to the player's entry (negative = already there, positive = arrives later), from a per-entity data range or a game-wide default; departures that day happen in a data window after the player's entry. Days still never pass in real time.
+- **Hidden lanes (A9):** AI traffic and persistent entities use hyperlanes the player hasn't discovered; ships arriving from an unseen direction hint that something is there.
+Why: Jarrad's answers at the milestone 3 check-in, 1 Nov 2026.
