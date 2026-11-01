@@ -161,8 +161,10 @@ func _spawn(entry: Entry, mode: String) -> void:
 	var ship: Ship = _make(entry.pool, at, heading, direction, speed_fraction, mode, start_planet, "", null, entry.via == "gate")
 	if ship != null:
 		entry.ships.append(ship)
+		if mode == "arrive":
+			ship.arrive_from_hyperspace(at, direction, ship.body.stats.top_speed * speed_fraction)  # A9
 		if mode == "arrive" or mode == "gate":
-			Flash.spawn(ship.get_parent(), at, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
+			Flash.spawn(ship.get_parent(), ship.global_position, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
 
 
 func _gate_open() -> bool:

@@ -114,6 +114,12 @@ Jarrad's check-in: the first half's building blocks are good; small values to tu
   - When the leader jumps, the fleet jumps; if the leader is lost, the next ship leads.
   - Checks: `Formation` maths unit-tested; scenario checks the slot is held, the whole fleet engages when the wingman is hit, and the fleet jumps together; a screenshot shows the patrol pair flying in formation.
 
+### 2026-11-01 — Playtest notes (Jarrad, second round)
+
+- **Fixed (TR4, A9): arrivals popped in.** Ships arriving by hyperspace, the player's and AI ships and entities alike, now drop out at hyperdrive speed along their bearing and brake to the arrival speed over `hyperspace.arrival_burn_seconds` (1.2 s), ending where they used to appear. It's a new `ARRIVING` phase of `JumpSequence`, and controls lock only for the burn. Unit test for the burn; scenario checks that player and AI arrivals burn and end in place.
+- **Design discussion opened: replacement traffic is too regular.** The same raider comes back at the same entry point soon after a kill. See the brainstorm options.
+- **Review list:** named entities need ways to last; an in-system map with selectable points of interest; planets, stations and gates as targets in the target panel.
+
 ---
 
 ## Phase 2 Milestone 2: Gates and lighting (30 Oct 2026)

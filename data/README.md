@@ -23,6 +23,7 @@ Fields marked **required** have no default.
 | `hyperspace.overdrive_accel_factor` | TR2: after the countdown the ship accelerates at its `accel` × this, past its speed cap (more than 0) | `6` |
 | `hyperspace.engage_speed_factor` | TR2: the hyperdrive engages at the ship's `top_speed` × this (more than 1) | `4` |
 | `hyperspace.arrival_speed_fraction` | TR4: arrivals enter at this fraction of top speed (0–1) | `0.5` |
+| `hyperspace.arrival_burn_seconds` | TR4, A9: ships (player and AI) drop out of hyperspace at hyperdrive speed and brake to their arrival speed over this many seconds, ending where they'd otherwise appear; 0 = appear directly | `1.2` |
 | `hyperspace.arrival_grace_seconds` | TR4: arrivals appear this many seconds of inward travel outside the jump radius, so J works straight away for the next leg | `2` |
 | `art_scale` | V1: one scale for all ship art: sprites, hitboxes, hardpoints and engine exits (all written in art px) are multiplied by it. More than 0 | `1.0` |
 | `mounts.arc.pivot`, `mounts.arc.turret` | V3: default total arc in degrees (0–360) for pivot and turret hardpoints, centred on the heading; a hardpoint's `arc` overrides it. Fixed mounts have no arc | `30`, `360` |

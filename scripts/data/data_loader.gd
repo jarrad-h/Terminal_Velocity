@@ -18,7 +18,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"calendar": {"start_date": "3200-01-01"},
 	"hyperspace": {"stop_speed": 2.0, "align_tolerance": 1.0, "thrust_angle": 20.0,
 		"overdrive_accel_factor": 6.0, "engage_speed_factor": 4.0, "arrival_speed_fraction": 0.5,
-		"arrival_grace_seconds": 2.0},
+		"arrival_grace_seconds": 2.0, "arrival_burn_seconds": 1.2},
 	"mounts": {"arc": {"pivot": 30.0, "turret": 360.0}, "traverse": {"pivot": 180.0, "turret": 360.0},
 		"fire_tolerance": 5.0, "turret_sprites": {"small": "", "medium": "", "large": "", "point_defence": ""}},
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},

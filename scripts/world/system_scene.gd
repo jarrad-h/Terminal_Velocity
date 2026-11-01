@@ -130,7 +130,10 @@ func _enter(system_id: String, arrival: FlightState) -> void:
 	var same_system: bool = system != null and system.id == system_id
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
 	if player != null and arrival != null:
-		player.place(arrival.position, arrival.rotation, arrival.velocity)
+		if arrival.velocity.is_zero_approx():
+			player.place(arrival.position, arrival.rotation, arrival.velocity)  # through a gate: stopped
+		else:
+			player.arrive_from_hyperspace(arrival.position, arrival.velocity.normalized(), arrival.velocity.length())
 		player.set_target(null)
 	load_system(system_id)
 	local_space.reset_visit()

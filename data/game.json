@@ -9,7 +9,8 @@
     "overdrive_accel_factor": 3,
     "engage_speed_factor": 12,
     "arrival_speed_fraction": 0.5,
-    "arrival_grace_seconds": 2
+    "arrival_grace_seconds": 2,
+    "arrival_burn_seconds": 1.2
   },
   "art_scale": 1.0,
   "mounts": {

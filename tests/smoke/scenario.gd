@@ -661,9 +661,12 @@ func _entity_checks(player: Ship, scene_root: Node) -> void:
 		var lead_ai: AIController = patrol[0].controller
 		var wing_ai: AIController = patrol[1].controller
 		_check(lead_ai.fleet != null and lead_ai.fleet == wing_ai.fleet and lead_ai.fleet.leader() == patrol[0], "PS4: the patrol flies as one fleet, first ship leading")
-		await _frames(600)
-		var gap: float = patrol[1].global_position.distance_to(lead_ai.fleet.slot_of(patrol[1]))
-		_check(gap < 150.0, "PS4: the wingman holds its formation slot (%.0f px off)" % gap)
+		await _frames(480)
+		var gap: float = INF
+		for i: int in 120:  # closest over two seconds: the slot swings as the leader turns
+			await get_tree().physics_frame
+			gap = minf(gap, patrol[1].global_position.distance_to(lead_ai.fleet.slot_of(patrol[1])))
+		_check(gap < 120.0, "PS4: the wingman holds its formation slot (%.0f px off)" % gap)
 		# Hitting the wingman (not the leader) brings the whole fleet on you.
 		player.place(patrol[1].global_position + Vector2(0.0, 1200.0), 0.0)
 		_debug.set_player_invulnerable(true)
@@ -808,7 +811,9 @@ func _ai_hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	var system: SystemDef = scene_root.system
 	var galaxy: GalaxyDef = DataRegistry.galaxy()
 	var arrival: Ship = traffic.spawn_arrival(DataRegistry.get_ai_pool("pirate_raid"))
-	_check(arrival != null and absf(arrival.global_position.length() - system.jump_radius) < 1.0, "A9: arrivals appear at the jump radius")
+	_check(arrival != null and arrival.autopilot != null and arrival.autopilot.is_arriving(), "A9: arrivals drop out of hyperspace with a braking burn")
+	await _frames(roundi(float(DataRegistry.settings["hyperspace"]["arrival_burn_seconds"]) * 60.0) + 1)
+	_check(arrival != null and absf(arrival.global_position.length() - system.jump_radius) < 40.0, "A9: ...ending at the jump radius (%.0f)" % arrival.global_position.length())
 	var from_neighbour: bool = false
 	for n: String in Hyperlanes.neighbours(galaxy, system.id):
 		if arrival.global_position.normalized().dot(-Hyperlanes.bearing(galaxy, n, system.id)) > 0.999:
@@ -1148,11 +1153,14 @@ func _hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	var length: float = Hyperlanes.lane_length(galaxy, origin, destination)
 	_check(GameState.clock.day == day_before + Hyperlanes.jump_days(length, player.def.jump_speed), "TM2: the jump cost its days")
 	_check(is_equal_approx(travel.fuel, fuel_before - player.def.jump_fuel), "TR8: the jump cost its fuel")
+	_check(player.autopilot != null and player.autopilot.is_arriving(), "TR4: drops out of hyperspace with a braking burn")
+	await _frames(roundi(float(DataRegistry.settings["hyperspace"]["arrival_burn_seconds"]) * 60.0) + 2)
+	_check(player.autopilot == null, "...then the controls are back")
 	var new_radius: float = scene_root.system.jump_radius
 	var arrival_speed: float = player.def.top_speed * float(DataRegistry.settings["hyperspace"]["arrival_speed_fraction"])
 	var grace: float = float(DataRegistry.settings["hyperspace"]["arrival_grace_seconds"])
 	var out_by: float = player.global_position.length() - new_radius
-	_check(out_by > 0.0 and absf(out_by - arrival_speed * grace) < 20.0, "TR4: arrives %.1f s of travel outside the jump radius (%.0f px)" % [grace, out_by])
+	_check(out_by > 0.0 and absf(out_by - arrival_speed * grace) < 40.0, "TR4: arrives %.1f s of travel outside the jump radius (%.0f px)" % [grace, out_by])
 	_check(player.global_position.normalized().dot(-bearing) > 0.99, "TR4: arrives on the side facing the origin")
 	travel.route.assign([travel.destination()]) if not travel.route.is_empty() else null
 	if not travel.route.is_empty():

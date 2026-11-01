@@ -121,10 +121,28 @@ func _compute_flight_input() -> FlightInput:
 	if not can_act():
 		return FlightInput.new()
 	if autopilot != null:
-		return autopilot.step(body.state, body.stats, get_physics_process_delta_time())
+		var input: FlightInput = autopilot.step(body.state, body.stats, get_physics_process_delta_time())
+		if autopilot.phase == JumpSequence.Phase.ARRIVED:
+			autopilot = null  # out of hyperspace: back to its own controls
+		return input
 	if controller == null:
 		return FlightInput.new()
 	return controller.get_flight_input()
+
+
+## TR4, A9: drop in from hyperspace so the ship ends up at `end_position`
+## moving along `direction` at `end_speed`, after a short braking burn
+## (hyperspace.arrival_burn_seconds; 0 = appear there directly).
+func arrive_from_hyperspace(end_position: Vector2, direction: Vector2, end_speed: float) -> void:
+	var settings: Dictionary = DataRegistry.settings["hyperspace"]
+	var seconds: float = float(settings["arrival_burn_seconds"])
+	var heading: float = Aim.rotation_of(direction)
+	if seconds <= 0.0:
+		place(end_position, heading, direction.normalized() * end_speed)
+		return
+	var burn: JumpSequence = JumpSequence.arrival(direction, end_speed, seconds, settings, body.stats)
+	place(JumpSequence.arrival_start(end_position, direction, burn.engage_speed, end_speed, seconds), heading, direction.normalized() * burn.engage_speed)
+	autopilot = burn
 
 
 ## Flight stats for this frame: the hull's, or the jump sequence's overdrive.
@@ -394,6 +412,8 @@ func set_docked(value: bool) -> void:
 
 ## Places the ship and resets interpolation (spawns, take-offs, arrivals).
 func place(at: Vector2, rotation_value: float, velocity: Vector2 = Vector2.ZERO) -> void:
+	if autopilot != null and autopilot.is_arriving():
+		autopilot = null  # placed somewhere new: the arrival burn is over
 	body.state = FlightState.new(at, velocity, rotation_value)
 	position = at
 	rotation = rotation_value

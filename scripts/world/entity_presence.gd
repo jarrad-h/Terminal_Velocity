@@ -127,6 +127,8 @@ func _materialise(s: EntityState, def: PersistentEntityDef, arriving: bool) -> v
 		ai.hunt_player = s.grudge_until >= GameState.clock.day
 		ai.fleet = fleet
 		ship.set_controller(ai)
+		if arriving and not by_gate:
+			ship.arrive_from_hyperspace(at, -side, ship.body.stats.top_speed * speed)  # after the controller: it clears autopilots
 		if fleet != null:
 			fleet.members.append(ship)
 		_apply_summary(ship, summary)
@@ -134,7 +136,7 @@ func _materialise(s: EntityState, def: PersistentEntityDef, arriving: bool) -> v
 		ship.tree_exiting.connect(_on_ship_gone.bind(s.id, ship))
 		entry["ships"].append(ship)
 		if arriving:
-			Flash.spawn(ship.get_parent(), at, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
+			Flash.spawn(ship.get_parent(), ship.global_position, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
 
 
 func _apply_summary(ship: Ship, summary: Dictionary) -> void:
