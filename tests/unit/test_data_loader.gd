@@ -249,6 +249,17 @@ func test_lighting_errors() -> void:
 	_expect_error(set, ["dim_lit.json", "lighting.star.height", "at most 1"])
 
 
+## PS2: persistent entity definitions.
+func test_entity_errors() -> void:
+	var set: DataSet = _load([BROKEN])
+	_expect_error(set, ["lost_patrol.json", "ships", "at least one ship"])
+	_expect_error(set, ["lost_patrol.json", "orders.route", "at least two systems"])
+	_expect_error(set, ["lost_patrol.json", "exists_if", "flag_name"])
+	_expect_error(set, ["lost_patrol.json", "start_system", "no system definition with id 'nowhere'"])
+	_expect_error(set, ["aimless.json", "orders.destination", "required for travel"])
+	_expect_error(set, ["aimless.json", "grudge_days", "at least 0"])
+
+
 ## PS6: memory settings, per-system overrides and traffic memory scaling.
 func test_memory_errors() -> void:
 	var set: DataSet = _load([BROKEN])

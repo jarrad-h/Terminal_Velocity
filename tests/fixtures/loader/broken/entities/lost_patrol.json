@@ -1,0 +1,2 @@
+{"name": "Lost Patrol", "government": "law", "pool": "broke", "ships": [], "start_system": "nowhere",
+ "orders": {"type": "patrol", "route": ["tiny"]}, "exists_if": "Bad Flag"}
