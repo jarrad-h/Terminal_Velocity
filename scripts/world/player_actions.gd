@@ -70,6 +70,7 @@ func try_land() -> String:
 ## the port's landing days (TM2).
 func land_at(port: SystemObjectDef, intro: String = "") -> void:
 	_end_boarding()
+	scene.entity_presence.on_leave()  # PS4: entities move on while you're down
 	GameState.advance_days(port.landing_days)
 	var player: Ship = _player()
 	player.place(port.position, player.rotation)
@@ -80,6 +81,7 @@ func land_at(port: SystemObjectDef, intro: String = "") -> void:
 
 func _take_off(port: SystemObjectDef) -> void:
 	GameState.advance_days(port.takeoff_days)  # TM2
+	scene.refresh_entities()  # PS4: who's here now
 	var player: Ship = _player()
 	player.place(port.position, player.rotation)
 	GameState.post_message("Took off from %s" % port.name)
@@ -117,7 +119,7 @@ func _dock_at_gate(gate: SystemObjectDef, player: Ship) -> String:
 func _travel_by_gate(gate: SystemObjectDef, system_id: String, days: int) -> void:
 	GameState.add_credits(-gate.fee)
 	dialog.close()
-	scene.record_wrecks()  # PS6: left now; the trip's days pass before arriving
+	scene.leave_system()  # PS4, PS6: left now; the trip's days pass before arriving
 	GameState.advance_days(days)
 	scene.hyperspace.arrive_at_gate(system_id)
 	GameState.post_message("Through %s to %s after %d day%s" % [gate.name, Hyperspace.system_name(system_id), days, "" if days == 1 else "s"])
@@ -291,7 +293,7 @@ func _rescue(pod: EscapePod) -> void:
 	GameState.add_credits(-fee)
 	var days: Array = settings["rescue_days"]
 	var days_passed: int = _rng.randi_range(roundi(days[0]), roundi(days[1]))
-	scene.record_wrecks()  # PS6: wrecks age while the pod drifts
+	scene.leave_system()  # PS4, PS6: wrecks age and entities move while the pod drifts
 	GameState.advance_days(days_passed)  # TM2: the days adrift pass on the calendar
 	var objects: Array[SystemObjectDef] = scene.system.objects
 	var index: int = PortRules.rescue_port(objects, from, GameState.records(), float(settings["record"]))

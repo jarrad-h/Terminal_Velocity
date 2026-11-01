@@ -22,13 +22,21 @@ var clock := DayClock.new()
 var flags: Dictionary = {}
 ## PS6: what each system remembers between visits.
 var memory := SystemMemory.new()
+## PS2: every persistent entity's summary; PS7: the news.
+var entities := EntityRegistry.new()
+var news := NewsLog.new()
+var _rng := RandomNumberGenerator.new()
 var travel := TravelState.new()
 
 
 func _ready() -> void:
 	clock.day_passed.connect(func(day: int) -> void:
 		memory.step_day(_memory_rules())  # TM3: systems recover a day at a time
+		for line: String in entities.step_day(day, entity_context()):  # PS2–PS5
+			news.add(day, line)
+		news.prune(day, int(DataRegistry.settings["entities"]["news"]["keep_days"]))
 		day_passed.emit(day))
+	_rng.randomize()
 	if DataRegistry.load_errors.is_empty():
 		_start_new()
 
@@ -37,6 +45,11 @@ func _start_new() -> void:
 	flags.clear()
 	flags_changed.emit()
 	memory = SystemMemory.new()
+	news = NewsLog.new()
+	var defs: Array = []
+	for id: String in DataRegistry.ids("entities"):
+		defs.append(DataRegistry.get_entity(id))
+	entities.start(defs, 0, _rng)
 	credits = int(DataRegistry.settings["player"]["credits"])
 	clock.day = 0
 	travel = TravelState.new()
@@ -123,6 +136,36 @@ func ship_lost(ship: Ship, act: String) -> void:
 	memory_add(travel.current_system, "pirate_presence", -float(settings["pirate_loss"][act]))
 
 
+## PS2–PS5: what the entity registry needs from the game (EntityRegistry).
+func entity_context() -> Dictionary:
+	var defs: Dictionary = {}
+	for id: String in DataRegistry.ids("entities"):
+		defs[id] = DataRegistry.get_entity(id)
+	var strength: Dictionary = {}
+	var speed: Dictionary = {}
+	for id: String in DataRegistry.ids("ships"):
+		var ship: ShipDef = DataRegistry.get_ship(id)
+		strength[id] = ship.strength
+		speed[id] = ship.jump_speed
+	var settings: Dictionary = (DataRegistry.settings["entities"]["encounter"] as Dictionary).duplicate()
+	return {"galaxy": DataRegistry.galaxy(), "defs": defs, "ship_strength": strength, "ship_speed": speed,
+		"gate_ok": entity_may_use_gate,
+		"hostile": func(a: String, b: String) -> bool:
+			return Relations.governments_hostile(DataRegistry.get_government(a), DataRegistry.get_government(b)),
+		"exists": func(def: PersistentEntityDef) -> bool: return GateRules.is_open(def.exists_if, flags),
+		"name_of": Hyperspace.system_name, "player_system": travel.current_system, "rng": _rng, "settings": settings}
+
+
+## PS3: an entity may use a system's gate if it's open and its government
+## isn't hostile to the entity's (decision 2026-10-31).
+func entity_may_use_gate(def: PersistentEntityDef, system_id: String) -> bool:
+	var system: SystemDef = DataRegistry.get_system(system_id)
+	var gate: SystemObjectDef = system.gate() if system != null else null
+	if gate == null or not GateRules.is_open(gate.open_condition, flags):
+		return false
+	return gate.government == "" or not Relations.governments_hostile(DataRegistry.get_government(gate.government), DataRegistry.get_government(def.government))
+
+
 ## PS6: {"baseline", "recovery_per_day", "max"} for a value in a system.
 func memory_rule(system_id: String, name: String) -> Dictionary:
 	var rule: Dictionary = (DataRegistry.settings["memory"]["values"][name] as Dictionary).duplicate()
@@ -169,7 +212,7 @@ func reset() -> void:
 ## SV1: everything above as plain values (the saves milestone stores this).
 func to_dict() -> Dictionary:
 	return {"credits": credits, "records": _records.duplicate(), "day": clock.day, "travel": travel.to_dict(), "flags": flags.duplicate(),
-		"memory": memory.to_dict()}
+		"memory": memory.to_dict(), "entities": entities.to_dict(), "news": news.to_dict()}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -179,6 +222,8 @@ func from_dict(data: Dictionary) -> void:
 	travel = TravelState.from_dict(data.get("travel", {}))
 	flags = (data.get("flags", {}) as Dictionary).duplicate()
 	memory = SystemMemory.from_dict(data.get("memory", {}))
+	entities = EntityRegistry.from_dict(data.get("entities", {}))
+	news = NewsLog.from_dict(data.get("news", {}))
 	flags_changed.emit()
 	credits_changed.emit(credits)
 

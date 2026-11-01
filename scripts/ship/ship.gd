@@ -24,6 +24,8 @@ var autopilot: JumpSequence = null
 ## glow all ask for it, and the autopilot must only step once per tick.
 var _input: FlightInput = FlightInput.new()
 var _input_frame: int = -1
+## PS4: a persistent entity's name shown instead of the hull class ("" = none).
+var callsign: String = ""
 ## Government ID ("" = none). Set at spawn.
 var government: String = ""
 ## AI role from its pool ("trader", "warship", "pirate"); "" for the player and idle ships.

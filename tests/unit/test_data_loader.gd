@@ -339,6 +339,7 @@ func test_real_game_data_is_valid() -> void:
 	assert_true(set.ids("weapons").size() == 6, "3 laser sizes, flak, missile, beam")
 	assert_true(set.ids("governments").size() == 3, "3 governments")
 	assert_true(set.ids("ai_pools").size() == 4, "3 prototype AI pools plus gate_haulers")
+	assert_true(set.ids("entities") == ["authority_patrol_group", "mara_vell", "red_ketch"], "PS2: the three test entities")
 	assert_true(set.ids("scenery").size() == 5, "5 scenery types")
 	assert_true(set.ids("personalities").size() == 5, "5 personalities")
 	assert_true(set.ids("systems").size() == 10, "the 10-system test cluster")

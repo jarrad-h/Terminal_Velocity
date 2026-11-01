@@ -135,7 +135,7 @@ func _complete(player: Ship) -> void:
 	GameState.set_fuel(travel.fuel - Hyperlanes.jump_fuel(player.def.jump_fuel, length), player.def.fuel)
 	if not travel.route.is_empty() and travel.route[0] == _destination:
 		travel.route.pop_front()
-	scene.record_wrecks()  # PS6: wrecks left now, then the trip's days pass, then arrive
+	scene.leave_system()  # PS4, PS6: left now, then the trip's days pass, then arrive
 	GameState.advance_days(days)
 	arrive(_destination, origin)
 	var text: String = "Arrived in %s after %d day%s" % [system_name(_destination), days, "" if days == 1 else "s"]

@@ -14,6 +14,9 @@ var arrive_day: int = 0
 ## The day it reached `location`, and the last day it stays there.
 var arrived_day: int = 0
 var leave_day: int = 0
+## Where it came from on its last arrival ("" = it started here), so it can
+## be seen arriving on that side (PS4).
+var came_from: String = ""
 ## Patrol: index of the route stop it's heading for or at.
 var route_index: int = 0
 ## [{"ship": String, "hull": 0–1, "shield": 0–1}]
@@ -28,7 +31,7 @@ func in_transit() -> bool:
 
 func to_dict() -> Dictionary:
 	return {"id": id, "alive": alive, "location": location, "transit_from": transit_from, "transit_to": transit_to,
-		"arrive_day": arrive_day, "arrived_day": arrived_day, "leave_day": leave_day, "route_index": route_index,
+		"arrive_day": arrive_day, "arrived_day": arrived_day, "leave_day": leave_day, "route_index": route_index, "came_from": came_from,
 		"ships": ships.duplicate(true), "grudge_until": grudge_until}
 
 
@@ -43,6 +46,7 @@ static func from_dict(data: Dictionary) -> EntityState:
 	s.arrived_day = int(data.get("arrived_day", 0))
 	s.leave_day = int(data.get("leave_day", 0))
 	s.route_index = int(data.get("route_index", 0))
+	s.came_from = str(data.get("came_from", ""))
 	s.ships = (data.get("ships", []) as Array).duplicate(true)
 	s.grudge_until = int(data.get("grudge_until", -1))
 	return s

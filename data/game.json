@@ -101,7 +101,8 @@
   "entities": {
     "arrival_offset": [-90, 120],
     "departure_window": [20, 150],
-    "encounter": {"randomness": 0.3, "loser_losses": 0.5, "loser_damage": 0.3, "winner_damage": 0.15, "floor_hull": 0.1},
+    "encounter": {"randomness": 0.3, "loser_losses": 0.5, "loser_damage": 0.3, "winner_damage": 0.15, "floor_hull": 0.4,
+                  "repair_per_day": 0.1},
     "news": {"days": 10, "max_items": 8, "keep_days": 60}
   },
   "stellars": {"cloud_spin": 0.6, "night_only_emission": ["planet_terran", "planet_ocean", "planet_rust"],

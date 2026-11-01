@@ -12,6 +12,16 @@ static func open(parent: Node, port: SystemObjectDef, player: Ship, on_take_off:
 	return dialog
 
 
+## PS7: recent off-screen events and announced movements, newest first.
+static func news_text() -> String:
+	var cfg: Dictionary = DataRegistry.settings["entities"]["news"]
+	var start: String = DataRegistry.settings["calendar"]["start_date"]
+	var lines: Array[String] = []
+	for item: Dictionary in GameState.news.recent(GameState.clock.day, int(cfg["days"]), int(cfg["max_items"])):
+		lines.append("%s  %s" % [Calendar.date_text(start, int(item["day"])), item["text"]])
+	return "\n\nNews:\n" + ("\n".join(lines) if not lines.is_empty() else "Nothing of note.")
+
+
 static func _refresh(dialog: Dialog, port: SystemObjectDef, player: Ship, on_take_off: Callable, intro: String) -> void:
 	var per_point: float = float(DataRegistry.settings["landing"]["repair_cost_per_point"])
 	var cost: int = PortRules.repair_cost(player.health.missing_points(), per_point)
@@ -22,6 +32,7 @@ static func _refresh(dialog: Dialog, port: SystemObjectDef, player: Ship, on_tak
 	text += "\n\nShield %.0f / %.0f   Armour %.0f / %.0f   Credits %d" % [
 		player.health.shield, player.health.max_shield, player.health.armor, player.health.max_armor, GameState.credits]
 	text += "\n%s   Fuel %.0f / %.0f" % [GameState.date_text(), GameState.travel.fuel, player.def.fuel]
+	text += news_text()
 	dialog.set_body(text)
 	dialog.clear_choices()
 	var needs_repair: bool = player.health.missing_points() > 0.0

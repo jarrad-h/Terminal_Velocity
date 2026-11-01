@@ -81,6 +81,10 @@ Fields marked **required** have no default.
 | `memory.pirate_loss` | PS6: pirate presence lost when a pirate ship is disabled (`disable`) or destroyed (`kill`) in the system, by anyone | `5`, `10` |
 | `memory.pirate_governments` | PS6: governments whose losses count as pirate losses | `[]` (data: `["pirates"]`) |
 | `memory.wreck_days` | PS6: disabled ships left behind stay this many days (boardable when the player returns), then are scavenged | `5` |
+| `entities.arrival_offset` | PS4: default arrival offset for entities arriving the same day as the player, seconds `[min, max]` | `[-90, 120]` |
+| `entities.departure_window` | PS4: an entity due to leave on the day the player is there leaves this many seconds after the player's entry `[min, max]` | `[20, 150]` |
+| `entities.encounter` | PS5: off-screen fights: `randomness` (each side's strength × 1 ± this), `loser_losses` (share of the loser's ships lost, rounded up), `loser_damage` and `winner_damage` (hull fraction lost by survivors), `floor_hull` (survivors never drop below this; keep it above ships' disable %), `repair_per_day` (entities repair this much hull a day) | `0.3`, `0.5`, `0.3`, `0.15`, `0.4`, `0.1` |
+| `entities.news` | PS7: the landed screen shows news from the last `days` days, at most `max_items`; older than `keep_days` is dropped | `10`, `8`, `60` |
 | `stellars.cloud_spin` | V9: how fast planet cloud layers turn, degrees/s (negative turns the other way) | `0.6` |
 | `stellars.star_disc_cover`, `stellars.star_disc_colour` | V9: the star's emission is additive, so an opaque disc this fraction of its radius (0–1), in this colour, sits under it to hide the backdrop | `0.97`, `"#000000"` |
 | `stellars.gate_light` | V9: an open gate's field lights nearby ships and its own ring: `colour`, `energy`, `radius` (px), `height` (px); off while the gate is closed | `"#9a86ff"`, `1.6`, `900`, `60` |
@@ -230,6 +234,25 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `systems` | `[{"system": <system ID>, "position": [x, y], "map_state": …}]`, each system once. `position` is in map units (+y is down, as in space); `map_state` is how it starts on the map: `explored` (name, government and system view shown), `unexplored` (shown as "Unexplored" until visited) or `hidden` (not drawn or routable, nor its lanes, until revealed) | **required**; `map_state` `"unexplored"` |
 | `hyperlanes` | `[{"from": <system ID>, "to": <system ID>}]`; two-way, each pair once, both ends listed in `systems` | `[]` |
 | `gate_links` | TR5: `[{"from": <system ID>, "to": <system ID>, "days": n}]` between two systems' gates; two-way, each pair once, both systems must have a gate. `days` (at least 1, default 1) must not exceed the fewest-days hyperlane route for the start ship (`player_ship`'s `jump_speed`), and must be fewer whenever that route takes more than a day | `[]` |
+
+## `entities/` — persistent characters and fleets (PS2–PS5)
+
+Tracked across the galaxy at all times: a summary (location or transit, ships' state, orders, grudge) moved one day at a time by the day clock, travelling by the player's rules (hyperlane days by the slowest ship's `jump_speed`; gates where open and not run by a government hostile to the entity's). In the player's system it becomes real ships flying as its AI pool, named with its `name`; when the player leaves, damage and losses are written back. Hostile entities sharing a system the player isn't in fight off-screen (`game.json` `entities.encounter`). Departures and fights are news on the landed screen.
+
+| Field | Meaning | Default |
+| --- | --- | --- |
+| `name` | Shown on the target panel and in the news | **required** |
+| `government` | Government ID | **required** |
+| `pool` | AI pool its ships fly as (behaviour, sensors, wealth) | **required** |
+| `personality` | Personality ID; `""` = neutral | `""` |
+| `ships` | `[{"ship": <ship ID>, "count": n}]`, at least one | **required** |
+| `start_system` | Where it starts (on the galaxy map) | **required** |
+| `orders.type` | `hold` (stays at its start), `patrol` (visits `route` in order and loops; at least two systems), `travel` (to `destination`, then holds) or `follow` (the player) | `"hold"` |
+| `orders.route`, `orders.destination` | Systems for `patrol` and `travel` | `[]`, `""` |
+| `orders.stay_days` | Days it stays at each stop `[min, max]`; it passes straight through systems on the way | `[1, 2]` |
+| `arrival_offset` | PS4: when it arrives on the same day as the player, seconds from the player's entry `[min, max]`; negative = already there, positive = jumps in later (a fixed positive value scripts an ambush) | `game.json` `entities.arrival_offset` |
+| `grudge_days` | PS2: days it follows the player after the player damages one of its ships (0 = never) | `0` |
+| `exists_if` | `""` always, `"flag"` / `"!flag"`: it only exists (moves, appears, fights) while this holds | `""` |
 
 ## `systems/`
 

@@ -129,7 +129,7 @@ func refresh() -> void:
 	visible = target != null and is_instance_valid(target) and player != null
 	if not visible:
 		return
-	_class.text = target.def.name
+	_class.text = target.def.name if target.callsign == "" else "%s (%s)" % [target.callsign, target.def.name]
 	_type.text = target.role.capitalize() if target.role != "" else "No role"
 	var gov: GovernmentDef = target.gov_def()
 	_government.text = gov.name if gov != null else "No government"

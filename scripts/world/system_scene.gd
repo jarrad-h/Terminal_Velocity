@@ -18,6 +18,7 @@ var system: SystemDef = null
 var actions: PlayerActions
 var hyperspace: Hyperspace
 var lighting: SystemLighting
+var entity_presence: EntityPresence
 
 
 func _ready() -> void:
@@ -33,6 +34,10 @@ func _ready() -> void:
 	actions.name = "PlayerActions"
 	actions.scene = self
 	add_child(actions)
+	entity_presence = EntityPresence.new()
+	entity_presence.name = "EntityPresence"
+	entity_presence.scene = self
+	add_child(entity_presence)
 	hyperspace = Hyperspace.new()
 	hyperspace.name = "Hyperspace"
 	hyperspace.scene = self
@@ -54,6 +59,7 @@ func _ready() -> void:
 		camera.target = player
 	hud.player = player
 	hud.actions = actions
+	entity_presence.on_enter(system.id)  # PS4
 	hud.hyperspace = hyperspace
 
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
@@ -90,11 +96,12 @@ func load_system(system_id: String) -> bool:
 ## C10: as if the player left and came back — every other ship goes,
 ## destroyed scenery returns, and traffic refills.
 func reset_visit() -> void:
-	_record_wrecks()
+	leave_system()
 	_clear_ships_and_shots()
 	local_space.reset_visit()
 	traffic.configure(system, true)
 	_restore_wrecks()
+	entity_presence.on_enter(system.id)
 
 
 ## TR2, TR4: the player leaves this system for `system_id`, arriving at its
@@ -118,7 +125,7 @@ func enter_system_at(system_id: String, at: Vector2) -> void:
 
 
 func _enter(system_id: String, arrival: FlightState) -> void:
-	_record_wrecks()
+	leave_system()
 	_clear_ships_and_shots()
 	var same_system: bool = system != null and system.id == system_id
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
@@ -130,15 +137,27 @@ func _enter(system_id: String, arrival: FlightState) -> void:
 	if same_system:
 		traffic.configure(system, true)  # D11 goto here: refill like a fresh visit
 	_restore_wrecks()
+	entity_presence.on_enter(system.id)
 	if player != null:
 		Flash.spawn(world, player.global_position, player.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
 
 
-## PS6: disabled ships the player leaves behind are remembered for
-## memory.wreck_days days (from when each was first left). Call before days
-## pass on leaving, so each wreck's clock starts when it was left.
-func record_wrecks() -> void:
+## PS4, PS6: the player is leaving (or days are about to pass while landed):
+## remember wrecks and write persistent entities back. Call before days pass,
+## so each wreck's clock starts when it was left. Safe to call twice.
+func leave_system() -> void:
 	_record_wrecks()
+	entity_presence.on_leave()
+
+
+## PS4: after days passed while landed, entities move on or arrive: their
+## ships are rebuilt from the registry as the player takes off.
+func refresh_entities() -> void:
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		if node.has_meta("entity"):
+			node.remove_from_group(&"ships")
+			node.queue_free()
+	entity_presence.on_enter(system.id)
 
 
 func _record_wrecks() -> void:
@@ -149,7 +168,7 @@ func _record_wrecks() -> void:
 	var list: Array = []
 	for node: Node in get_tree().get_nodes_in_group(&"ships"):
 		var ship: Ship = node
-		if ship.is_player() or not ship.health.is_disabled or ship.health.is_destroyed or ship.docked:
+		if ship.is_player() or ship.has_meta("entity") or not ship.health.is_disabled or ship.health.is_destroyed or ship.docked:
 			continue
 		var expires: int = int(ship.get_meta("wreck_expires", today + wreck_days))
 		ship.set_meta("wreck_expires", expires)

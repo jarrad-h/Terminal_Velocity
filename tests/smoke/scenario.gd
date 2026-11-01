@@ -576,6 +576,7 @@ func _run() -> void:
 	await _gate_checks(player, scene_root)
 	await _ai_hyperspace_checks(player, scene_root)
 	_memory_checks(player, scene_root)
+	await _entity_checks(player, scene_root)
 	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
@@ -634,6 +635,75 @@ func _run() -> void:
 
 func actions_of(scene_root: Node) -> PlayerActions:
 	return scene_root.actions
+
+
+func _entity_ships(id: String) -> Array[Ship]:
+	var result: Array[Ship] = []
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		if node.get_meta("entity", "") == id and not (node as Ship).is_queued_for_deletion():
+			result.append(node)
+	return result
+
+
+## P2M3: persistent entities in the player's system (PS2–PS4, PS7, D13).
+func _entity_checks(player: Ship, scene_root: Node) -> void:
+	var presence: EntityPresence = scene_root.entity_presence
+	var registry: EntityRegistry = GameState.entities
+	_check(registry.states.size() == DataRegistry.ids("entities").size() and registry.states.size() == 3, "PS2: the three test entities are tracked")
+	_check(_debug.switch_system("test_nebula"), "to the start system")
+	presence.set_enabled(true)
+	var today: int = GameState.clock.day
+	_check(_debug.run_command("entity authority_patrol_group move test_nebula").begins_with("Moved"), "D13: move an entity here")
+	await _frames(2)
+	var patrol: Array[Ship] = _entity_ships("authority_patrol_group")
+	_check(patrol.size() == 2 and patrol.all(func(sh: Ship) -> bool: return sh.callsign == "Authority Patrol Group"), "PS4: it materialises as real ships, named")
+	if patrol.size() == 2:
+		patrol[0].health.armor = patrol[0].health.max_armor * 0.6
+		patrol[1].health.force_destroy()
+	await _frames(2)
+	_check(_debug.switch_system("aster"), "leave")
+	var summary: EntityState = registry.states["authority_patrol_group"]
+	_check(summary.alive and summary.ships.size() == 1 and float(summary.ships[0]["hull"]) < 0.8, "PS4: damage and losses are written back (%s)" % [summary.ships])
+	_check(_debug.run_command("entity red_ketch move aster").begins_with("Moved"), "D13: move the pirate here")
+	await _frames(2)
+	var ketch: Array[Ship] = _entity_ships("red_ketch")
+	_check(ketch.size() == 2, "Red Ketch is here")
+	if not ketch.is_empty():
+		ketch[0].health.apply_damage(5.0, 0.0, player)
+	_check(registry.states["red_ketch"].grudge_until >= today + DataRegistry.get_entity("red_ketch").grudge_days, "PS2: hitting him earns a grudge")
+	# PS4: arriving after the player, from the side it came from.
+	var ketch_state: EntityState = registry.states["red_ketch"]
+	var ketch_def: PersistentEntityDef = DataRegistry.get_entity("red_ketch")
+	var offset_before: Vector2 = ketch_def.arrival_offset
+	ketch_def.arrival_offset = Vector2(0.5, 0.5)
+	ketch_state.arrived_day = today
+	ketch_state.came_from = "test_nebula"
+	scene_root.refresh_entities()
+	await _frames(2)
+	_check(_entity_ships("red_ketch").is_empty(), "PS4: an entity arriving later in the day isn't here yet")
+	await _frames(60)
+	ketch = _entity_ships("red_ketch")
+	var bearing: Vector2 = Hyperlanes.bearing(DataRegistry.galaxy(), "test_nebula", "aster")
+	_check(ketch.size() == 2 and ketch[0].global_position.normalized().dot(-bearing) > 0.95, "PS4: ...then jumps in on the side facing where it came from")
+	ketch_def.arrival_offset = offset_before
+	# PS4: leaving during the player's visit.
+	ketch_state.leave_day = today
+	ketch_state.grudge_until = -1
+	presence._present["red_ketch"]["depart_in"] = 0.05
+	await _frames(10)
+	_check(ketch_state.in_transit(), "PS4: due to leave today, it departs during the visit")
+	_check(_entity_ships("red_ketch").all(func(sh: Ship) -> bool: return (sh.controller as AIController).state in [AIController.State.LEAVE, AIController.State.JUMPING]), "PS4: its ships fly out")
+	_check(LandedScreen.news_text().contains("Red Ketch departs Aster"), "PS7: the departure is news")
+	# PS2, PS3: days move entities by their orders.
+	var mara: EntityState = registry.states["mara_vell"]
+	var mara_from: String = mara.location
+	_debug.advance_days(6)
+	_check(mara.in_transit() or mara.location != mara_from, "PS3: Mara Vell moves along her trade route over days")
+	_check(_debug.run_command("entities").contains("Captain Mara Vell"), "D13: entities via console")
+	presence.set_enabled(false)
+	_check(_debug.switch_system("test_nebula"), "back to the start")
+	GameState.entities.start(DataRegistry.ids("entities").map(func(id: String) -> PersistentEntityDef: return DataRegistry.get_entity(id)), GameState.clock.day, RandomNumberGenerator.new())
+	GameState.news = NewsLog.new()
 
 
 ## P2M3: system memory (PS6).

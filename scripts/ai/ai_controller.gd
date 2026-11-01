@@ -30,6 +30,9 @@ var exit_bearing: Vector2 = Vector2.ZERO
 ## A10: this ship travels the gate network: it leaves by docking with the
 ## system's gate instead of jumping.
 var via_gate: bool = false
+## PS4: a persistent entity's ship: it only leaves when its entity departs
+## (leave_for), never on its own stay timer or after its last stop.
+var persistent: bool = false
 
 var _stops_left: int = 0
 var _timer: float = 0.0
@@ -129,7 +132,7 @@ func _think(elapsed: float) -> void:
 	match state:
 		State.PATROL:
 			_timer -= elapsed
-			if _timer <= 0.0:
+			if _timer <= 0.0 and not persistent:
 				_start_leave()
 			elif ship.global_position.distance_to(destination) < pool.sensor_range * _ai("waypoint_reached_fraction"):
 				_new_waypoint()
@@ -283,14 +286,35 @@ func _land() -> void:
 func _take_off() -> void:
 	ship.place(planet.position, _rng.randf() * TAU)
 	ship.set_docked(false)
-	if _stops_left > 0:
+	if _stops_left > 0 or persistent:
 		_travel_to_next_planet()
 	else:
 		_start_leave()
 
 
 ## A6: job done; jump out with a flash.
+## PS4: the entity is moving on: leave for `system_id`, by gate or by jump.
+func leave_for(system_id: String, by_gate: bool) -> void:
+	target = null
+	ship.set_target(null)
+	if ship.docked:
+		ship.set_docked(false)
+	state = State.LEAVE
+	via_gate = by_gate
+	planet = _open_gate() if by_gate else null
+	if planet != null:
+		return
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	if galaxy != null and galaxy.has_system(system_id) and galaxy.has_system(system.id) and system_id != system.id:
+		exit_system = system_id
+		exit_bearing = Hyperlanes.bearing(galaxy, system.id, system_id)
+		destination = exit_bearing * system.jump_radius * _ai("jump_out_factor")
+	else:
+		_pick_exit()
+
+
 func _jump_out() -> void:
+	ship.set_meta("jumped_out", true)  # left the system, not destroyed (PS4)
 	Flash.spawn(ship.get_parent(), ship.global_position, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
 	_leave_quietly()
 

@@ -30,7 +30,8 @@ static func after_defeat(ships: Array, loss_fraction: float, damage: float, floo
 	return Encounter.after_damage(kept, damage, floor_hull)
 
 
-## Every ship takes `damage` off its hull, down to `floor_hull`.
+## Every ship takes `damage` off its hull, down to `floor_hull` (negative
+## damage repairs).
 static func after_damage(ships: Array, damage: float, floor_hull: float) -> Array:
 	var result: Array = ships.duplicate(true)
 	for s: Dictionary in result:

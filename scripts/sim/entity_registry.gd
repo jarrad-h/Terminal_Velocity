@@ -47,6 +47,9 @@ func step_day(day: int, ctx: Dictionary) -> Array[String]:
 			continue
 		if s.grudge_until >= 0 and day > s.grudge_until:
 			s.grudge_until = -1
+		s.ships = Encounter.after_damage(s.ships, -float(ctx["settings"].get("repair_per_day", 0.0)), 0.0)
+		for ship: Dictionary in s.ships:
+			ship["hull"] = minf(float(ship["hull"]), 1.0)
 		if s.in_transit():
 			if day >= s.arrive_day:
 				news.append_array(_arrive(s, def, day, ctx))
@@ -137,6 +140,7 @@ static func from_dict(data: Dictionary) -> EntityRegistry:
 
 
 func _arrive(s: EntityState, def: PersistentEntityDef, day: int, ctx: Dictionary) -> Array[String]:
+	s.came_from = s.transit_from
 	s.location = s.transit_to
 	s.transit_to = ""
 	s.arrived_day = day
