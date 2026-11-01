@@ -7,6 +7,7 @@
  * order is flip, then scale, then rotate about the centre (as compose.py render_design does).
  * Marker conventions, drawing, hull.json output and checks come from ../shared/hull-markers.js.
  */
+window.__designerLoaded = true;
 (() => {
 'use strict';
 const H = TVHull;

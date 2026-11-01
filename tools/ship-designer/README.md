@@ -6,6 +6,8 @@ A standalone browser tool for building ship hulls from a kit of painted parts. D
 
 Open `index.html` in Chrome or Firefox (double-click it). No install, server or build step.
 
+It needs its scripts beside it: `designer.js` in the same folder and `../shared/hull-markers.js`. Open it from a checkout of the repo (or a download of the whole `tools` folder), not as a lone HTML file; if a script is missing the page says which.
+
 1. **Open kit folder** and pick the kit folder (the folder holding `manifest.json` and the part PNGs, or any folder above it, such as `art_src/sow/kit_v2`). **Open kit zip** reads a zip of the same. You can also drop the folder or zip on the canvas. In Chrome the folder is remembered, so next time **Reopen kit** brings it back.
 2. Drag parts from the palette onto the canvas, or click one to add it at the view centre. Search filters by id, category and note.
 3. Arrange them: move, rotate, scale, flip, restack, lock, group. **Mirror** (M) keeps a partner on the other side of the centre line.

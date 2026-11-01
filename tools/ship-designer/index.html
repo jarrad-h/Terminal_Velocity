@@ -363,7 +363,33 @@ details.out summary { cursor: pointer; font-size: 11.5px; font-weight: 600; text
 </div>
 <div class="toast" id="toast" hidden></div>
 
+<div class="modal" id="loadError" hidden>
+  <div class="card" role="alertdialog" aria-labelledby="loadErrTitle" style="width:min(560px,100%)">
+    <h3 id="loadErrTitle">The designer didn't start</h3>
+    <p class="note" id="loadErrMsg"></p>
+    <p class="note">This page needs its two script files beside it, in the repo layout:</p>
+    <pre class="json" style="user-select:text">tools/
+  shared/hull-markers.js
+  ship-designer/index.html
+  ship-designer/designer.js</pre>
+    <p class="note">Open <span class="mono">tools/ship-designer/index.html</span> from a checkout (or a download) of the whole <span class="mono">tools</span> folder, not the HTML file on its own.</p>
+  </div>
+</div>
+<script>
+  // Shows why nothing works if a script is missing or throws while starting up.
+  window.__bootErrors = [];
+  window.addEventListener('error', e => {
+    window.__bootErrors.push(e.target && e.target.src ? 'Could not load ' + e.target.src : (e.message || 'Script error'));
+  }, true);
+</script>
 <script src="../shared/hull-markers.js"></script>
 <script src="designer.js"></script>
+<script>
+  if (!window.__designer) {
+    const missing = [!window.TVHull && '../shared/hull-markers.js', !window.__designerLoaded && 'designer.js'].filter(Boolean);
+    document.getElementById('loadErrMsg').textContent = (missing.length ? 'Missing: ' + missing.join(', ') + '. ' : '') + window.__bootErrors.join(' · ');
+    document.getElementById('loadError').hidden = false;
+  }
+</script>
 </body>
 </html>
