@@ -7,7 +7,7 @@ extends CanvasLayer
 const MAX_LINES: int = 14
 
 var _input: LineEdit
-var _output: Label
+var _output: RichTextLabel
 var _lines: Array[String] = []
 var _history: Array[String] = []
 
@@ -18,13 +18,19 @@ func _ready() -> void:
 	var panel := PanelContainer.new()
 	panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	panel.offset_top = -320.0
+	panel.offset_bottom = 0.0
+	panel.clip_contents = true
 	add_child(panel)
 	var box := VBoxContainer.new()
 	panel.add_child(box)
-	_output = Label.new()
+	# Fixed height that scrolls, so long (wrapped) output never pushes the
+	# newest line off the bottom of the screen.
+	_output = RichTextLabel.new()
 	_output.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_output.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_output.bbcode_enabled = false
+	_output.scroll_following = true
 	_output.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_output.focus_mode = Control.FOCUS_NONE
 	box.add_child(_output)
 	_input = LineEdit.new()
 	_input.placeholder_text = "Type a command (help)"

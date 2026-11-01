@@ -119,6 +119,7 @@ func _materialise(s: EntityState, def: PersistentEntityDef, arriving: bool) -> v
 		var ai := AIController.new()
 		ai.setup(pool, personality if personality != null else PersonalityDef.neutral(), system, "arrive" if arriving else "inside")
 		ai.persistent = true
+		ai.hunt_player = s.grudge_until >= GameState.clock.day
 		ship.set_controller(ai)
 		_apply_summary(ship, summary)
 		ship.attacked.connect(_on_attacked.bind(s.id))
@@ -148,8 +149,15 @@ func _depart(s: EntityState, def: PersistentEntityDef) -> void:
 	var hop: Array[Dictionary] = EntityRouting.plot(DataRegistry.galaxy(), from, s.transit_to, _speed(s),
 		func(system_id: String) -> bool: return GameState.entity_may_use_gate(def, system_id))
 	var by_gate: bool = not hop.is_empty() and hop[0]["via"] == "gate"
-	for ship: Variant in _present[s.id]["ships"]:
-		if is_instance_valid(ship) and (ship as Ship).controller is AIController and (ship as Ship).can_act():
+	var entry: Dictionary = _present[s.id]
+	for ship: Variant in entry["ships"].duplicate():
+		if not is_instance_valid(ship):
+			continue
+		if not (ship as Ship).can_act():
+			# Disabled when its fleet moves on: abandoned, an ordinary wreck now (PS6).
+			(ship as Ship).remove_meta("entity")
+			entry["ships"].erase(ship)
+		elif (ship as Ship).controller is AIController:
 			((ship as Ship).controller as AIController).leave_for(s.transit_to, by_gate)
 
 
@@ -159,6 +167,9 @@ func _on_attacked(attacker: Ship, id: String) -> void:
 		var s: EntityState = GameState.entities.states.get(id)
 		if def != null and s != null and def.grudge_days > 0 and s.grudge_until < GameState.clock.day + def.grudge_days:
 			GameState.entities.give_grudge(id, def, GameState.clock.day)
+			for ship: Variant in _present.get(id, {}).get("ships", []):
+				if is_instance_valid(ship) and (ship as Ship).controller is AIController:
+					((ship as Ship).controller as AIController).hunt_player = true
 
 
 ## A ship left the scene: jumped out (keep its state for the summary) or

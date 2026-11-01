@@ -101,6 +101,18 @@ func test_grudge_follows_the_player_then_ends() -> void:
 	assert_true(s.grudge_until == -1, "the grudge runs out")
 
 
+func test_grudge_cuts_the_stay_short() -> void:
+	var def: PersistentEntityDef = _def("ketch", {"grudge_days": 6, "orders": {"type": "patrol", "route": ["a", "b"], "stay_days": [5, 5]}})
+	var reg := EntityRegistry.new()
+	var ctx: Dictionary = _ctx([def], false, "c")
+	reg.start([def], 0, ctx["rng"])
+	var s: EntityState = reg.states["ketch"]
+	assert_true(s.leave_day == 5, "staying five days")
+	reg.give_grudge("ketch", def, 1)
+	reg.step_day(2, ctx)
+	assert_true(s.in_transit() and s.transit_to == "b", "PS2: a grudge sends it after the player the next day, stay or not")
+
+
 func test_grudging_patrol_passes_its_stops_on_the_way() -> void:
 	var def: PersistentEntityDef = _def("ketch", {"grudge_days": 9, "orders": {"type": "patrol", "route": ["a", "b"], "stay_days": [3, 3]}})
 	var reg := EntityRegistry.new()

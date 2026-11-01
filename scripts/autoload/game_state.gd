@@ -93,6 +93,10 @@ func set_fuel(value: float, capacity: float) -> void:
 
 func get_record(government: String) -> float:
 	if not _records.has(government):
+		# G3: a government can start the player off elsewhere (pirates: hostile).
+		var gov: GovernmentDef = DataRegistry.get_government(government)
+		if gov != null and gov.start_record != null:
+			return float(gov.start_record)
 		return float(DataRegistry.settings["player"]["record"])
 	return _records[government]
 

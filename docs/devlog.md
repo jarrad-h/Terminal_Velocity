@@ -96,6 +96,19 @@ Jarrad's check-in: the first half's building blocks are good; small values to tu
   - scenario: materialise, write-back of damage and losses, grudge, a late arrival on the right side, departure during a visit, news, movement over days, D13;
   - a 60-day dry run: all three move as ordered, and the news reads naturally.
 
+### 2026-11-01 — Playtest notes (Jarrad)
+
+- **Bug: the console's bottom line went off the screen** when long output wrapped. The output is now a fixed-height scrolling panel that always shows the newest line (checked under a virtual display).
+- **Debug: entity lines say when an entity leaves, not just when it arrives.** For example: "in Aster since 3 Jan, leaves 5 Jan for Drift"; "travelling Aster → Drift, arrives 7 Jan, then stays 1–2 days"; "grudge until … (follows you)".
+- **Bug: Red Ketch's grudge didn't work as expected.** Two causes:
+  - A grudge didn't cut the stay short, so he sat out his stop before chasing. Now he sets off the next day.
+  - Once he arrived, his ships only fought inside sensor range. Now they hunt the player anywhere in the system.
+  - Also decided: a ship still disabled when its fleet departs is abandoned as an ordinary wreck, and the fleet loses it.
+  - Destroyed named entities stay dead (confirmed).
+  - Unit and scenario regression checks added.
+- **Design change, built: pirates can be won over (G3).** Governments get `start_record`. Pirates start the player at −60, hostile below −20, friendly from 25 (replacing the 1000 threshold). Assisting pirate ships raises the record; missions will later.
+- **Design question raised:** grouped entities like the patrol group should fly together as a fleet.
+
 ---
 
 ## Phase 2 Milestone 2: Gates and lighting (30 Oct 2026)

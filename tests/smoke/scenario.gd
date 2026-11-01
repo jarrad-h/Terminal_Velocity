@@ -671,6 +671,10 @@ func _entity_checks(player: Ship, scene_root: Node) -> void:
 	if not ketch.is_empty():
 		ketch[0].health.apply_damage(5.0, 0.0, player)
 	_check(registry.states["red_ketch"].grudge_until >= today + DataRegistry.get_entity("red_ketch").grudge_days, "PS2: hitting him earns a grudge")
+	await _frames(15)
+	var hunters: Array[Ship] = _entity_ships("red_ketch")
+	_check(hunters.size() == 2 and hunters.all(func(sh: Ship) -> bool: return (sh.controller as AIController).hunt_player), "PS2: with a grudge his ships hunt the player")
+	_check(hunters.any(func(sh: Ship) -> bool: return (sh.controller as AIController).state == AIController.State.ATTACK and (sh.controller as AIController).target == player), "PS2: ...and go for the player, whatever the range")
 	scene_root.refresh_entities()  # like taking off again
 	await _frames(3)
 	scene_root.leave_system()
@@ -703,17 +707,29 @@ func _entity_checks(player: Ship, scene_root: Node) -> void:
 	# PS4: leaving during the player's visit.
 	ketch_state.leave_day = today
 	ketch_state.grudge_until = -1
+	var crippled: Ship = _entity_ships("red_ketch")[1] if _entity_ships("red_ketch").size() == 2 else null
+	if crippled != null:
+		crippled.health.force_disable()
 	presence._present["red_ketch"]["depart_in"] = 0.05
 	await _frames(10)
 	_check(ketch_state.in_transit(), "PS4: due to leave today, it departs during the visit")
 	_check(_entity_ships("red_ketch").all(func(sh: Ship) -> bool: return (sh.controller as AIController).state in [AIController.State.LEAVE, AIController.State.JUMPING]), "PS4: its ships fly out")
 	_check(LandedScreen.news_text().contains("Red Ketch departs Aster"), "PS7: the departure is news")
+	_check(crippled != null and is_instance_valid(crippled) and not crippled.has_meta("entity") and crippled.health.is_disabled, "PS4: a disabled ship is abandoned when its fleet moves on")
 	# PS2, PS3: days move entities by their orders.
 	var mara: EntityState = registry.states["mara_vell"]
 	var mara_from: String = mara.location
 	_debug.advance_days(6)
 	_check(mara.in_transit() or mara.location != mara_from, "PS3: Mara Vell moves along her trade route over days")
 	_check(_debug.run_command("entities").contains("Captain Mara Vell"), "D13: entities via console")
+	# G3: pirates start hostile, but a good enough record wins them over.
+	var pirates: GovernmentDef = DataRegistry.get_government("pirates")
+	var pirate_record: float = GameState.get_record("pirates")
+	GameState._records.erase("pirates")
+	_check(Relations.hostile_to_player(pirates, GameState.get_record("pirates")) and GameState.get_record("pirates") < 0.0, "G3: pirates start hostile, with a negative record")
+	GameState.set_record("pirates", pirates.friendly_record)
+	_check(not Relations.hostile_to_player(pirates, GameState.get_record("pirates")), "G3: ...and can be won over")
+	GameState.set_record("pirates", pirate_record)
 	presence.set_enabled(false)
 	_check(_debug.switch_system("test_nebula"), "back to the start")
 	GameState.entities.start(DataRegistry.ids("entities").map(func(id: String) -> PersistentEntityDef: return DataRegistry.get_entity(id)), GameState.clock.day, RandomNumberGenerator.new())

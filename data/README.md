@@ -161,6 +161,7 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `name` | Display name | **required** |
 | `colour` | Radar/HUD colour | `"#ffffff"` |
 | `allies`, `enemies` | Lists of government IDs (one ID can't be in both) | `[]` |
+| `start_record` | G3: the player's record with this government at the start (e.g. pirates start hostile, below their `crime_threshold`, and the player can raise it); unset = `game.json` `player.record` | unset |
 | `crime_threshold` | Record below which its warships attack the player | `-50` |
 | `friendly_record` | G5: record at or above which its ships show as friendly (radar, target panel); must be above `crime_threshold` | `25` |
 | `penalties` | `{"shoot", "disable", "board", "kill"}`: record lost per act | all `0` |

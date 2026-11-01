@@ -33,6 +33,9 @@ var via_gate: bool = false
 ## PS4: a persistent entity's ship: it only leaves when its entity departs
 ## (leave_for), never on its own stay timer or after its last stop.
 var persistent: bool = false
+## PS2: an entity holding a grudge hunts the player across the whole system,
+## not just within sensor range.
+var hunt_player: bool = false
 
 var _stops_left: int = 0
 var _timer: float = 0.0
@@ -116,8 +119,14 @@ func _think(elapsed: float) -> void:
 		return
 	if state == State.ATTACK and (not _valid_target(target) or not ship.is_hostile_to(target)):
 		_end_attack()
-	if state == State.ATTACK and ship.global_position.distance_to(target.global_position) > pool.sensor_range * _ai("disengage_factor"):
+	if state == State.ATTACK and ship.global_position.distance_to(target.global_position) > pool.sensor_range * _ai("disengage_factor") \
+			and not (hunt_player and target.is_player()):
 		_end_attack()
+	if hunt_player and state in [State.PATROL, State.TRAVEL]:
+		var player: Ship = get_tree().get_first_node_in_group(&"player")
+		if _valid_target(player) and _armed():
+			_start_attack(player)
+			return
 	if state != State.FLEE and state != State.LEAVE:
 		# A4: retreat below the (personality-shifted) shield threshold.
 		if Behaviour.should_flee(ship.health.shield, ship.health.max_shield, _flee_threshold()):

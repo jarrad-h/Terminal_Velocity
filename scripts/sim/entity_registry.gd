@@ -54,7 +54,7 @@ func step_day(day: int, ctx: Dictionary) -> Array[String]:
 		if s.in_transit():
 			if day >= s.arrive_day:
 				news.append_array(_arrive(s, def, day, ctx))
-		elif day > s.leave_day:
+		elif day > s.leave_day or (s.grudge_until >= 0 and s.location != ctx["player_system"]):
 			news.append_array(depart(s, def, day, ctx))
 	news.append_array(_encounters(ctx))
 	return news
@@ -106,6 +106,7 @@ func give_grudge(id: String, def: PersistentEntityDef, day: int) -> void:
 	var s: EntityState = states.get(id)
 	if s != null and s.alive and def.grudge_days > 0:
 		s.grudge_until = day + def.grudge_days
+		s.leave_day = mini(s.leave_day, day)  # a grudge cuts the stay short
 
 
 ## PS4: the ships' state after the player saw them; none left means dead.

@@ -229,3 +229,9 @@ Why: Jarrad's answers, 31 Oct 2026.
 - **Arrival offsets (PS4):** confirmed as proposed: an entity due in a system the same day gets an offset in seconds relative to the player's entry (negative = already there, positive = arrives later), from a per-entity data range or a game-wide default; departures that day happen in a data window after the player's entry. Days still never pass in real time.
 - **Hidden lanes (A9):** AI traffic and persistent entities use hyperlanes the player hasn't discovered; ships arriving from an unseen direction hint that something is there.
 Why: Jarrad's answers at the milestone 3 check-in, 1 Nov 2026.
+
+## 2026-11-01 — Pirates start hostile but can be won over; grudges hunt; disabled ships abandoned (G3, PS2, PS4)
+- **Pirates (G3):** governments get `start_record`. Pirates start the player at −60 with a crime threshold of −20 and friendly at 25, so they're hostile at first but actions (assisting pirate ships; missions later) can make them neutral and then friendly. Replaces the prototype's threshold of 1000, which made them effectively permanent enemies.
+- **Grudges (PS2):** a grudge cuts the entity's stay short (it sets off after the player the next day), and while it holds, the entity's ships hunt the player anywhere in the system, not only within sensor range.
+- **Disabled ships (PS4):** a ship still disabled when its fleet departs is abandoned: it becomes an ordinary wreck (PS6) and the fleet loses it. Destroyed named entities stay dead.
+Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (Red Ketch didn't follow or chase; pirates couldn't be made friendly).

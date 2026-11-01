@@ -180,13 +180,36 @@ func entity_text(id: String) -> String:
 		return "%s: unknown" % id
 	if not s.alive:
 		return "%s (%s): destroyed" % [def.name, id]
-	var where: String = "in %s until day %d" % [s.location, s.leave_day] if not s.in_transit() \
-		else "%s → %s, arriving day %d" % [s.transit_from, s.transit_to, s.arrive_day]
+	var start: String = DataRegistry.settings["calendar"]["start_date"]
+	var when: Callable = func(day: int) -> String: return Calendar.date_text(start, day)
+	var where: String
+	if s.in_transit():
+		where = "travelling %s → %s, arrives %s, then stays %d–%d days" % [s.transit_from, s.transit_to, when.call(s.arrive_day),
+			def.stay_days.x, def.stay_days.y]
+	elif def.order_type == "hold" and s.grudge_until < 0:
+		where = "in %s since %s, holding there" % [s.location, when.call(s.arrived_day)]
+	else:
+		where = "in %s since %s, leaves %s for %s" % [s.location, when.call(s.arrived_day), when.call(s.leave_day + 1), _next_stop(s, def)]
 	var hulls: Array[String] = []
 	for ship: Dictionary in s.ships:
 		hulls.append("%s %d%%" % [ship["ship"], roundi(float(ship["hull"]) * 100.0)])
-	var grudge: String = "  grudge until day %d" % s.grudge_until if s.grudge_until >= 0 else ""
+	var grudge: String = "; grudge until %s (follows you)" % when.call(s.grudge_until) if s.grudge_until >= 0 else ""
 	return "%s (%s): %s; %s; %s%s" % [def.name, id, where, ", ".join(hulls), def.order_type, grudge]
+
+
+## Where an entity in a system goes next, without changing its orders.
+func _next_stop(s: EntityState, def: PersistentEntityDef) -> String:
+	if s.grudge_until >= 0 or def.order_type == "follow":
+		return "you (%s)" % GameState.travel.current_system
+	match def.order_type:
+		"patrol":
+			var i: int = s.route_index
+			if s.location == def.route[i]:
+				i = (i + 1) % def.route.size()
+			return def.route[i]
+		"travel":
+			return def.destination
+	return "nowhere (holding)"
 
 
 ## D13: puts an entity in `system_id` now (arrived yesterday, so it's simply
