@@ -239,3 +239,11 @@ Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (Red Ketch didn't follow or chase
 ## 2026-11-01 — Entity fleets fly in formation and fight as one (PS4)
 Per-entity `formation` (`wedge`, `line`, `none`). The first able ship leads; followers hold slots (spacing in `game.json` `entities.formation_spacing`) matching the leader's velocity and heading. Any member attacked makes the fleet's choice: fight (every member treats the attacker as an enemy and engages) or flee (the leader runs, the rest keep formation), so attacking a wingman isn't a free hit (Jarrad's point). When the leader jumps, everyone jumps; the next able ship takes over if the leader is lost. Entities only for now; the same Fleet could drive ambient patrols and escorts later.
 Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (the patrol group should feel like a unified force); answers: always jump together, formation per entity in data, build it now.
+
+## 2026-11-01 — Less regular replacement traffic: live memory counts, a lull after losses, an arrival arc (A6, A9, PS6)
+- **A: live counts.** Memory-scaled traffic targets are re-read whenever replacements are considered, so killing pirates lowers pirate presence and the population during the same visit.
+- **B: lull after a loss.** A traffic ship disabled or destroyed puts its pool on `ai.loss_lull` ([60, 180] s) before a replacement, instead of the system's `respawn_delay`.
+- **C: arrival arc.** Hyperspace arrivals come in within ±`ai.arrival_arc` (30°) of the lane's bearing, on screen or off (Jarrad: not forced off-screen; the arc alone breaks up the camping spot).
+- **D (danger memory)** is on the review list; Jarrad wants it implemented when the time is right.
+- Also: fleet leaders cruise at `entities.formation_cruise` (0.85) of top speed so same-hull wingmen can keep station (found while testing formations).
+Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (kill a raider, the same raider pops in at the same spot soon after).

@@ -117,7 +117,13 @@ Jarrad's check-in: the first half's building blocks are good; small values to tu
 ### 2026-11-01 — Playtest notes (Jarrad, second round)
 
 - **Fixed (TR4, A9): arrivals popped in.** Ships arriving by hyperspace, the player's and AI ships and entities alike, now drop out at hyperdrive speed along their bearing and brake to the arrival speed over `hyperspace.arrival_burn_seconds` (1.2 s), ending where they used to appear. It's a new `ARRIVING` phase of `JumpSequence`, and controls lock only for the burn. Unit test for the burn; scenario checks that player and AI arrivals burn and end in place.
-- **Design discussion opened: replacement traffic is too regular.** The same raider comes back at the same entry point soon after a kill. See the brainstorm options.
+- **Design change, confirmed and built: less regular replacement traffic.**
+  - **A (live counts):** memory-scaled traffic counts are re-read live.
+  - **B (lull):** a loss puts its pool on a 60–180 s lull (`ai.loss_lull`).
+  - **C (arc):** arrivals spread within ±30° of the lane's bearing (`ai.arrival_arc`), on screen or off.
+  - **D:** danger memory is on the review list for later.
+  - **Also:** fleet leaders now cruise at 85% (`entities.formation_cruise`), because a same-hull wingman could never catch a leader at full speed. Found as a flaky formation check.
+  - **Checks:** scenario checks for the arc, the live count, the lull and the tighter formation slot (within 60 px).
 - **Review list:** named entities need ways to last; an in-system map with selectable points of interest; planets, stations and gates as targets in the target panel.
 
 ---

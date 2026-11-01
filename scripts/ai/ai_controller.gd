@@ -392,17 +392,25 @@ func _steer(delta: float) -> void:
 		State.ATTACK:
 			_steer_attack(s, stats, delta)
 		State.TRAVEL, State.FLEE, State.LEAVE when planet != null:
-			_input = Steering.toward_velocity(s, stats, Steering.arrive_velocity(s, stats, planet.position), thrust_angle, delta)
+			_input = Steering.toward_velocity(s, stats, _cruise(Steering.arrive_velocity(s, stats, planet.position), stats), thrust_angle, delta)
 			var landing: Dictionary = DataRegistry.settings["landing"]
 			if PortRules.landing_check(s.position.distance_to(planet.position), planet.radius, float(landing["radius_fraction"]),
 					s.velocity.length(), float(landing["max_speed"])) == "":
 				_land()
 		State.PATROL:
-			_input = Steering.toward_velocity(s, stats, Steering.arrive_velocity(s, stats, destination), thrust_angle, delta)
+			_input = Steering.toward_velocity(s, stats, _cruise(Steering.arrive_velocity(s, stats, destination), stats), thrust_angle, delta)
 		_:
 			# LEAVE and edge-bound FLEE: full speed outward.
 			var out: Vector2 = (destination - s.position).normalized() * stats.top_speed
-			_input = Steering.toward_velocity(s, stats, out, thrust_angle, delta)
+			_input = Steering.toward_velocity(s, stats, _cruise(out, stats), thrust_angle, delta)
+
+
+## PS4: a fleet leader cruises below top speed so its wingmen (often the same
+## hull) can keep station; fleeing, it goes flat out.
+func _cruise(desired: Vector2, stats: FlightStats) -> Vector2:
+	if fleet == null or state == State.FLEE or fleet.leader() != ship or fleet.members.size() < 2:
+		return desired
+	return desired.limit_length(stats.top_speed * float(DataRegistry.settings["entities"]["formation_cruise"]))
 
 
 ## PS4: hold this ship's slot behind the fleet leader, matching its velocity;

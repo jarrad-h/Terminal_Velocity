@@ -76,6 +76,8 @@ Fields marked **required** have no default.
 | `ai.planet_spawn_chance` | For pools with `spawn_from_planets`: chance a replacement takes off from a planet rather than jumping in at the edge | `0.5` |
 | `ai.arrival_speed_fraction` | Ships jumping in at the edge start at this fraction of their top speed | `0.5` |
 | `ai.spawn_keep_away_factor` | Traffic placed at system load starts beyond sensor range × this from the player | `1.2` |
+| `ai.loss_lull` | A6: when a traffic ship is disabled or destroyed, its pool waits this long before a replacement `[min, max]` s (instead of the system's `respawn_delay`) | `[60, 180]` |
+| `ai.arrival_arc` | A9: hyperspace arrivals come in anywhere within this many degrees either side of the lane's bearing, on screen or off | `30` |
 | `ai.inside_spawn_band` | …and between these fractions of the edge radius `[min, max]` | `[0.15, 0.7]` |
 | `memory.values.alert`, `memory.values.pirate_presence` | PS6: each system remembers these between visits: `baseline` (where the value rests), `recovery_per_day` (how far it moves back towards the baseline each day) and `max`. A system's `memory` overrides `baseline` and `recovery_per_day` | alert `0`, `10`, `100`; pirate presence `100`, `10`, `200` |
 | `memory.alert_per_record` | PS6: alert raised in the current system per point of record the player loses there (any act that costs record) | `2` |
@@ -87,6 +89,7 @@ Fields marked **required** have no default.
 | `entities.min_stay_seconds` | PS4: an entity arriving after the player stays at least this long before a same-day departure | `5` |
 | `entities.ship_spacing` | PS4: gap between an entity's ships when they appear, px | `160` |
 | `entities.formation_spacing`, `entities.formation_settle` | PS4: gap between slots in an entity's formation, px; and how close (px, and px/s of relative speed) a follower must be to its slot to count as in formation and face the leader's heading | `180`, `40` |
+| `entities.formation_cruise` | PS4: a fleet's leader cruises at this fraction of its top speed (0–1) so wingmen can keep station; fleeing, it goes flat out | `0.85` |
 | `entities.encounter` | PS5: off-screen fights: `randomness` (each side's strength × 1 ± this), `loser_losses` (share of the loser's ships lost, rounded up), `loser_damage` and `winner_damage` (hull fraction lost by survivors), `floor_hull` (survivors never drop below this; keep it above ships' disable %), `repair_per_day` (entities repair this much hull a day) | `0.3`, `0.5`, `0.3`, `0.15`, `0.4`, `0.1` |
 | `entities.news` | PS7: the landed screen shows news from the last `days` days, at most `max_items`; older than `keep_days` is dropped | `10`, `8`, `60` |
 | `stellars.cloud_spin` | V9: how fast planet cloud layers turn, degrees/s (negative turns the other way) | `0.6` |

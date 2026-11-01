@@ -69,7 +69,7 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
 
 **AI travel (A, continued from the prototype)**
 
-- A9: AI ships leaving a system pick a real neighbouring system (hidden lanes included: the galaxy is real whether or not the player knows it) and fly the hyperspace sequence (TR2: beyond the jump radius, stop, face the bearing, countdown, overdrive); ships arriving appear at the jump radius on the side facing the system they came from (TR4). Fleeing ships fly the full sequence too, and hits don't cancel it.
+- A9: AI ships leaving a system pick a real neighbouring system (hidden lanes included: the galaxy is real whether or not the player knows it) and fly the hyperspace sequence (TR2: beyond the jump radius, stop, face the bearing, countdown, overdrive); ships arriving appear at the jump radius on the side facing the system they came from (TR4), anywhere within a data arc either side of the lane's bearing (on screen or off), so arrivals don't all come in at one spot. Losing a traffic ship (disabled or destroyed) brings a longer data lull before its replacement, and memory-scaled traffic counts (PS6) apply live during a visit. Fleeing ships fly the full sequence too, and hits don't cancel it.
 - A10: Hub systems can list traffic that travels the gate network: those ships arrive through the system's gate, cross the system or call at a planet, and leave through the gate.
 
 **Saves (SV)**
@@ -273,6 +273,7 @@ An art phase follows Phase 2 to build an expanded asset library, so Phase 3 cont
 - A large turret sprite, and a pirate turret style.
 - Named entities that last: important characters need strong ships, ways to escape (retreating early, escape pods, jumping out under fire), or other tricks such as reinforcements, or they die too quickly to matter (milestone 3 playtest).
 - An in-system map: the radar expands into a full system map where the player can select points of interest (planets, stations, gates) directly (milestone 3 playtest).
+- **Danger as system memory** (Jarrad wants it, at the right time): a "danger" value raised by fighting in a system and recovering over days; traders and pirates avoid dangerous systems, patrols are drawn to them, so a system the player has shot up stays quieter for days.
 - Points of interest as targets: planets, stations and gates selectable like ships and shown in the target panel (name, government, landable or dockable, distance) (milestone 3 playtest).
 
 **Carried over from the prototype devlog**

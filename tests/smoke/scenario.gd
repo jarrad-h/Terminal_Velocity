@@ -575,7 +575,8 @@ func _run() -> void:
 	await _hyperspace_checks(player, scene_root)
 	await _gate_checks(player, scene_root)
 	await _ai_hyperspace_checks(player, scene_root)
-	_memory_checks(player, scene_root)
+	await _memory_checks(player, scene_root)
+	await _lull_checks(scene_root)
 	await _entity_checks(player, scene_root)
 	await _frames(2)
 	await _lighting_checks(player, scene_root)
@@ -666,7 +667,7 @@ func _entity_checks(player: Ship, scene_root: Node) -> void:
 		for i: int in 120:  # closest over two seconds: the slot swings as the leader turns
 			await get_tree().physics_frame
 			gap = minf(gap, patrol[1].global_position.distance_to(lead_ai.fleet.slot_of(patrol[1])))
-		_check(gap < 120.0, "PS4: the wingman holds its formation slot (%.0f px off)" % gap)
+		_check(gap < 60.0, "PS4: the wingman holds its formation slot (%.0f px off)" % gap)
 		# Hitting the wingman (not the leader) brings the whole fleet on you.
 		player.place(patrol[1].global_position + Vector2(0.0, 1200.0), 0.0)
 		_debug.set_player_invulnerable(true)
@@ -758,6 +759,27 @@ func _entity_checks(player: Ship, scene_root: Node) -> void:
 	GameState.news = NewsLog.new()
 
 
+## A6: losing a traffic ship brings a lull before its replacement.
+func _lull_checks(scene_root: Node) -> void:
+	var traffic: TrafficSpawner = scene_root.traffic
+	var was_on: bool = _debug.is_traffic_enabled()
+	_debug.set_traffic_enabled(true)
+	await _frames(2)
+	var raider: Ship = null
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		var ship: Ship = node
+		if ship.controller is AIController and (ship.controller as AIController).pool.id == "pirate_raid" and not ship.has_meta("entity"):
+			raider = ship
+			break
+	_check(raider != null, "a raider to lose")
+	if raider != null:
+		raider.health.force_disable()
+		var lull: Array = DataRegistry.settings["ai"]["loss_lull"]
+		_check(traffic.cooldown_of("pirate_raid") >= float(lull[0]), "A6: a loss brings a lull before the next raider (%.0f s)" % traffic.cooldown_of("pirate_raid"))
+	_debug.set_traffic_enabled(was_on)
+	await _frames(2)
+
+
 ## P2M3: system memory (PS6).
 func _memory_checks(player: Ship, scene_root: Node) -> void:
 	_check(_debug.switch_system("test_nebula"), "to the start system")
@@ -794,6 +816,10 @@ func _memory_checks(player: Ship, scene_root: Node) -> void:
 	var patrol_entry: Dictionary = scene_root.system.traffic.filter(func(t: Dictionary) -> bool: return t["pool"] == "authority_patrol")[0]
 	var expected_patrols: int = SystemMemory.scaled_count(patrol_entry["count"], 50.0, alert_base, patrol_entry["per_point"])
 	_check(scene_root.traffic.target_count("authority_patrol") == expected_patrols and expected_patrols > patrol_entry["count"], "PS6: high alert brings more patrols (%d)" % expected_patrols)
+	_debug.set_memory("alert", alert_base)
+	await _frames(2)
+	_check(scene_root.traffic.target_count("authority_patrol") == patrol_entry["count"], "PS6: memory counts apply live, during the visit")
+	_debug.set_memory("alert", 50.0)
 	var recovery: float = float(GameState.memory_rule(here, "alert")["recovery_per_day"])
 	_debug.advance_days(2)
 	_check(is_equal_approx(GameState.memory_value(here, "alert"), 50.0 - 2.0 * recovery), "PS6: alert recovers day by day")
@@ -816,12 +842,22 @@ func _ai_hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	_check(arrival != null and absf(arrival.global_position.length() - system.jump_radius) < 40.0, "A9: ...ending at the jump radius (%.0f)" % arrival.global_position.length())
 	var from_neighbour: bool = false
 	for n: String in Hyperlanes.neighbours(galaxy, system.id):
-		if arrival.global_position.normalized().dot(-Hyperlanes.bearing(galaxy, n, system.id)) > 0.999:
+		if absf(arrival.global_position.angle_to(-Hyperlanes.bearing(galaxy, n, system.id))) <= deg_to_rad(float(DataRegistry.settings["ai"]["arrival_arc"])) + 0.01:
 			from_neighbour = true
 	_check(from_neighbour, "A9: ...on the side facing a real neighbouring system")
 	_check(arrival.get_velocity().dot(-arrival.global_position) > 0.0, "...moving inward")
 	arrival.remove_from_group(&"ships")
 	arrival.queue_free()
+	# Arrivals spread across an arc around the lane bearings, not one spot.
+	var arc: float = deg_to_rad(float(DataRegistry.settings["ai"]["arrival_arc"]))
+	var sides: Array[Vector2] = []
+	for i: int in 30:
+		sides.append(traffic.arrival_side())
+	var within: bool = sides.all(func(side: Vector2) -> bool:
+		return Hyperlanes.neighbours(galaxy, system.id).any(func(n: String) -> bool:
+			return absf(side.angle_to(-Hyperlanes.bearing(galaxy, n, system.id))) <= arc + 0.001))
+	var spread: bool = sides.any(func(side: Vector2) -> bool: return side.angle_to(sides[0]) > 0.05 and side.angle_to(sides[0]) < arc)
+	_check(within and spread, "A9: arrivals spread within ±%.0f° of the lane bearings" % rad_to_deg(arc))
 	# A9: a fleeing ship makes for the neighbour on its own side of the system.
 	var neighbours: Array[String] = Hyperlanes.neighbours(galaxy, system.id)
 	var side: Vector2 = Hyperlanes.bearing(galaxy, system.id, neighbours[-1])

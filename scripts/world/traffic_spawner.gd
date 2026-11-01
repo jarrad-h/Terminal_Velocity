@@ -11,6 +11,10 @@ class Entry:
 	var count: int
 	## A10: "gate" traffic arrives and leaves through the system's gate.
 	var via: String = "hyperspace"
+	## PS6: the system file's count and its memory scaling, re-applied live.
+	var base_count: int = 0
+	var memory: String = ""
+	var per_point: float = 0.0
 	## Every live ship from this entry, disabled ones included (so they can be
 	## freed on clear); only non-disabled ones count towards `count`.
 	var ships: Array = []
@@ -49,12 +53,10 @@ func configure(p_system: SystemDef, fill: bool) -> void:
 	for t: Dictionary in system.traffic:
 		var entry := Entry.new()
 		entry.pool = DataRegistry.get_ai_pool(t["pool"])
-		entry.count = t["count"]
-		if t["memory"] != "":
-			# PS6: the system's memory shifts the population (more patrols on alert…).
-			var rule: Dictionary = GameState.memory_rule(system.id, t["memory"])
-			entry.count = SystemMemory.scaled_count(entry.count, GameState.memory_value(system.id, t["memory"]),
-				float(rule["baseline"]), float(t["per_point"]))
+		entry.base_count = t["count"]
+		entry.memory = t["memory"]
+		entry.per_point = t["per_point"]
+		_update_count(entry)
 		entry.via = t["via"]
 		var old_entry: Entry = keep.get(entry.pool.id)
 		if old_entry != null:
@@ -85,10 +87,29 @@ func clear_traffic(free_ships: bool = true) -> void:
 	_entries.clear()
 
 
+## PS6: the system's memory shifts the population (more patrols on alert,
+## fewer pirates once cleared out), re-read live so it applies this visit.
+func _update_count(entry: Entry) -> void:
+	entry.count = entry.base_count
+	if entry.memory != "":
+		var rule: Dictionary = GameState.memory_rule(system.id, entry.memory)
+		entry.count = SystemMemory.scaled_count(entry.base_count, GameState.memory_value(system.id, entry.memory),
+			float(rule["baseline"]), entry.per_point)
+
+
+## Seconds before the entry's next replacement (tests, debug).
+func cooldown_of(pool_id: String) -> float:
+	for entry: Entry in _entries:
+		if entry.pool.id == pool_id:
+			return entry.cooldown
+	return -1.0
+
+
 ## PS6: the population an entry aims for this visit (after system memory).
 func target_count(pool_id: String) -> int:
 	for entry: Entry in _entries:
 		if entry.pool.id == pool_id:
+			_update_count(entry)
 			return entry.count
 	return -1
 
@@ -108,6 +129,7 @@ func _physics_process(delta: float) -> void:
 	for entry: Entry in _entries:
 		# Disabled ships stay in space (boarding comes in M5) but no longer count.
 		entry.prune()
+		_update_count(entry)  # PS6: memory counts live (kill pirates, fewer return)
 		if entry.active_count() >= entry.count:
 			continue
 		entry.cooldown -= delta
@@ -161,6 +183,10 @@ func _spawn(entry: Entry, mode: String) -> void:
 	var ship: Ship = _make(entry.pool, at, heading, direction, speed_fraction, mode, start_planet, "", null, entry.via == "gate")
 	if ship != null:
 		entry.ships.append(ship)
+		# A6: losing a ship (disabled or destroyed) brings a lull before the
+		# next one: word gets round.
+		ship.health.disabled.connect(func() -> void: _lull(entry))
+		ship.health.destroyed.connect(func() -> void: _lull(entry))
 		if mode == "arrive":
 			ship.arrive_from_hyperspace(at, direction, ship.body.stats.top_speed * speed_fraction)  # A9
 		if mode == "arrive" or mode == "gate":
@@ -180,7 +206,14 @@ func arrival_side() -> Vector2:
 	if options.is_empty():
 		return Vector2.from_angle(_rng.randf() * TAU)
 	var origin: String = options[_rng.randi() % options.size()]
-	return -Hyperlanes.bearing(galaxy, origin, system.id)
+	# Spread around the lane's bearing so arrivals don't all come in at one spot.
+	var arc: float = deg_to_rad(_ai("arrival_arc"))
+	return (-Hyperlanes.bearing(galaxy, origin, system.id)).rotated(_rng.randf_range(-arc, arc))
+
+
+func _lull(entry: Entry) -> void:
+	var lull: Array = DataRegistry.settings["ai"]["loss_lull"]
+	entry.cooldown = maxf(entry.cooldown, _rng.randf_range(float(lull[0]), float(lull[1])))
 
 
 ## Spawns one gate arrival of `pool` now (A10; tests).
