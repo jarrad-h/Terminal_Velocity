@@ -147,7 +147,12 @@ func switch_system(system_id: String) -> bool:
 ## D11: advances the date by `days` (each day stepped, TM3).
 func advance_days(days: int) -> void:
 	if OS.is_debug_build():
+		var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+		if scene != null:
+			scene.leave_system()  # PS4: write entities back before they move
 		GameState.advance_days(days)
+		if scene != null:
+			scene.refresh_entities()
 
 
 ## D11 (debug for TR7 reveals): makes a hidden system unexplored.
@@ -199,10 +204,10 @@ func move_entity(id: String, system_id: String) -> bool:
 	s.came_from = ""
 	s.arrived_day = today - 1
 	s.leave_day = today + def.stay_days.y
-	if system_id == GameState.travel.current_system:
-		var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
-		if scene != null:
-			scene.refresh_entities()
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	if scene != null:
+		scene.entity_presence.on_leave()  # it may be leaving the player's system
+		scene.refresh_entities()
 	return true
 
 
@@ -465,7 +470,7 @@ func run_command(line: String) -> String:
 				return "Usage: entity <id> [move <system>|grudge]"
 			if w.size() == 4 and w[2] == "move":
 				return "Moved: %s" % entity_text(w[1]) if move_entity(w[1], w[3]) else "Usage: entity <id> move <system in the galaxy>"
-			if w.size() == 3 and w[2] == "grudge":
+			if w.size() == 3 and w[2] == "grudge" and GameState.entities.states.has(w[1]):
 				var def: PersistentEntityDef = DataRegistry.get_entity(w[1])
 				GameState.entities.states[w[1]].grudge_until = GameState.clock.day + maxi(def.grudge_days, 1)
 				return "Grudge: %s" % entity_text(w[1])

@@ -314,7 +314,6 @@ func leave_for(system_id: String, by_gate: bool) -> void:
 
 
 func _jump_out() -> void:
-	ship.set_meta("jumped_out", true)  # left the system, not destroyed (PS4)
 	Flash.spawn(ship.get_parent(), ship.global_position, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
 	_leave_quietly()
 

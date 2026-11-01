@@ -10,7 +10,7 @@ var name: String
 var government: String
 ## AI pool its ships fly as (behaviour, sensor range, wealth factor…).
 var pool: String
-## Personality ID ("" = the pool's pick each time it materialises).
+## Personality ID ("" = neutral).
 var personality: String
 ## [{"ship": String, "count": int}]
 var ships: Array[Dictionary] = []

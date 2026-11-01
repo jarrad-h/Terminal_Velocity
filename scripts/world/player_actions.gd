@@ -120,7 +120,9 @@ func _travel_by_gate(gate: SystemObjectDef, system_id: String, days: int) -> voi
 	GameState.add_credits(-gate.fee)
 	dialog.close()
 	scene.leave_system()  # PS4, PS6: left now; the trip's days pass before arriving
+	GameState.player_heading = system_id
 	GameState.advance_days(days)
+	GameState.player_heading = ""
 	scene.hyperspace.arrive_at_gate(system_id)
 	GameState.post_message("Through %s to %s after %d day%s" % [gate.name, Hyperspace.system_name(system_id), days, "" if days == 1 else "s"])
 

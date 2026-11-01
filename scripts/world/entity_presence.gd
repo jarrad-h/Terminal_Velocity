@@ -12,7 +12,7 @@ extends Node
 ##   ships have left or been destroyed; the player damaging one gives a
 ##   grudge-holder its grudge.
 
-var scene: Node  # SystemScene
+var scene: Node  # SystemScene (no class_name)
 ## entity id -> {"ships": [Ship], "departed": [ship summaries], "arrive_in": float
 ## (seconds; < 0 = done), "depart_in": float (< 0 = not today)}
 var _present: Dictionary = {}
@@ -48,7 +48,7 @@ func on_enter(system_id: String) -> void:
 			_materialise(s, def, false)
 		if s.leave_day == today:
 			var window: Vector2 = _range(settings["departure_window"])
-			entry["depart_in"] = maxf(_rng.randf_range(window.x, window.y), offset + 5.0)
+			entry["depart_in"] = maxf(_rng.randf_range(window.x, window.y), offset + float(settings["min_stay_seconds"]))
 
 
 ## Called before the player leaves (jump, gate, rescue): write every present
@@ -67,13 +67,7 @@ func set_enabled(value: bool) -> void:
 	scene.refresh_entities()
 
 
-func is_entity_ship(ship: Ship) -> bool:
-	return ship.has_meta("entity")
-
-
-func _process(delta: float) -> void:
-	if get_tree().paused:
-		return
+func _physics_process(delta: float) -> void:
 	for id: String in _present.keys():
 		var entry: Dictionary = _present[id]
 		var s: EntityState = GameState.entities.states.get(id)
@@ -101,15 +95,20 @@ func _materialise(s: EntityState, def: PersistentEntityDef, arriving: bool) -> v
 	if s.came_from != "" and galaxy.has_system(s.came_from) and s.came_from != system.id:
 		side = -Hyperlanes.bearing(galaxy, s.came_from, system.id)
 	var centre: Vector2
-	if arriving:
+	var gate: SystemObjectDef = system.gate()
+	var by_gate: bool = arriving and s.came_via == "gate" and gate != null
+	if by_gate:
+		centre = gate.position + StellarArt.jump_point(gate)
+	elif arriving:
 		centre = side * system.jump_radius
 	else:
 		var band: Array = DataRegistry.settings["ai"]["inside_spawn_band"]
 		centre = Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(band[0], band[1]) * system.edge_radius
-	var speed: float = float(DataRegistry.settings["ai"]["arrival_speed_fraction"])
+	var speed: float = 0.0 if by_gate else float(DataRegistry.settings["ai"]["arrival_speed_fraction"])
+	var spacing: float = float(DataRegistry.settings["entities"]["ship_spacing"])
 	for i: int in s.ships.size():
 		var summary: Dictionary = s.ships[i]
-		var at: Vector2 = centre + side.orthogonal() * (i - (s.ships.size() - 1) / 2.0) * 160.0
+		var at: Vector2 = centre + side.orthogonal() * (i - (s.ships.size() - 1) / 2.0) * spacing
 		var ship: Ship = scene.spawn_ship(summary["ship"], at, def.government)
 		if ship == null:
 			continue
@@ -165,7 +164,9 @@ func _on_attacked(attacker: Ship, id: String) -> void:
 ## A ship left the scene: jumped out (keep its state for the summary) or
 ## destroyed (lost). With none left here, write the entity back.
 func _on_ship_gone(id: String, ship: Ship) -> void:
-	if not _present.has(id):
+	# Ships from an earlier visit (freed as the system was rebuilt) leave the
+	# tree after the new visit has started: they aren't part of it.
+	if not _present.has(id) or not (_present[id]["ships"] as Array).has(ship):
 		return
 	var entry: Dictionary = _present[id]
 	entry["ships"].erase(ship)

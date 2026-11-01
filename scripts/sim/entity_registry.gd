@@ -8,7 +8,8 @@ extends RefCounted
 ##   ship_strength, ship_speed: {ship id -> strength / jump speed}
 ##   gate_ok: Callable(def, system_id) -> bool   (may use that gate)
 ##   hostile: Callable(gov_a, gov_b) -> bool     exists: Callable(def) -> bool
-##   name_of: Callable(system_id) -> String      player_system: String
+##   name_of: Callable(system_id) -> String
+##   player_system: where the player is, or is heading during a trip
 ##   rng: RandomNumberGenerator   settings: game.json entities.encounter
 ## step_day and depart return news lines (PS7).
 
@@ -79,6 +80,7 @@ func depart(s: EntityState, def: PersistentEntityDef, day: int, ctx: Dictionary)
 			ctx["name_of"].call(target), total, "" if total == 1 else "s"])
 	s.transit_from = s.location
 	s.transit_to = hops[0]["system"]
+	s.transit_via = hops[0]["via"]
 	s.arrive_day = day + int(hops[0]["days"])
 	s.location = ""
 	return news
@@ -141,10 +143,11 @@ static func from_dict(data: Dictionary) -> EntityRegistry:
 
 func _arrive(s: EntityState, def: PersistentEntityDef, day: int, ctx: Dictionary) -> Array[String]:
 	s.came_from = s.transit_from
+	s.came_via = s.transit_via
 	s.location = s.transit_to
 	s.transit_to = ""
 	s.arrived_day = day
-	var goal: String = target_of(s, def, ctx) if def.order_type != "patrol" else def.route[s.route_index]
+	var goal: String = def.route[s.route_index] if def.order_type == "patrol" and s.grudge_until < 0 else target_of(s, def, ctx)
 	if goal != s.location:
 		s.transit_from = s.location  # passing through: straight on, no new announcement
 		var news: Array[String] = depart(s, def, day, ctx)

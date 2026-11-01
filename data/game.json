@@ -101,6 +101,8 @@
   "entities": {
     "arrival_offset": [-90, 120],
     "departure_window": [20, 150],
+    "min_stay_seconds": 5,
+    "ship_spacing": 160,
     "encounter": {"randomness": 0.3, "loser_losses": 0.5, "loser_damage": 0.3, "winner_damage": 0.15, "floor_hull": 0.4,
                   "repair_per_day": 0.1},
     "news": {"days": 10, "max_items": 8, "keep_days": 60}

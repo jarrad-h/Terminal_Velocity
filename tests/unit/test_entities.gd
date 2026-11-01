@@ -101,6 +101,20 @@ func test_grudge_follows_the_player_then_ends() -> void:
 	assert_true(s.grudge_until == -1, "the grudge runs out")
 
 
+func test_grudging_patrol_passes_its_stops_on_the_way() -> void:
+	var def: PersistentEntityDef = _def("ketch", {"grudge_days": 9, "orders": {"type": "patrol", "route": ["a", "b"], "stay_days": [3, 3]}})
+	var reg := EntityRegistry.new()
+	var ctx: Dictionary = _ctx([def], false, "c")
+	reg.start([def], 0, ctx["rng"])
+	var s: EntityState = reg.states["ketch"]
+	s.leave_day = 0
+	reg.give_grudge("ketch", def, 0)
+	reg.step_day(1, ctx)
+	reg.step_day(2, ctx)
+	assert_true(s.in_transit() and s.transit_to == "c", "PS2: with a grudge it doesn't stop at its patrol stop b on the way to the player")
+	assert_true(s.transit_via == "lane", "PS4: remembers how it travels")
+
+
 func test_encounters_hurt_the_loser_and_can_kill() -> void:
 	var law: PersistentEntityDef = _def("law", {"ships": [{"ship": "brig", "count": 2}]})
 	var outlaw: PersistentEntityDef = _def("outlaw", {"government": "outlaws"})

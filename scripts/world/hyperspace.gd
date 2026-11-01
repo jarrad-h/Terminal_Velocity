@@ -136,7 +136,9 @@ func _complete(player: Ship) -> void:
 	if not travel.route.is_empty() and travel.route[0] == _destination:
 		travel.route.pop_front()
 	scene.leave_system()  # PS4, PS6: left now, then the trip's days pass, then arrive
+	GameState.player_heading = _destination
 	GameState.advance_days(days)
+	GameState.player_heading = ""
 	arrive(_destination, origin)
 	var text: String = "Arrived in %s after %d day%s" % [system_name(_destination), days, "" if days == 1 else "s"]
 	if not travel.route.is_empty():

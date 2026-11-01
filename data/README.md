@@ -83,6 +83,8 @@ Fields marked **required** have no default.
 | `memory.wreck_days` | PS6: disabled ships left behind stay this many days (boardable when the player returns), then are scavenged | `5` |
 | `entities.arrival_offset` | PS4: default arrival offset for entities arriving the same day as the player, seconds `[min, max]` | `[-90, 120]` |
 | `entities.departure_window` | PS4: an entity due to leave on the day the player is there leaves this many seconds after the player's entry `[min, max]` | `[20, 150]` |
+| `entities.min_stay_seconds` | PS4: an entity arriving after the player stays at least this long before a same-day departure | `5` |
+| `entities.ship_spacing` | PS4: gap between an entity's ships when they appear, px | `160` |
 | `entities.encounter` | PS5: off-screen fights: `randomness` (each side's strength × 1 ± this), `loser_losses` (share of the loser's ships lost, rounded up), `loser_damage` and `winner_damage` (hull fraction lost by survivors), `floor_hull` (survivors never drop below this; keep it above ships' disable %), `repair_per_day` (entities repair this much hull a day) | `0.3`, `0.5`, `0.3`, `0.15`, `0.4`, `0.1` |
 | `entities.news` | PS7: the landed screen shows news from the last `days` days, at most `max_items`; older than `keep_days` is dropped | `10`, `8`, `60` |
 | `stellars.cloud_spin` | V9: how fast planet cloud layers turn, degrees/s (negative turns the other way) | `0.6` |

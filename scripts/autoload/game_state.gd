@@ -25,6 +25,9 @@ var memory := SystemMemory.new()
 ## PS2: every persistent entity's summary; PS7: the news.
 var entities := EntityRegistry.new()
 var news := NewsLog.new()
+## PS2: during a trip (jump or gate), where the player is going: grudges and
+## followers chase it and off-screen fights don't happen there. "" otherwise.
+var player_heading: String = ""
 var _rng := RandomNumberGenerator.new()
 var travel := TravelState.new()
 
@@ -153,7 +156,8 @@ func entity_context() -> Dictionary:
 		"hostile": func(a: String, b: String) -> bool:
 			return Relations.governments_hostile(DataRegistry.get_government(a), DataRegistry.get_government(b)),
 		"exists": func(def: PersistentEntityDef) -> bool: return GateRules.is_open(def.exists_if, flags),
-		"name_of": Hyperspace.system_name, "player_system": travel.current_system, "rng": _rng, "settings": settings}
+		"name_of": Hyperspace.system_name, "player_system": player_heading if player_heading != "" else travel.current_system,
+		"rng": _rng, "settings": settings}
 
 
 ## PS3: an entity may use a system's gate if it's open and its government
@@ -223,6 +227,9 @@ func from_dict(data: Dictionary) -> void:
 	flags = (data.get("flags", {}) as Dictionary).duplicate()
 	memory = SystemMemory.from_dict(data.get("memory", {}))
 	entities = EntityRegistry.from_dict(data.get("entities", {}))
+	for id: String in DataRegistry.ids("entities"):
+		if not entities.states.has(id):  # added to the data since the save
+			entities.states[id] = EntityRegistry.new_state(DataRegistry.get_entity(id), clock.day, _rng)
 	news = NewsLog.from_dict(data.get("news", {}))
 	flags_changed.emit()
 	credits_changed.emit(credits)

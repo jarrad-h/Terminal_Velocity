@@ -75,6 +75,21 @@ Jarrad's check-in: the first half's building blocks are good; small values to tu
   - **Captain Mara Vell:** a freighter and courier on a trade route: Test Nebula, Aster, Drift, Brink, Solace.
   - **Authority Patrol Group:** two corvettes looping Aster, Test Nebula, Test Graveyard and Lumen, using gates.
   - **Red Ketch:** two pirate raiders circuiting Redhaven, Ember and Hollow. He holds grudges for 6 days and arrives 15–60 s after you.
+- **Review (godot-reviewer) and fixes:**
+  - **Fixed:**
+    - Fleets duplicated themselves. Ships freed when the system was rebuilt (take-off, rescue, debug moves) reported themselves to the new visit as "departed", doubling the fleet on the next write-back. They're now ignored, with a scenario check.
+    - Grudges chased the system the player had just left during a trip. The trip's destination is now used for grudges and followers, and off-screen fights skip it.
+    - Grudging patrols stopped at their own patrol stops on the way to you.
+    - An entity that came by gate appeared at the edge. It now comes out of the gate (`came_via`).
+    - Debug `days` and `entity … move` now write entities back first.
+    - Entities added to the data after a save are filled in on load.
+    - Ship spacing and the minimum stay before departing are now data (`entities.ship_spacing`, `min_stay_seconds`).
+  - **Later:**
+    - Disabled ships go with their fleet when it departs.
+    - The loader doesn't check that a patrol stop is reachable.
+    - PS2's "cargo" in the summary waits for the economy (milestone 5).
+    - D13 "spawn" is covered by `entity <id> move <your system>`.
+    - The debug-goto destruction news names the wrong system.
 - **Checks:**
   - unit tests: routing with and without gates, hold, patrol hop by hop, the pace set by the slowest ship, grudges, encounters (including no fight in your system), the existence condition, write-back, round trips and news;
   - loader tests for entity data;

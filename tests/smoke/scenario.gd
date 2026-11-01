@@ -671,6 +671,12 @@ func _entity_checks(player: Ship, scene_root: Node) -> void:
 	if not ketch.is_empty():
 		ketch[0].health.apply_damage(5.0, 0.0, player)
 	_check(registry.states["red_ketch"].grudge_until >= today + DataRegistry.get_entity("red_ketch").grudge_days, "PS2: hitting him earns a grudge")
+	scene_root.refresh_entities()  # like taking off again
+	await _frames(3)
+	scene_root.leave_system()
+	_check(registry.states["red_ketch"].ships.size() == 2, "PS4: rebuilding the system doesn't duplicate a fleet (%d)" % registry.states["red_ketch"].ships.size())
+	scene_root.refresh_entities()
+	await _frames(2)
 	# PS4: arriving after the player, from the side it came from.
 	var ketch_state: EntityState = registry.states["red_ketch"]
 	var ketch_def: PersistentEntityDef = DataRegistry.get_entity("red_ketch")
@@ -685,6 +691,14 @@ func _entity_checks(player: Ship, scene_root: Node) -> void:
 	ketch = _entity_ships("red_ketch")
 	var bearing: Vector2 = Hyperlanes.bearing(DataRegistry.galaxy(), "test_nebula", "aster")
 	_check(ketch.size() == 2 and ketch[0].global_position.normalized().dot(-bearing) > 0.95, "PS4: ...then jumps in on the side facing where it came from")
+	# PS4: an entity that came by gate appears at the gate.
+	ketch_state.came_via = "gate"
+	scene_root.refresh_entities()
+	await _frames(70)
+	var aster_gate: SystemObjectDef = scene_root.system.gate()
+	ketch = _entity_ships("red_ketch")
+	_check(ketch.size() == 2 and ketch[0].global_position.distance_to(aster_gate.position) < 400.0, "PS4: arriving by gate, it comes out of the gate")
+	ketch_state.came_via = "lane"
 	ketch_def.arrival_offset = offset_before
 	# PS4: leaving during the player's visit.
 	ketch_state.leave_day = today
