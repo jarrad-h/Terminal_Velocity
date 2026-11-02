@@ -84,6 +84,10 @@ func _physics_process(delta: float) -> void:
 			mount.barrel.rotation = mount.angle
 		var wants: bool = input.fire_secondary if mount.weapon.kind == "guided" else input.fire_primary
 		wants = wants and _ready_to_fire(mount, target, desired)
+		if wants and input.covering_angle >= 0.0:
+			wants = target != null and MountAim.can_cover(mount.tracks(), mount.weapon.kind == "guided",
+				MountAim.relative_angle(ship.global_rotation, target.global_position - ship.global_transform * mount.point),
+				mount.arc, input.covering_angle)
 		if mount.beam != null:
 			if wants:
 				mount.beam.fire(ship, _exclude(), delta)

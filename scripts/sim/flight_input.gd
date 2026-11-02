@@ -11,6 +11,9 @@ var reverse: bool = false
 var fire_primary: bool = false
 ## Guided missiles.
 var fire_secondary: bool = false
+## A12 covering fire: >= 0 = fire only mounts that can hit the target without
+## the ship turning (fixed mounts within this many degrees of the nose).
+var covering_angle: float = -1.0
 
 
 func _init(p_thrust: bool = false, p_turn: float = 0.0, p_reverse: bool = false) -> void:

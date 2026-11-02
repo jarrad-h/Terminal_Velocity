@@ -261,6 +261,11 @@ func standing_to(player_ship: Ship) -> String:
 	return Relations.standing(player_ship.is_hostile_to(self), grievance, gov_def(), record)
 
 
+## The ship that last damaged this one (null if none or gone).
+func last_attacker() -> Ship:
+	return _last_attacker if is_instance_valid(_last_attacker) else null
+
+
 func forget_aggressor(ship: Ship) -> void:
 	_aggressors.erase(ship)
 

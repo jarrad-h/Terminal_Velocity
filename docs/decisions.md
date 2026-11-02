@@ -272,3 +272,11 @@ Rejected for now:
 - **Option 1:** hidden docking with shelter rules only; it keeps the pop.
 - **Option 2:** fully visible Nova-style orbit with planet sanctuary. It needs law and defence rules that belong with Phase 3 station weapons.
 
+## 2026-11-02 — Covering fire while running (A12)
+A ship that's running, sheltering in orbit, leaving or flying in formation fires turrets, pivots (within their arc), fixed guns that happen to bear, and missiles at a threat, without changing course. It starts only after it has been attacked, so traders still don't open fire on passing pirates or on a merely angry player. All personalities do it, because it costs nothing in the retreat.
+Why: Jarrad's milestone 3 playtest, 2 Nov 2026. Freighters with turrets never fired, because AI ships only fired while attacking.
+Rejected:
+- Firing only in the attack state (the old behaviour).
+- Letting personality decide (a coward still shoots back when it costs nothing).
+- Pivots firing at their arc edge when covering (wasted shots).
+

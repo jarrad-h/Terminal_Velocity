@@ -169,6 +169,16 @@ Jarrad attacked Mara Vell's courier until it turned hostile. Mara didn't turn ho
   - Followers flying down to land had started making their own flee decisions.
 - **Checks:** scenario checks for the fleet turning hostile and running, the orbit pause, landing together, sheltering while the player is near, an early departure once clear, and a blockade run that a hit while launching doesn't undo.
 
+### 2026-11-02 — Playtest notes (Jarrad, fifth round): covering fire
+
+- **Confirmed:** hitting the courier now turns the freighter hostile.
+- **Design change, agreed with defaults and built (A12): freighters never fired.** AI ships only fired while attacking, so running traders' turrets stayed silent. Now a ship that isn't attacking returns fire once it has been attacked (fleeing, in orbit, leaving, in formation), whatever its personality. It uses only weapons that can hit without turning:
+  - turrets and pivots inside their arc;
+  - fixed guns within the pool's `fire_angle` of the nose;
+  - missiles in range.
+
+  Its target is the last attacker if still in range, else the nearest hostile ship in range. The rule is `MountAim.can_cover`, with a unit test; the scenario checks that a fleeing skittish freighter fires its turret.
+
 ---
 
 ## Phase 2 Milestone 2: Gates and lighting (30 Oct 2026)

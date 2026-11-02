@@ -724,6 +724,29 @@ func _shelter_checks(player: Ship, scene_root: Node) -> void:
 	trader.health.apply_damage(5.0, 0.0, player)
 	await _frames(roundi(float(DataRegistry.settings["ai"]["orbit_pause"]) * 60.0) + 30)
 	_check(not trader.docked and trader_ai.state == AIController.State.LEAVE, "A11: ...and a hit while launching doesn't send it back down: %s" % trader.get_state_label())
+	# A12: a running freighter's turret returns fire without turning round.
+	var hauler: Ship = scene_root.spawn_ship("freighter", port.position + Vector2(-4000.0, 3000.0), "independent_traders")
+	var hauler_ai := AIController.new()
+	hauler_ai.setup(DataRegistry.get_ai_pool("trader_traffic"), DataRegistry.get_personality("skittish"), system, "inside")
+	hauler.set_controller(hauler_ai)
+	await _frames(2)
+	await _teleport(player, hauler.global_position - FlightModel.heading(hauler.rotation) * 350.0)
+	hauler.health.apply_damage(hauler.health.max_shield * 0.5, 0.0, player)
+	hauler.health.apply_damage(hauler.health.max_shield * 0.5, 0.0, player)
+	var fired: bool = false
+	for i: int in 240:
+		await get_tree().physics_frame
+		if hauler.weapons.mounts.any(func(m: WeaponMounts.Mount) -> bool: return m.cooldown > 0.0):
+			fired = true
+			break
+	_check(hauler_ai.is_fleeing() and fired, "A12: a fleeing freighter returns fire with its turret (%s, fired %s)" % [hauler.get_state_label(), fired])
+	for done: Ship in [hauler, trader]:
+		if is_instance_valid(done):
+			done.remove_from_group(&"ships")
+			done.queue_free()
+	for shot: Node in scene_root.get_node("World/Shots").get_children():
+		shot.queue_free()
+	await _frames(2)
 	_debug.set_player_invulnerable(false)
 	presence.set_enabled(false)
 	GameState.entities.start(DataRegistry.ids("entities").map(func(id: String) -> PersistentEntityDef: return DataRegistry.get_entity(id)), GameState.clock.day, RandomNumberGenerator.new())

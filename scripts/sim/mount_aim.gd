@@ -34,3 +34,15 @@ static func step(current: float, desired: float, traverse_degrees: float, arc_de
 	else:
 		diff = clamp_to_arc(desired, arc_degrees) - clamp_to_arc(current, arc_degrees)
 	return clamp_to_arc(current + clampf(diff, -max_turn, max_turn), arc_degrees)
+
+
+## A12 covering fire: can this mount hit a target at `relative` (radians from
+## the heading) without the ship turning? Guided launchers always can; pivots
+## and turrets inside their arc; fixed mounts within `fixed_degrees` of the nose.
+static func can_cover(tracks: bool, guided: bool, relative: float, arc_degrees: float, fixed_degrees: float) -> bool:
+	if guided:
+		return true
+	if tracks:
+		return in_arc(relative, arc_degrees)
+	return absf(wrapf(relative, -PI, PI)) <= deg_to_rad(fixed_degrees)
+

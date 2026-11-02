@@ -78,6 +78,11 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
     - **Threat gone:** if its attacker, and any ship hostile to it that came within range while it sheltered, has been beyond its sensor range for a data time (5 s), it launches and runs for safety elsewhere. A persistent entity departs the system early along its orders; ambient traffic leaves by hyperspace or gate.
     - **Threat still there:** when the shelter time runs out, it runs the blockade: it launches and heads flat out for the jump radius or gate to leave, fighting only if it is a fighter by role.
   - Ambient traders follow the same rules.
+- A12: Covering fire (milestone 3 playtest, 2 Nov 2026). An AI ship that isn't attacking returns fire with any weapon that can hit without changing its course, for any personality. This covers fleeing, in orbit, running the blockade, leaving and flying in formation. It starts only once the ship has been attacked; its steering never changes for it.
+  - **Turrets and pivot mounts:** fire when the threat is inside their arc.
+  - **Fixed guns:** fire only when the threat is within the pool's `fire_angle` of the nose.
+  - **Guided missiles:** fire when in range.
+  - **Target:** the ship that last hit it if it's still in range and hostile, else the nearest ship in weapon range that it is hostile to.
 
 **Saves (SV)**
 
