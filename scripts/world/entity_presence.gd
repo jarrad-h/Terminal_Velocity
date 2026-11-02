@@ -133,6 +133,7 @@ func _materialise(s: EntityState, def: PersistentEntityDef, arriving: bool) -> v
 			fleet.members.append(ship)
 		_apply_summary(ship, summary)
 		ship.attacked.connect(_on_attacked.bind(s.id))
+		ai.shelter_ended.connect(_on_shelter_ended.bind(s.id))
 		ship.tree_exiting.connect(_on_ship_gone.bind(s.id, ship))
 		entry["ships"].append(ship)
 		if arriving:
@@ -169,6 +170,17 @@ func _depart(s: EntityState, def: PersistentEntityDef) -> void:
 			entry["ships"].erase(ship)
 		elif (ship as Ship).controller is AIController:
 			((ship as Ship).controller as AIController).leave_for(s.transit_to, by_gate)
+
+
+## A11: a ship sheltering at a planet is ready to go: the entity departs
+## early (a fleet's leader decides for all of it).
+func _on_shelter_ended(id: String) -> void:
+	var s: EntityState = GameState.entities.states.get(id)
+	var def: PersistentEntityDef = DataRegistry.get_entity(id)
+	if s == null or def == null or not _present.has(id) or s.location != scene.system.id:
+		return
+	_present[id]["depart_in"] = -1.0
+	_depart(s, def)
 
 
 func _on_attacked(attacker: Ship, id: String) -> void:

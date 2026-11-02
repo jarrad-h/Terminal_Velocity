@@ -7,11 +7,15 @@ extends Node
 ##
 ## Decisions run every ai.think_interval seconds; steering runs every frame.
 
-enum State { TRAVEL, DOCKED, PATROL, ATTACK, FLEE, LEAVE, JUMPING }
+## A11: a ship that has sheltered at a planet is done waiting (the threat has
+## gone, or it's running the blockade); a persistent entity departs early.
+signal shelter_ended
+
+enum State { TRAVEL, DOCKED, PATROL, ATTACK, FLEE, LEAVE, JUMPING, ORBIT }
 const STATE_NAMES: Dictionary = {
 	State.TRAVEL: "travelling", State.DOCKED: "docked", State.PATROL: "patrolling",
 	State.ATTACK: "attacking", State.FLEE: "fleeing", State.LEAVE: "leaving",
-	State.JUMPING: "jumping",
+	State.JUMPING: "jumping", State.ORBIT: "in orbit",
 }
 
 var pool: AiPoolDef
@@ -40,6 +44,18 @@ var hunt_player: bool = false
 var fleet: Fleet = null
 ## PS4: a follower out of position, flying back to its slot.
 var _regrouping: bool = false
+## A11: holding over a planet (ORBIT) before docking (`_orbit_landing`) or
+## after launching; then `_after_orbit` runs.
+var _orbit_landing: bool = false
+var _orbit_left: float = 0.0
+var _after_orbit: Callable = Callable()
+## A11: dock to shelter (it fled here); sheltering while docked; seconds the
+## coast has been clear.
+var _shelter_next: bool = false
+var _sheltering: bool = false
+var _clear_for: float = 0.0
+## A11: a follower flying down to land with its leader.
+var _landing_with_leader: bool = false
 
 var _stops_left: int = 0
 var _timer: float = 0.0
@@ -84,6 +100,11 @@ func _ready() -> void:
 		state = State.PATROL
 
 
+## Running from a fight: fleeing, landing to shelter, or sheltering (A1, A11).
+func is_fleeing() -> bool:
+	return state == State.FLEE or (state == State.ORBIT and _orbit_landing and _shelter_next) or (state == State.DOCKED and _sheltering)
+
+
 func get_flight_input() -> FlightInput:
 	return _input
 
@@ -116,7 +137,20 @@ func _physics_process(delta: float) -> void:
 # --- Decisions ---------------------------------------------------------------
 
 func _think(elapsed: float) -> void:
+	if state == State.ORBIT:
+		_orbit_left -= elapsed
+		if _orbit_left <= 0.0:
+			var next: Callable = _after_orbit
+			_after_orbit = Callable()
+			if next.is_valid():
+				next.call()
+		return
 	if state == State.DOCKED:
+		if _is_follower():
+			return  # A11: launches with its leader
+		if _sheltering:
+			_shelter(elapsed)
+			return
 		_timer -= elapsed
 		if _timer <= 0.0:
 			_take_off()
@@ -126,7 +160,7 @@ func _think(elapsed: float) -> void:
 	if state == State.ATTACK and ship.global_position.distance_to(target.global_position) > pool.sensor_range * _ai("disengage_factor") \
 			and not (hunt_player and target.is_player()):
 		_end_attack()
-	if _is_follower() and state != State.ATTACK:
+	if _is_follower() and state != State.ATTACK and not _landing_with_leader:
 		return  # formation: the leader decides (fights and flights come via the fleet)
 	if hunt_player and state in [State.PATROL, State.TRAVEL]:
 		var player: Ship = get_tree().get_first_node_in_group(&"player")
@@ -161,6 +195,11 @@ func _on_attacked(attacker: Ship) -> void:
 		return
 	if not ship.is_hostile_to(attacker) or not ship.can_act():
 		return
+	if state == State.ORBIT and _orbit_landing:
+		_shelter_next = true  # A11: nearly down; shelter once docked
+		if fleet != null:
+			fleet.flee(attacker)
+		return
 	# A1, A7: fight back or run, by role and personality; in a fleet, every
 	# member follows that choice, whichever member was hit.
 	if Behaviour.fights_back(pool.behaviour, personality.when_attacked) and _armed():
@@ -169,7 +208,7 @@ func _on_attacked(attacker: Ship) -> void:
 		elif state != State.ATTACK:
 			_start_attack(attacker)
 	elif fleet != null:
-		fleet.flee()
+		fleet.flee(attacker)
 	else:
 		_start_flee()
 
@@ -187,7 +226,7 @@ func _is_follower() -> bool:
 
 ## Fleet: engage `attacker` with the rest of the fleet.
 func join_attack(attacker: Ship) -> void:
-	if state in [State.JUMPING, State.DOCKED, State.FLEE, State.LEAVE] or not _armed():
+	if state in [State.JUMPING, State.DOCKED, State.FLEE, State.LEAVE] or (state == State.ORBIT and _orbit_landing) or not _armed():
 		return
 	if state != State.ATTACK or target != attacker:
 		_start_attack(attacker)
@@ -195,8 +234,38 @@ func join_attack(attacker: Ship) -> void:
 
 ## Fleet: the leader runs (the others keep formation).
 func join_flee() -> void:
-	if state not in [State.FLEE, State.LEAVE, State.JUMPING]:
+	if state == State.ORBIT and _orbit_landing:
+		_shelter_next = true  # already landing: shelter there
+	elif state not in [State.FLEE, State.LEAVE, State.JUMPING, State.DOCKED]:
 		_start_flee()
+
+
+## A11 fleet: the leader is landing at `p`; fly down and land too.
+func land_at(p: SystemObjectDef) -> void:
+	if state in [State.ATTACK, State.JUMPING, State.LEAVE, State.DOCKED, State.ORBIT] or p == null:
+		return
+	planet = p
+	state = State.TRAVEL
+	_landing_with_leader = true
+
+
+## A11 fleet: the leader is launching; launch too (or stop flying down).
+func launch_with_leader() -> void:
+	if ship.docked:
+		_launch(_rejoin)
+	elif _landing_with_leader or (state == State.ORBIT and _orbit_landing):
+		_rejoin()
+
+
+## A11: back in the fleet after landing with it.
+func _rejoin() -> void:
+	_landing_with_leader = false
+	_sheltering = false
+	if pool.behaviour == "trader":
+		_travel_to_next_planet()
+	else:
+		_new_waypoint()
+		state = State.PATROL
 
 
 ## Fleet: the leader is jumping; jump on the same bearing now.
@@ -328,24 +397,84 @@ func _land() -> void:
 			via_gate = false  # closed while on the way (TR6): leave by hyperspace
 			_start_leave()
 		return
-	var fleeing: bool = state == State.FLEE
+	# A11: hold over the planet, visible and targetable, then dock.
+	_shelter_next = state == State.FLEE
+	state = State.ORBIT
+	_orbit_landing = true
+	_orbit_left = _ai("orbit_pause")
+	_after_orbit = _dock
+	if fleet != null and fleet.leader() == ship:
+		fleet.land_with(ship, planet)
+
+
+func _dock() -> void:
 	ship.place(planet.position, ship.rotation)
 	ship.set_docked(true)
-	if fleeing:
-		_leave_quietly()  # ran home and stays there
+	state = State.DOCKED
+	_landing_with_leader = false
+	if _shelter_next:
+		# A11: it fled here: shelter until the threat goes, or run for it.
+		_shelter_next = false
+		_sheltering = true
+		_clear_for = 0.0
+		_timer = _rng.randf_range(pool.shelter_time.x, pool.shelter_time.y)
 		return
 	_stops_left -= 1
-	state = State.DOCKED
 	_timer = _rng.randf_range(pool.dwell_time.x, pool.dwell_time.y)
 
 
 func _take_off() -> void:
+	_launch(func() -> void:
+		if _stops_left > 0 or persistent:
+			_travel_to_next_planet()
+		else:
+			_start_leave())
+
+
+## A11: appear over the planet, hold there, then `after`.
+func _launch(after: Callable) -> void:
 	ship.place(planet.position, _rng.randf() * TAU)
 	ship.set_docked(false)
-	if _stops_left > 0 or persistent:
-		_travel_to_next_planet()
+	_sheltering = false
+	state = State.ORBIT
+	_orbit_landing = false
+	_orbit_left = _ai("orbit_pause")
+	_after_orbit = after
+	if fleet != null and fleet.leader() == ship:
+		fleet.launch_with(ship)
+
+
+## A11: sheltering at a planet. Clear of hostile ships for long enough: run
+## for safety elsewhere; shelter time up with the threat still there: run the
+## blockade. Either way it leaves (an entity departs early, via its signal).
+func _shelter(elapsed: float) -> void:
+	if _threat_near():
+		_clear_for = 0.0
+		_timer -= elapsed
+		if _timer > 0.0:
+			return
 	else:
-		_start_leave()
+		_clear_for += elapsed
+		if _clear_for < _ai("shelter_clear_time"):
+			return
+	_sheltering = false
+	if persistent and not shelter_ended.get_connections().is_empty():
+		shelter_ended.emit()  # the entity departs (leave_for launches it)
+		if ship.docked and state == State.DOCKED:
+			_take_off()  # nowhere to go: carry on here
+		return
+	_launch(_start_leave)
+
+
+## A11: a ship this one treats as hostile, able to act, within sensor range
+## of the planet it's sheltering at.
+func _threat_near() -> bool:
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		var other: Ship = node as Ship
+		if other != null and other != ship and other.can_act() and not other.docked and ship.is_hostile_to(other) \
+				and other.global_position.distance_to(planet.position) <= pool.sensor_range:
+			return true
+	return false
 
 
 ## A6: job done; jump out with a flash.
@@ -353,8 +482,15 @@ func _take_off() -> void:
 func leave_for(system_id: String, by_gate: bool) -> void:
 	target = null
 	ship.set_target(null)
+	_sheltering = false
 	if ship.docked:
-		ship.set_docked(false)
+		_launch(_leave_for.bind(system_id, by_gate))  # A11: launch, then go
+		return
+	_leave_for(system_id, by_gate)
+
+
+func _leave_for(system_id: String, by_gate: bool) -> void:
+	_landing_with_leader = false
 	state = State.LEAVE
 	via_gate = by_gate
 	planet = _open_gate() if by_gate else null
@@ -385,12 +521,15 @@ func _steer(delta: float) -> void:
 	var s: FlightState = ship.body.state
 	var stats: FlightStats = ship.body.stats
 	var thrust_angle: float = _ai("thrust_angle")
-	if _is_follower() and state != State.ATTACK:
+	if _is_follower() and state not in [State.ATTACK, State.ORBIT, State.DOCKED] and not _landing_with_leader:
 		_steer_formation(s, stats, thrust_angle, delta)
 		return
 	match state:
 		State.DOCKED:
 			_input = FlightInput.new()
+		State.ORBIT:
+			# A11: hold over the planet.
+			_input = Steering.toward_velocity(s, stats, Steering.arrive_velocity(s, stats, planet.position), thrust_angle, delta, _deadband(stats))
 		State.ATTACK:
 			_steer_attack(s, stats, delta)
 		State.TRAVEL, State.FLEE, State.LEAVE when planet != null:

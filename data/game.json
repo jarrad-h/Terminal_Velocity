@@ -71,7 +71,9 @@
     "inside_spawn_band": [0.15, 0.7],
     "loss_lull": [60, 180],
     "arrival_arc": 30,
-    "steer_deadband": 0.08
+    "steer_deadband": 0.08,
+    "orbit_pause": 3,
+    "shelter_clear_time": 5
   },
   "local_space": {"chunk_size": 1024},
   "radar": {

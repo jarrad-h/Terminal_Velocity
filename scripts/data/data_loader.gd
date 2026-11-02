@@ -39,7 +39,8 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"waypoint_reached_fraction": 0.1, "object_patrol_chance": 0.6, "object_patrol_offset_factor": 0.3,
 		"roam_band": [0.1, 0.6], "jump_out_factor": 1.05, "planet_spawn_chance": 0.5,
 		"arrival_speed_fraction": 0.5, "spawn_keep_away_factor": 1.2, "inside_spawn_band": [0.15, 0.7],
-		"loss_lull": [60.0, 180.0], "arrival_arc": 30.0, "steer_deadband": 0.08},
+		"loss_lull": [60.0, 180.0], "arrival_arc": 30.0, "steer_deadband": 0.08,
+		"orbit_pause": 3.0, "shelter_clear_time": 5.0},
 	"radar": {"size": 200.0, "range": 3000.0, "margin": 16.0, "disabled_pale": 0.55, "colours": {
 		"background": "#0a1426c0", "rim": "#5a7aa0", "player": "#ffffff",
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",

@@ -3,7 +3,8 @@ extends RefCounted
 ## A persistent entity's ships flying as one force (PS4, playtest 1 Nov
 ## 2026): the first able ship leads with its normal behaviour; the others hold
 ## formation slots behind it. Whichever member is attacked, the whole fleet
-## fights or flees together; when the leader jumps, everyone jumps.
+## fights or flees together; it lands and launches together (A11); when the
+## leader jumps, everyone jumps.
 
 var members: Array = []  # Ship (may be freed)
 var formation: String = "wedge"
@@ -45,8 +46,12 @@ func engage(attacker: Ship) -> void:
 			((ship as Ship).controller as AIController).join_attack(attacker)
 
 
-## A member chose to run: the leader flees and the others keep formation.
-func flee() -> void:
+## A member chose to run: every member treats the attacker as an enemy
+## (as when fighting), the leader flees and the others keep formation.
+func flee(attacker: Ship) -> void:
+	for ship: Variant in members:
+		if is_instance_valid(ship):
+			(ship as Ship).provoke(attacker)
 	var lead: Ship = leader()
 	if lead != null and lead.controller is AIController:
 		(lead.controller as AIController).join_flee()
@@ -57,3 +62,17 @@ func jump_with(lead: Ship, bearing: Vector2) -> void:
 	for ship: Variant in members:
 		if ship != lead and is_instance_valid(ship) and (ship as Ship).can_act() and (ship as Ship).controller is AIController:
 			((ship as Ship).controller as AIController).jump_now(bearing)
+
+
+## A11: the leader is landing at `planet`: the others land there too.
+func land_with(lead: Ship, planet: SystemObjectDef) -> void:
+	for ship: Variant in members:
+		if ship != lead and is_instance_valid(ship) and (ship as Ship).can_act() and (ship as Ship).controller is AIController:
+			((ship as Ship).controller as AIController).land_at(planet)
+
+
+## A11: the leader is launching: the others launch with it.
+func launch_with(lead: Ship) -> void:
+	for ship: Variant in members:
+		if ship != lead and is_instance_valid(ship) and (ship as Ship).can_act() and (ship as Ship).controller is AIController:
+			((ship as Ship).controller as AIController).launch_with_leader()

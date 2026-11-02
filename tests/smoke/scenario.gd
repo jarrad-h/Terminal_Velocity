@@ -284,10 +284,10 @@ func _run() -> void:
 	var trader_ai: AIController = trader.controller
 	await _frames(240)
 	# Ships are delicate (M7): the trader may already be disabled or gone.
-	_check(not is_instance_valid(trader) or trader.health.is_disabled or trader_ai.state == AIController.State.FLEE or trader.health.shield < trader.health.max_shield,
+	_check(not is_instance_valid(trader) or trader.health.is_disabled or trader_ai.is_fleeing() or trader.health.shield < trader.health.max_shield,
 		"trader under attack (A1): %s" % (trader.get_state_label() if is_instance_valid(trader) else "gone"))
 	if is_instance_valid(trader) and not trader.health.is_disabled:
-		_check(trader_ai.state == AIController.State.FLEE, "steady trader flees when attacked (A1): %s" % trader.get_state_label())
+		_check(trader_ai.is_fleeing(), "steady trader flees when attacked (A1): %s" % trader.get_state_label())
 	var patrol: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), pirate.global_position + Vector2(0.0, 900.0), "", "steady")
 	await _frames(90)
 	var patrol_ai: AIController = patrol.controller
@@ -579,6 +579,8 @@ func _run() -> void:
 	await _lull_checks(scene_root)
 	await _entity_checks(player, scene_root)
 	await _frames(2)
+	await _shelter_checks(player, scene_root)
+	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
 
@@ -636,6 +638,76 @@ func _run() -> void:
 
 func actions_of(scene_root: Node) -> PlayerActions:
 	return scene_root.actions
+
+
+## A11, PS4: a fleet that runs lands together, shelters while the threat is
+## near, then leaves once it's gone; landing and launching pause in orbit.
+func _shelter_checks(player: Ship, scene_root: Node) -> void:
+	var registry: EntityRegistry = GameState.entities
+	var system: SystemDef = scene_root.system
+	var port: SystemObjectDef = null
+	for obj: SystemObjectDef in system.objects:
+		if obj.landable and obj.type != "gate":
+			port = obj
+			break
+	_check(port != null, "A11: %s has a planet to shelter at" % system.id)
+	if port == null:
+		return
+	var presence: EntityPresence = scene_root.entity_presence
+	presence.set_enabled(true)
+	var mara: EntityState = registry.states["mara_vell"]
+	_check(_debug.run_command("entity mara_vell move %s" % system.id).begins_with("Moved"), "D13: move Mara Vell here")
+	mara.leave_day = GameState.clock.day + 5
+	scene_root.refresh_entities()
+	await _frames(2)
+	var fleet: Array[Ship] = _entity_ships("mara_vell")
+	_check(fleet.size() == 2, "A11: Mara Vell and her escort are here (%d)" % fleet.size())
+	if fleet.size() != 2:
+		presence.set_enabled(false)
+		return
+	var lead: Ship = fleet[0]
+	var escort: Ship = fleet[1]
+	var lead_ai: AIController = lead.controller
+	var escort_ai: AIController = escort.controller
+	var near: Vector2 = port.position + Vector2(port.radius + 400.0, 0.0)
+	lead.place(near, 0.0)
+	escort.place(near + Vector2(150.0, 150.0), 0.0)
+	_debug.set_player_invulnerable(true)
+	await _teleport(player, port.position + Vector2(port.radius + 900.0, 0.0))
+	# PS4: hitting the escort until it turns hostile turns the whole fleet.
+	escort.health.apply_damage(escort.health.max_shield + escort.health.max_armor * 0.2, 0.0, player)
+	await _frames(20)
+	_check(lead.is_hostile_to(player), "PS4: when the fleet runs, the leader turns hostile too")
+	_check(lead_ai.is_fleeing(), "PS4: ...and runs: %s" % lead.get_state_label())
+	# A11: down to the planet together, pausing in orbit first.
+	var saw_orbit: bool = false
+	for i: int in 1500:
+		await get_tree().physics_frame
+		if lead_ai.state == AIController.State.ORBIT and lead.visible and not lead.docked:
+			saw_orbit = true
+		if lead.docked and escort.docked:
+			break
+	_check(saw_orbit, "A11: landing, it holds in orbit, visible, before docking")
+	_check(lead.docked and escort.docked, "A11: the fleet lands together (%s / %s)" % [lead.get_state_label(), escort.get_state_label()])
+	# A11: sheltering while the threat is near.
+	await _frames(roundi((float(DataRegistry.settings["ai"]["shelter_clear_time"]) + 1.0) * 60.0))
+	_check(lead.docked and lead_ai.is_fleeing() and not mara.in_transit(), "A11: it shelters while the player is near: %s" % lead.get_state_label())
+	# A11: the threat goes; the entity leaves early, launching through orbit.
+	await _teleport(player, port.position + Vector2(lead_ai.pool.sensor_range + 3000.0, 0.0))
+	var launched: bool = false
+	for i: int in roundi((float(DataRegistry.settings["ai"]["shelter_clear_time"]) + 2.0) * 60.0):
+		await get_tree().physics_frame
+		if lead_ai.state == AIController.State.ORBIT and not lead.docked:
+			launched = true
+			break
+	_check(launched and mara.in_transit(), "A11: with the coast clear, it launches and departs early (%s)" % lead.get_state_label())
+	_check(not escort.docked, "A11: ...its escort launches with it: %s" % escort.get_state_label())
+	await _frames(roundi(float(DataRegistry.settings["ai"]["orbit_pause"]) * 60.0) + 20)
+	_check(lead_ai.state in [AIController.State.LEAVE, AIController.State.JUMPING], "A11: ...then flies out: %s" % lead.get_state_label())
+	_debug.set_player_invulnerable(false)
+	presence.set_enabled(false)
+	GameState.entities.start(DataRegistry.ids("entities").map(func(id: String) -> PersistentEntityDef: return DataRegistry.get_entity(id)), GameState.clock.day, RandomNumberGenerator.new())
+	GameState.news = NewsLog.new()
 
 
 func _entity_ships(id: String) -> Array[Ship]:
