@@ -74,7 +74,7 @@ Each requirement has an ID so later milestones and tests can refer to it.
 
 **AI**
 
-- A1: Traders fly between planets, land, and take off again (the same ship docks for a while, then launches); they flee when attacked unless their personality makes them fight back (A7).
+- A1: Traders fly between planets, land, and take off again (the same ship docks for a while, then launches); they flee when attacked unless their personality makes them fight back (A7). Landing, launching and sheltering after a flight are extended by Phase 2 A11.
 - A2: Warships patrol and attack ships of enemy governments, including the player when hostile.
 - A3: Pirates attack traders and the player on sight.
 - A4: Each AI ship retreats below a shield threshold set by its government.

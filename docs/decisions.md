@@ -258,3 +258,17 @@ Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (kill a raider, the same raider p
 
 Why: Jarrad's milestone 3 playtest, 2 Nov 2026 ("not oriented towards their destination"; "the fleet a bit more stable, it shouldn't be completely static but the constant flipping looks a bit noisy").
 
+## 2026-11-02 — Landing with an orbit pause; fleets land together; fleeing ships shelter, then run (A1, A11, PS4)
+- **Option 3 chosen:**
+  - AI ships hold visibly over a planet for a few seconds when landing and launching, so there's no teleport pop. They're safe and hidden only once docked.
+  - Fleets land and launch together, so no leaderless wingmen are left exposed.
+  - A ship that flees to a planet shelters for 20–60 s instead of vanishing. It then runs for safety elsewhere once the threat has gone (a named fleet departs early along its orders), or runs the blockade if the threat is still there.
+- **Also:** when a fleet chooses to run, every member turns hostile to the attacker, as when it fights.
+- **Review later:** orbital stations as the default landing entity, berths with a docking animation, and stations defending client ships (station weapons, defence fighter patrols, sanctuary as a crime). Jarrad sees more gameplay there.
+
+Why: Jarrad's milestone 3 playtest, 2 Nov 2026. A fleeing freighter vanished on landing; a leaderless courier wandered on alone; hitting a wingman didn't turn the leader hostile when the fleet fled. He recalled Nova's ships pausing in orbit.
+
+Rejected for now:
+- **Option 1:** hidden docking with shelter rules only; it keeps the pop.
+- **Option 2:** fully visible Nova-style orbit with planet sanctuary. It needs law and defence rules that belong with Phase 3 station weapons.
+
