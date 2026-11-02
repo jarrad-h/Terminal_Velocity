@@ -192,7 +192,7 @@ func entity_text(id: String) -> String:
 		where = "in %s since %s, leaves %s for %s" % [s.location, when.call(s.arrived_day), when.call(s.leave_day + 1), _next_stop(s, def)]
 	var hulls: Array[String] = []
 	for ship: Dictionary in s.ships:
-		hulls.append("%s %d%%" % [ship["ship"], roundi(float(ship["hull"]) * 100.0)])
+		hulls.append("%s %d%%" % [ShipRecord.design_of(ship), roundi(float(ship["hull"]) * 100.0)])
 	var grudge: String = "; grudge until %s (follows you)" % when.call(s.grudge_until) if s.grudge_until >= 0 else ""
 	return "%s (%s): %s; %s; %s%s" % [def.name, id, where, ", ".join(hulls), def.order_type, grudge]
 

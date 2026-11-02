@@ -178,12 +178,13 @@ func _record_wrecks() -> void:
 		if expires <= today:
 			continue
 		var ai: AIController = ship.controller as AIController
-		list.append({"ship": ship.def.id, "government": ship.government,
+		var wreck: Dictionary = ShipRecord.make(ship.def.id, ship.health.armor / maxf(ship.health.max_armor, 0.001), 0.0)
+		wreck.merge({"government": ship.government,
 			"pool": ai.pool.id if ai != null else "", "personality": ai.personality.id if ai != null else "",
-			"armor_pct": ship.health.armor / maxf(ship.health.max_armor, 0.001),
 			"position": [ship.global_position.x, ship.global_position.y], "rotation": ship.global_rotation,
 			"credits": ship.credits_aboard, "looted": ship.looted, "acts": ship.player_acts.keys(),
 			"days_left": expires - today})
+		list.append(wreck)
 	GameState.memory.set_wrecks(system.id, list)
 
 
@@ -195,7 +196,7 @@ func _restore_wrecks() -> void:
 	var today: int = GameState.clock.day
 	for wreck: Dictionary in GameState.memory.wrecks_in(system.id):
 		var at := Vector2(wreck["position"][0], wreck["position"][1])
-		var ship: Ship = spawn_ship(wreck["ship"], at, wreck["government"])
+		var ship: Ship = spawn_ship(ShipRecord.design_of(wreck), at, wreck["government"])
 		if ship == null:
 			continue
 		ship.set_meta("wreck_expires", today + int(wreck["days_left"]))
@@ -214,7 +215,7 @@ func _restore_wrecks() -> void:
 			ship.player_acts[str(act)] = true
 		ship.set_meta("restoring", true)  # not a new loss (PS6)
 		ship.health.force_disable()
-		ship.health.armor = minf(ship.health.armor, ship.health.max_armor * float(wreck.get("armor_pct", 1.0)))
+		ship.health.armor = minf(ship.health.armor, ship.health.max_armor * float(wreck.get("hull", 1.0)))
 		ship.remove_meta("restoring")
 	GameState.memory.set_wrecks(system.id, [])
 
