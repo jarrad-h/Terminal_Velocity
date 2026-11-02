@@ -803,6 +803,10 @@ func _save_checks(player: Ship) -> void:
 	_check(Pilots.save_manual("Eleventh") != "", "SV2: an eleventh is refused")
 	_check(Pilots.save_manual("Slot 3") == "", "SV2: ...but a slot can be overwritten")
 	_check(Pilots.autosave() == "" and Pilots.list_slots("test_ace").size() == 11, "SV2: the autosave is extra")
+	# D15: from the console.
+	_check(_debug.run_command("save Slot 3").begins_with("Saved"), "D15: save from the console")
+	_check(_debug.run_command("pilots").contains("test_ace") and _debug.run_command("pilots").contains("slot_3"), "D15: pilots lists pilots and slots")
+	_check(_debug.run_command("savepath").contains("test_pilots"), "D15: savepath shows the folder")
 	# SV3: ironman.
 	Pilots.pilot["ironman"] = true
 	_check(Pilots.save_manual("Cheat") != "", "SV3: ironman can't save by hand")

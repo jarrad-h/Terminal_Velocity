@@ -62,6 +62,15 @@ func _run() -> void:
 	var landed: Dialog = _actions().dialog
 	_check(landed != null and landed.has_choice("save") and landed.has_choice("load") and landed.has_choice("menu"), "SV2: Save, Load and Main menu when landed")
 	game.credits = 777
+	# Mid-route, with an entity in transit (milestone 4's "done" condition).
+	var here: String = game.travel.current_system
+	var next: String = Hyperlanes.neighbours(DataRegistry.galaxy(), here)[0]
+	game.travel.route = [next] as Array[String]
+	var mara: EntityState = game.entities.states["mara_vell"]
+	mara.location = ""
+	mara.transit_from = here
+	mara.transit_to = next
+	mara.arrive_day = game.clock.day + 2
 	landed.choose("save")
 	await _frames(2)
 	var save_dialog: Dialog = null
@@ -84,6 +93,9 @@ func _run() -> void:
 	await _frames(12)
 	_check(get_tree().current_scene != null and get_tree().current_scene.name == "SystemScene", "SV2: Continue loads the game")
 	_check(game.credits == 777, "SV1: the saved credits are back (%d)" % game.credits)
+	_check(game.travel.route == ([next] as Array[String]), "SV1: the route is back")
+	var back: EntityState = game.entities.states["mara_vell"]
+	_check(back.in_transit() and back.transit_to == next, "SV1: Mara Vell is still in transit to %s" % next)
 	_check(_actions() != null and _actions().dialog != null and pilots.landed_at == port.id, "SV1: back on the landed screen at %s" % port.name)
 	# SV3: an ironman pilot.
 	pilots.quit_to_menu()

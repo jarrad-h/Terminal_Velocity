@@ -454,7 +454,7 @@ func run_command(line: String) -> String:
 	var gov_arg: Callable = func(index: int) -> String: return w[index] if w.size() > index else ""
 	match w[0]:
 		"help":
-			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | flag <name> [n] | entities | entity <id> [move <system>|grudge] | memory [<value> <n>] | light on|off | star angle <deg>|auto | star height <0-1> | reload | " \
+			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | flag <name> [n] | entities | entity <id> [move <system>|grudge] | memory [<value> <n>] | light on|off | star angle <deg>|auto | star height <0-1> | save [name] | load <slot> | pilots | savepath | reload | " \
 				+ "time <scale> | pause | resume | step | invuln on|off | ai on|off | traffic on|off | radar all|range | " \
 				+ "kill | disable | clear | credits <n> | record <gov> <n> | overlay <name> on|off | ids <type> | pos"
 		"spawn", "pool":
@@ -483,6 +483,27 @@ func run_command(line: String) -> String:
 				return "Usage: flag <name> [value, default 1; 0 clears]"
 			set_flag(w[1], w[2].to_int() if w.size() > 2 else 1)
 			return "Flag %s = %d" % [w[1], GameState.flag(w[1])]
+		"save":
+			# D15: anywhere, not just landed; no name = the autosave slot.
+			if not Pilots.has_pilot():
+				return "No pilot (start from the main menu)"
+			var name_given: String = " ".join(w.slice(1))
+			var error: String = Pilots.save_manual(name_given) if name_given != "" else Pilots.autosave()
+			return error if error != "" else "Saved %s" % (name_given if name_given != "" else "(autosave)")
+		"load":
+			if w.size() < 2 or not Pilots.has_pilot():
+				return "Usage: load <slot id> (see pilots)"
+			var error: String = Pilots.load_save(Pilots.pilot_id, w[1])
+			return error if error != "" else "Loading %s" % w[1]
+		"pilots":
+			var rows: Array[String] = []
+			for entry: Dictionary in Pilots.list_pilots():
+				var slots: Array = entry["slots"].map(func(m: Dictionary) -> String: return m["id"])
+				rows.append("%s%s%s: %s" % [entry["id"], " (ironman)" if bool(entry["pilot"].get("ironman", false)) else "",
+					" (dead)" if bool(entry["pilot"].get("dead", false)) else "", ", ".join(slots) if not slots.is_empty() else "no saves"])
+			return "\n".join(rows) if not rows.is_empty() else "No pilots"
+		"savepath":
+			return ProjectSettings.globalize_path(Pilots.root)
 		"entities":
 			var rows: Array[String] = []
 			for id: String in DataRegistry.ids("entities"):
