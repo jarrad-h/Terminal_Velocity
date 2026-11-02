@@ -247,3 +247,14 @@ Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (the patrol group should feel lik
 - **D (danger memory)** is on the review list; Jarrad wants it implemented when the time is right.
 - Also: fleet leaders cruise at `entities.formation_cruise` (0.85) of top speed so same-hull wingmen can keep station (found while testing formations).
 Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (kill a raider, the same raider pops in at the same spot soon after).
+
+## 2026-11-02 — AI faces its course when coasting; wingmen hold station loosely and regroup decisively (A1, A2, PS4)
+- **Steering deadband:** an AI ship ignores a velocity error below `ai.steer_deadband` × top speed and faces its intended direction of travel, rather than coasting skewed or flipping for a few px/s.
+- **Formation station-keeping:** with forward-only thrust, slowing down means turning round, so constant small corrections looked like constant flipping. Wingmen now:
+  - hold loosely: within `entities.formation_hold` of the slot they face the leader's heading and only burn forward;
+  - regroup decisively: beyond it they fly back properly (one turn-round at most) until settled (`formation_settle`, `formation_settle_speed`).
+  - **Replaces:** the old continuous slot-chasing and `formation_settle`'s old dual meaning.
+- **Not done:** physics-breaking "station-keeping dampers" (they'd break the kinematic flight rule) and leader-side speed adjustment (it ratchets speeds upward).
+
+Why: Jarrad's milestone 3 playtest, 2 Nov 2026 ("not oriented towards their destination"; "the fleet a bit more stable, it shouldn't be completely static but the constant flipping looks a bit noisy").
+

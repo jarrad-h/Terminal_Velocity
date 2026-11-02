@@ -70,7 +70,8 @@
     "spawn_keep_away_factor": 1.2,
     "inside_spawn_band": [0.15, 0.7],
     "loss_lull": [60, 180],
-    "arrival_arc": 30
+    "arrival_arc": 30,
+    "steer_deadband": 0.08
   },
   "local_space": {"chunk_size": 1024},
   "radar": {
@@ -109,6 +110,8 @@
     "formation_spacing": 180,
     "formation_settle": 40,
     "formation_cruise": 0.85,
+    "formation_hold": 320,
+    "formation_settle_speed": 10,
     "encounter": {"randomness": 0.3, "loser_losses": 0.5, "loser_damage": 0.3, "winner_damage": 0.15, "floor_hull": 0.4,
                   "repair_per_day": 0.1},
     "news": {"days": 10, "max_items": 8, "keep_days": 60}

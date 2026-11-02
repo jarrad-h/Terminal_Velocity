@@ -126,6 +126,26 @@ Jarrad's check-in: the first half's building blocks are good; small values to tu
   - **Checks:** scenario checks for the arc, the live count, the lull and the tighter formation slot (within 60 px).
 - **Review list:** named entities need ways to last; an in-system map with selectable points of interest; planets, stations and gates as targets in the target panel.
 
+### 2026-11-02 — Playtest notes (Jarrad, third round)
+
+- **Fixed (A1, A2): coasting ships didn't face where they were going.** Once at cruise, AI steering stopped steering when the velocity error was tiny, so a ship could coast with its nose off its course. Now an error smaller than `ai.steer_deadband` × top speed (0.08) isn't chased: the ship just faces its desired direction of travel. That also removes the tiny flip-and-burn corrections. Unit test `test_coasting_ships_face_where_they_are_going`.
+- **Fixed (PS4): wingmen fussed, flipping and burning to hold their slot (worst for faster hulls).** Station-keeping was rebuilt around a hold radius:
+  - Within `entities.formation_hold` (320 px) of its slot, a wingman faces the leader's heading and only burns forward when falling behind.
+  - Drifting further starts one regroup: it flies back to the slot, turning round to brake if it must, until it has settled within `formation_settle` (40 px) and `formation_settle_speed` (10 px/s).
+  - **Measured (20 s windows, scenario patrol group):**
+
+    | Leader | Before | Now |
+    |---|---|---|
+    | Steady | about 16 rad of turning | 0 in most windows, one regroup (about 7–10 rad) in a few |
+    | U-turn | — | about one regroup on top of following the turn |
+
+  - Larger `formation_hold` = calmer but looser. Tuning is in `game.json`.
+- **Tests:**
+  - The formation checks now assert at most one regroup in 10 s and no fussing while holding.
+  - Two pre-existing flaky checks fixed:
+    - the PS2 grudge check waited exactly one AI think (15 frames), so it now waits 20;
+    - the A9 arc-spread check only looked on one side of the first sample.
+
 ---
 
 ## Phase 2 Milestone 2: Gates and lighting (30 Oct 2026)

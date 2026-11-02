@@ -667,7 +667,28 @@ func _entity_checks(player: Ship, scene_root: Node) -> void:
 		for i: int in 120:  # closest over two seconds: the slot swings as the leader turns
 			await get_tree().physics_frame
 			gap = minf(gap, patrol[1].global_position.distance_to(lead_ai.fleet.slot_of(patrol[1])))
-		_check(gap < 60.0, "PS4: the wingman holds its formation slot (%.0f px off)" % gap)
+		_check(gap < float(DataRegistry.settings["entities"]["formation_hold"]), "PS4: the wingman holds its formation slot (%.0f px off)" % gap)
+		# No fussing: holding station it turns no more than the leader does, and
+		# drifting off starts at most one regroup in ten seconds.
+		var hold_turn: float = 0.0
+		var lead_turn: float = 0.0
+		var regroups: int = 0
+		var was_regrouping: bool = wing_ai._regrouping
+		var wing_rot: float = patrol[1].rotation
+		var lead_rot: float = patrol[0].rotation
+		for i: int in 600:
+			await get_tree().physics_frame
+			if not was_regrouping and not wing_ai._regrouping:
+				hold_turn += absf(angle_difference(wing_rot, patrol[1].rotation))
+				lead_turn += absf(angle_difference(lead_rot, patrol[0].rotation))
+			elif wing_ai._regrouping and not was_regrouping:
+				regroups += 1
+			was_regrouping = wing_ai._regrouping
+			wing_rot = patrol[1].rotation
+			lead_rot = patrol[0].rotation
+		# (Plus turning back to the leader's heading once each regroup ends.)
+		_check(hold_turn <= lead_turn + PI * (1 + regroups), "PS4: holding station, the wingman doesn't fuss (turned %.1f rad vs the leader's %.1f)" % [hold_turn, lead_turn])
+		_check(regroups <= 1, "PS4: the wingman regroups at most once in ten seconds (%d)" % regroups)
 		# Hitting the wingman (not the leader) brings the whole fleet on you.
 		player.place(patrol[1].global_position + Vector2(0.0, 1200.0), 0.0)
 		_debug.set_player_invulnerable(true)
@@ -694,7 +715,7 @@ func _entity_checks(player: Ship, scene_root: Node) -> void:
 	if not ketch.is_empty():
 		ketch[0].health.apply_damage(5.0, 0.0, player)
 	_check(registry.states["red_ketch"].grudge_until >= today + DataRegistry.get_entity("red_ketch").grudge_days, "PS2: hitting him earns a grudge")
-	await _frames(15)
+	await _frames(20)  # more than one AI think (0.25 s = 15 frames)
 	var hunters: Array[Ship] = _entity_ships("red_ketch")
 	_check(hunters.size() == 2 and hunters.all(func(sh: Ship) -> bool: return (sh.controller as AIController).hunt_player), "PS2: with a grudge his ships hunt the player")
 	_check(hunters.any(func(sh: Ship) -> bool: return (sh.controller as AIController).state == AIController.State.ATTACK and (sh.controller as AIController).target == player), "PS2: ...and go for the player, whatever the range")
@@ -856,7 +877,8 @@ func _ai_hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	var within: bool = sides.all(func(side: Vector2) -> bool:
 		return Hyperlanes.neighbours(galaxy, system.id).any(func(n: String) -> bool:
 			return absf(side.angle_to(-Hyperlanes.bearing(galaxy, n, system.id))) <= arc + 0.001))
-	var spread: bool = sides.any(func(side: Vector2) -> bool: return side.angle_to(sides[0]) > 0.05 and side.angle_to(sides[0]) < arc)
+	# Another point in the same lane's arc, on either side of the first one.
+	var spread: bool = sides.any(func(side: Vector2) -> bool: return absf(side.angle_to(sides[0])) > 0.05 and absf(side.angle_to(sides[0])) <= 2.0 * arc)
 	_check(within and spread, "A9: arrivals spread within ±%.0f° of the lane bearings" % rad_to_deg(arc))
 	# A9: a fleeing ship makes for the neighbour on its own side of the system.
 	var neighbours: Array[String] = Hyperlanes.neighbours(galaxy, system.id)

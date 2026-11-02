@@ -39,7 +39,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"waypoint_reached_fraction": 0.1, "object_patrol_chance": 0.6, "object_patrol_offset_factor": 0.3,
 		"roam_band": [0.1, 0.6], "jump_out_factor": 1.05, "planet_spawn_chance": 0.5,
 		"arrival_speed_fraction": 0.5, "spawn_keep_away_factor": 1.2, "inside_spawn_band": [0.15, 0.7],
-		"loss_lull": [60.0, 180.0], "arrival_arc": 30.0},
+		"loss_lull": [60.0, 180.0], "arrival_arc": 30.0, "steer_deadband": 0.08},
 	"radar": {"size": 200.0, "range": 3000.0, "margin": 16.0, "disabled_pale": 0.55, "colours": {
 		"background": "#0a1426c0", "rim": "#5a7aa0", "player": "#ffffff",
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
@@ -51,6 +51,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"pirate_governments": [], "wreck_days": 5},
 	"entities": {"arrival_offset": [-90.0, 120.0], "departure_window": [20.0, 150.0], "min_stay_seconds": 5.0, "ship_spacing": 160.0,
 		"formation_spacing": 180.0, "formation_settle": 40.0, "formation_cruise": 0.85,
+		"formation_hold": 320.0, "formation_settle_speed": 10.0,
 		"encounter": {"randomness": 0.3, "loser_losses": 0.5, "loser_damage": 0.3, "winner_damage": 0.15, "floor_hull": 0.4,
 			"repair_per_day": 0.1},
 		"news": {"days": 10, "max_items": 8, "keep_days": 60}},
@@ -239,6 +240,8 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	entities.number("ship_spacing", 0.0, false, 0.0)
 	entities.number("formation_spacing", 0.0, false, 0.0)
 	entities.number("formation_settle", 0.0, false, 0.0)
+	entities.number("formation_hold", 0.0, false, 0.0)
+	entities.number("formation_settle_speed", 0.0, false, 0.0)
 	if entities.number("formation_cruise", 1.0, false, 0.0) > 1.0:
 		entities.error("formation_cruise", "must be at most 1")
 	var encounter: DefReader = entities.object("encounter")

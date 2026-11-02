@@ -6,11 +6,13 @@ extends RefCounted
 
 ## Turn toward the velocity change needed and thrust once roughly aligned.
 ## `thrust_angle` (degrees): how closely aligned before thrusting.
-static func toward_velocity(state: FlightState, stats: FlightStats, desired: Vector2, thrust_angle: float, delta: float) -> FlightInput:
+## `deadband` (px/s): a smaller error isn't worth turning round for; the ship
+## holds course facing where it's meant to be going (no sideways coasting).
+static func toward_velocity(state: FlightState, stats: FlightStats, desired: Vector2, thrust_angle: float, delta: float, deadband: float = 0.0) -> FlightInput:
 	var input := FlightInput.new()
 	var dv: Vector2 = desired - state.velocity
-	if dv.length() <= stats.accel * delta:
-		return input
+	if dv.length() <= maxf(stats.accel * delta, deadband):
+		return face(state, stats, desired if not desired.is_zero_approx() else state.velocity, delta)
 	var diff: float = angle_difference(state.rotation, Aim.rotation_of(dv))
 	input.turn = _turn_amount(diff, stats, delta)
 	input.thrust = absf(diff) <= deg_to_rad(thrust_angle)

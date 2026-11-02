@@ -53,6 +53,14 @@ func test_aligned_for_firing() -> void:
 	assert_true(not Steering.aligned(0.0, Vector2(1, -1), 8.0), "45° off")
 
 
+func test_coasting_ships_face_where_they_are_going() -> void:
+	# At cruise along +x but facing up: a small error isn't chased sideways.
+	var s := FlightState.new(Vector2.ZERO, Vector2(300, 10), 0.0)
+	var input: FlightInput = Steering.toward_velocity(s, _stats(), Vector2(300, 0), 35.0, DT, 24.0)
+	assert_false(input.thrust, "within the deadband: no burn")
+	assert_true(input.turn > 0.0, "turns towards the direction of travel (right)")
+
+
 func test_formation_slots() -> void:
 	assert_vec_near(Formation.offset(0, "wedge", 100.0), Vector2.ZERO, "the leader's own slot")
 	assert_vec_near(Formation.offset(1, "wedge", 100.0), Vector2(100, 100), "wedge: first follower behind right")

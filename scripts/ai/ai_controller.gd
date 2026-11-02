@@ -38,6 +38,8 @@ var persistent: bool = false
 var hunt_player: bool = false
 ## PS4: the entity's fleet this ship flies in (null = flies alone).
 var fleet: Fleet = null
+## PS4: a follower out of position, flying back to its slot.
+var _regrouping: bool = false
 
 var _stops_left: int = 0
 var _timer: float = 0.0
@@ -392,17 +394,17 @@ func _steer(delta: float) -> void:
 		State.ATTACK:
 			_steer_attack(s, stats, delta)
 		State.TRAVEL, State.FLEE, State.LEAVE when planet != null:
-			_input = Steering.toward_velocity(s, stats, _cruise(Steering.arrive_velocity(s, stats, planet.position), stats), thrust_angle, delta)
+			_input = Steering.toward_velocity(s, stats, _cruise(Steering.arrive_velocity(s, stats, planet.position), stats), thrust_angle, delta, _deadband(stats))
 			var landing: Dictionary = DataRegistry.settings["landing"]
 			if PortRules.landing_check(s.position.distance_to(planet.position), planet.radius, float(landing["radius_fraction"]),
 					s.velocity.length(), float(landing["max_speed"])) == "":
 				_land()
 		State.PATROL:
-			_input = Steering.toward_velocity(s, stats, _cruise(Steering.arrive_velocity(s, stats, destination), stats), thrust_angle, delta)
+			_input = Steering.toward_velocity(s, stats, _cruise(Steering.arrive_velocity(s, stats, destination), stats), thrust_angle, delta, _deadband(stats))
 		_:
 			# LEAVE and edge-bound FLEE: full speed outward.
 			var out: Vector2 = (destination - s.position).normalized() * stats.top_speed
-			_input = Steering.toward_velocity(s, stats, _cruise(out, stats), thrust_angle, delta)
+			_input = Steering.toward_velocity(s, stats, _cruise(out, stats), thrust_angle, delta, _deadband(stats))
 
 
 ## PS4: a fleet leader cruises below top speed so its wingmen (often the same
@@ -413,18 +415,34 @@ func _cruise(desired: Vector2, stats: FlightStats) -> Vector2:
 	return desired.limit_length(stats.top_speed * float(DataRegistry.settings["entities"]["formation_cruise"]))
 
 
-## PS4: hold this ship's slot behind the fleet leader, matching its velocity;
-## once in the slot, face the way the leader faces.
+## PS4: hold this ship's slot behind the fleet leader (game.json
+## entities.formation_*) without constant fussing. Near the slot it just faces
+## the leader's heading and burns forward when falling behind; drift beyond
+## `formation_hold` starts one proper manoeuvre back into the slot (turning
+## round to brake if it must), which ends once settled there.
 func _steer_formation(s: FlightState, stats: FlightStats, thrust_angle: float, delta: float) -> void:
 	var lead: Ship = fleet.leader()
 	var slot: Vector2 = fleet.slot_of(ship)
 	var lead_velocity: Vector2 = lead.get_velocity() if not lead.docked else Vector2.ZERO
-	var settle: float = float(DataRegistry.settings["entities"]["formation_settle"])
-	if s.position.distance_to(slot) < settle and (s.velocity - lead_velocity).length() < settle:
-		_input = Steering.face(s, stats, FlightModel.heading(lead.global_rotation), delta)
-		_input.thrust = (s.velocity - lead_velocity).length() > stats.accel * delta and Steering.aligned(s.rotation, lead_velocity - s.velocity, thrust_angle)
+	var cfg: Dictionary = DataRegistry.settings["entities"]
+	var off: float = s.position.distance_to(slot)
+	var settle_speed: float = float(cfg["formation_settle_speed"])
+	if off > float(cfg["formation_hold"]):
+		_regrouping = true
+	elif _regrouping and off < float(cfg["formation_settle"]) and (s.velocity - lead_velocity).length() < settle_speed:
+		_regrouping = false
+	if _regrouping:
+		# Not fussing over errors smaller than the settle speed ends it cleanly.
+		_input = Steering.toward_velocity(s, stats, Steering.arrive_velocity(s, stats, slot, lead_velocity), thrust_angle, delta, settle_speed * 0.8)
 		return
-	_input = Steering.toward_velocity(s, stats, Steering.arrive_velocity(s, stats, slot, lead_velocity), thrust_angle, delta)
+	var heading: Vector2 = FlightModel.heading(lead.global_rotation)
+	_input = Steering.face(s, stats, heading, delta)
+	_input.thrust = (lead_velocity - s.velocity).dot(heading) > stats.accel * delta and Steering.aligned(s.rotation, heading, thrust_angle)
+
+
+## Velocity error too small to turn round for (ai.steer_deadband × top speed).
+func _deadband(stats: FlightStats) -> float:
+	return stats.top_speed * _ai("steer_deadband")
 
 
 func _steer_attack(s: FlightState, stats: FlightStats, delta: float) -> void:
