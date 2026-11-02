@@ -86,9 +86,9 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
 
 **Saves (SV)**
 
-- SV1: A pilot file holds everything persistent: player ship and outfits, cargo, credits, records, ratings, flags, missions, the date, the galaxy simulation state and system memory. The current system is saved as its persistent parts only. Every ship, the player's included, is saved as a design reference plus instance state (name, damage, fitted items, cargo); premade ships are designs too, so player-made designs can be saved later without a format change.
-- SV2: The player saves and loads from the main menu and when landed; the game autosaves on landing.
-- SV3: Ironman is chosen when the pilot is created and cannot be changed. An ironman pilot has one save slot, autosaves on landing and on each jump, and cannot load an older state. Death follows the same escape-pod and insurance rules as normal play.
+- SV1: A pilot file holds everything persistent: player ship and outfits, cargo, credits, records, ratings, flags, missions, the date, the galaxy simulation state and system memory. The current system is saved as its persistent parts only. Every ship, the player's included, is saved as a design reference plus instance state (name, damage, fitted items, cargo); premade ships are designs too, so player-made designs can be saved later without a format change. Persistent entities' ships use the same shape. The escape pod and insurance are pilot properties in the save, starting from the `game.json` values. Saves are readable JSON under the user data folder. A save naming a ship design that no longer exists loads with the uninsured hull in its place and a warning; a missing current system refuses with a message.
+- SV2: The player saves and loads from the main menu and when landed; the game autosaves on landing. Up to 5 pilots exist at once (delete one to make another), and each normal pilot has one autosave plus up to 10 manual save slots, named by the player; a full set of slots means overwriting one (limits in `game.json`, so saving stays a deliberate choice).
+- SV3: Ironman is chosen when the pilot is created and cannot be changed. An ironman pilot has one save slot, autosaves on landing and on each jump, and cannot load an older state; it has no manual save, and quitting to the menu writes its slot. Death follows the same escape-pod and insurance rules as normal play; an ironman pilot who dies with no escape pod is marked dead and stays in the pilot list as a memorial that can't be loaded.
 - SV4: The save format carries a version number; older saves are migrated or refused with a clear message.
 
 **Economy (EC)**
@@ -140,6 +140,7 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
 - D12: View and edit flags, ratings and records; list available missions and why others are not available.
 - D13: Inspect the persistent-entity registry and system memory; spawn or move a persistent entity.
 - D14: Lighting on and off, and live control of the star's direction and height.
+- D15: Save and load from the console (`save [slot]`, `load <slot>`, `pilots`, `savepath`).
 
 ## Persistence model
 
@@ -292,6 +293,7 @@ An art phase follows Phase 2 to build an expanded asset library, so Phase 3 cont
   - Stations defend client ships where it makes sense: station weapons, and local defence fighter patrols.
   - Attacking a ship sheltering in orbit is a crime with the planet's government.
   - Much is still to work out; ties in with station weapons in Phase 3.
+- **Pilot memorial and lifetime stats** (Jarrad, milestone 4 planning): a dead pilot's entry lists their record: kills, money made through trade, planets landed on, highest standing reached with each faction. The save carries an empty `stats` block from milestone 4; the counters arrive with progression (milestone 8, PR).
 - Points of interest as targets: planets, stations and gates selectable like ships and shown in the target panel (name, government, landable or dockable, distance) (milestone 3 playtest).
 
 **Carried over from the prototype devlog**

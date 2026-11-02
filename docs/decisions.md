@@ -280,3 +280,14 @@ Rejected:
 - Letting personality decide (a coward still shoots back when it costs nothing).
 - Pivots firing at their arc edge when covering (wasted shots).
 
+## 2026-11-02 — Milestone 4 plan: pilots, slots and the save file (SV1–SV4, D15)
+- **Limits:** up to 5 pilots at once; each normal pilot has one autosave (on landing) and up to 10 named manual slots. A full set means overwriting a slot, to keep saving deliberate. Both limits are in `game.json`.
+- **Ironman:** one slot, written by autosaves (landing, each jump) and on quitting to the menu; no manual save; no loading an older state. A death with no escape pod marks the pilot dead, and it stays in the list as a memorial.
+- **File:** readable JSON under `user://pilots/<pilot>/`, with a version number and ordered migrations; newer or unknown versions are refused with a message.
+- **Ships:** saved as a design reference plus instance state, entities' ships included (migrated from the milestone 3 shape).
+- **Missing data:** a missing ship design loads as the uninsured hull with a warning; a missing current system refuses to load.
+- **Escape pod and insurance:** become pilot properties in the save, ready for the outfitter (milestone 6).
+- **Debug:** D15 adds save and load from the console.
+- **Later:** a dead pilot's memorial lists lifetime achievements (kills, trade profit, planets landed on, highest faction standing). The save reserves an empty `stats` block now; the counters come with progression in milestone 8.
+Why: Jarrad's answers to the milestone 4 plan, 2 Nov 2026 ("don't want to encourage over saving").
+
