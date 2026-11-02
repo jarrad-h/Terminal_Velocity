@@ -177,7 +177,15 @@ func _depart(s: EntityState, def: PersistentEntityDef) -> void:
 func _on_shelter_ended(id: String) -> void:
 	var s: EntityState = GameState.entities.states.get(id)
 	var def: PersistentEntityDef = DataRegistry.get_entity(id)
-	if s == null or def == null or not _present.has(id) or s.location != scene.system.id:
+	if s == null or def == null or not _present.has(id):
+		return
+	if s.in_transit():
+		# Already on its way (it left, then ran back to shelter): go again.
+		for ship: Variant in _present[id]["ships"]:
+			if is_instance_valid(ship) and (ship as Ship).can_act() and (ship as Ship).controller is AIController:
+				((ship as Ship).controller as AIController).leave_for(s.transit_to, s.transit_via == "gate")
+		return
+	if s.location != scene.system.id:
 		return
 	_present[id]["depart_in"] = -1.0
 	_depart(s, def)

@@ -146,6 +146,29 @@ Jarrad's check-in: the first half's building blocks are good; small values to tu
     - the PS2 grudge check waited exactly one AI think (15 frames), so it now waits 20;
     - the A9 arc-spread check only looked on one side of the first sample.
 
+### 2026-11-02 — Playtest notes (Jarrad, fourth round): fleet landing and fleeing
+
+Jarrad attacked Mara Vell's courier until it turned hostile. Mara didn't turn hostile and kept trading; the freighter landed and never came back; the courier carried on alone, later lost its hostility, then landed and never took off.
+
+- **Causes:**
+  - A fleet that chose to run didn't mark its other members hostile.
+  - A ship that fled to a planet was removed for good ("ran home and stays there").
+  - With the leader gone, the courier led a fleet of one on its own plan.
+  - The courier's lost hostility is **not explained yet**: nothing clears hostility within a visit. A system rebuild (landing elsewhere) or mistaking an ambient courier for Mara's is the likely cause. Jarrad to note the callsign if it happens again.
+- **Fixed (PS4):** when a fleet runs, every member turns hostile to the attacker, as when it fights.
+- **Design change, agreed (option 3) and built (A11):**
+  - **Orbit pause:** AI ships hold visibly over a planet for `ai.orbit_pause` (3 s) when landing and launching.
+  - **Fleets land together:** fleets land and launch together.
+  - **Sheltering:** a ship that fled to a planet shelters for up to the pool's `shelter_time` (20–60 s). With no hostile ship within its sensor range for `ai.shelter_clear_time` (5 s), it leaves for safety elsewhere; a named entity departs early along its orders. Otherwise it runs the blockade when time is up.
+  - **Review list:** orbital stations as the landing entity, berths, and stations defending client ships, for a later milestone.
+- **Review (godot-reviewer) fixes:**
+  - A ship attacked while launching dived straight back to shelter. That made the blockade loop forever and could strand an entity that had already departed. Launch orbits now ignore attacks, and an entity in transit that sheltered again is sent on.
+  - A stale orbit could resume after a fight; orbits no longer start attacks.
+  - A leader launching cut short a follower's fight.
+  - A follower hit after the leader had docked didn't make the fleet shelter.
+  - Followers flying down to land had started making their own flee decisions.
+- **Checks:** scenario checks for the fleet turning hostile and running, the orbit pause, landing together, sheltering while the player is near, an early departure once clear, and a blockade run that a hit while launching doesn't undo.
+
 ---
 
 ## Phase 2 Milestone 2: Gates and lighting (30 Oct 2026)

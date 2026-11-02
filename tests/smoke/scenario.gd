@@ -704,6 +704,26 @@ func _shelter_checks(player: Ship, scene_root: Node) -> void:
 	_check(not escort.docked, "A11: ...its escort launches with it: %s" % escort.get_state_label())
 	await _frames(roundi(float(DataRegistry.settings["ai"]["orbit_pause"]) * 60.0) + 20)
 	_check(lead_ai.state in [AIController.State.LEAVE, AIController.State.JUMPING], "A11: ...then flies out: %s" % lead.get_state_label())
+	# A11: running the blockade: shelter time up with the threat still near,
+	# it launches and goes, and a hit while launching doesn't send it back.
+	var trader: Ship = scene_root.traffic.spawn_from_pool(DataRegistry.get_ai_pool("trader_traffic"), near, "", "steady")
+	var trader_ai: AIController = trader.controller
+	await _teleport(player, port.position + Vector2(port.radius + 900.0, 0.0))
+	trader.health.apply_damage(trader.health.max_shield + trader.health.max_armor * 0.2, 0.0, player)
+	for i: int in 1500:
+		await get_tree().physics_frame
+		if trader.docked:
+			break
+	_check(trader.docked and trader_ai.is_fleeing(), "A11: an ambient trader shelters too: %s" % trader.get_state_label())
+	trader_ai._timer = 0.0  # shelter time up, player still close
+	for i: int in 60:
+		await get_tree().physics_frame
+		if not trader.docked:
+			break
+	_check(trader_ai.state == AIController.State.ORBIT and not trader.docked, "A11: with the threat still there, it runs the blockade: %s" % trader.get_state_label())
+	trader.health.apply_damage(5.0, 0.0, player)
+	await _frames(roundi(float(DataRegistry.settings["ai"]["orbit_pause"]) * 60.0) + 30)
+	_check(not trader.docked and trader_ai.state == AIController.State.LEAVE, "A11: ...and a hit while launching doesn't send it back down: %s" % trader.get_state_label())
 	_debug.set_player_invulnerable(false)
 	presence.set_enabled(false)
 	GameState.entities.start(DataRegistry.ids("entities").map(func(id: String) -> PersistentEntityDef: return DataRegistry.get_entity(id)), GameState.clock.day, RandomNumberGenerator.new())
