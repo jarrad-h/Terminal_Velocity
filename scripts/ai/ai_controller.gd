@@ -56,8 +56,9 @@ var _sheltering: bool = false
 var _clear_for: float = 0.0
 ## A11: a follower flying down to land with its leader.
 var _landing_with_leader: bool = false
-## A12: it has been attacked, so it returns covering fire at `_cover_target`.
-var _under_fire: bool = false
+## A12: seconds left of returning covering fire at `_cover_target` (reset by
+## each hit from a ship it's hostile to; ai.cover_memory).
+var _under_fire: float = 0.0
 var _cover_target: Ship = null
 
 var _stops_left: int = 0
@@ -141,6 +142,7 @@ func _physics_process(delta: float) -> void:
 # --- Decisions ---------------------------------------------------------------
 
 func _think(elapsed: float) -> void:
+	_under_fire = maxf(_under_fire - elapsed, 0.0)
 	_update_cover()
 	if state == State.ORBIT:
 		_orbit_left -= elapsed
@@ -196,7 +198,8 @@ func _think(elapsed: float) -> void:
 
 
 func _on_attacked(attacker: Ship) -> void:
-	_under_fire = true  # A12
+	if attacker != null and ship.is_hostile_to(attacker):
+		_under_fire = _ai("cover_memory")  # A12
 	if state == State.FLEE or state == State.LEAVE or state == State.DOCKED or state == State.JUMPING:
 		return
 	if state == State.ORBIT and not _orbit_landing:
@@ -224,7 +227,12 @@ func _on_attacked(attacker: Ship) -> void:
 ## A12: who to return fire at while not attacking: the last ship to hit it
 ## if still hostile and in range, else the nearest hostile ship in range.
 func _update_cover() -> void:
-	if not _under_fire or state == State.ATTACK:
+	if state == State.ATTACK:
+		return
+	if _under_fire <= 0.0:
+		if _cover_target != null and ship.get_target() == _cover_target:
+			ship.set_target(null)
+		_cover_target = null
 		return
 	var reach: float = maxf(ship.weapons.primary_range(), ship.weapons.guided_range())
 	var best: Ship = null
@@ -244,12 +252,12 @@ func _update_cover() -> void:
 
 func _cover_ok(other: Ship, reach: float) -> bool:
 	return other != null and is_instance_valid(other) and other != ship and other.can_act() and not other.docked \
-		and ship.is_hostile_to(other) and ship.global_position.distance_to(other.global_position) <= reach
+		and ship.global_position.distance_squared_to(other.global_position) <= reach * reach and ship.is_hostile_to(other)
 
 
 ## A12: covering fire this frame (steering is already decided and unchanged).
 func _covering_fire() -> void:
-	if state == State.ATTACK or state == State.DOCKED or state == State.JUMPING or not _valid_target(_cover_target):
+	if state == State.ATTACK or state == State.DOCKED or state == State.JUMPING or not _valid_target(_cover_target) or not ship.is_hostile_to(_cover_target):
 		return
 	var distance: float = ship.global_position.distance_to(_cover_target.global_position)
 	_input.fire_primary = distance <= ship.weapons.primary_range()

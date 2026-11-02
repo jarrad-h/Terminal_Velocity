@@ -73,7 +73,8 @@
     "arrival_arc": 30,
     "steer_deadband": 0.08,
     "orbit_pause": 3,
-    "shelter_clear_time": 5
+    "shelter_clear_time": 5,
+    "cover_memory": 15
   },
   "local_space": {"chunk_size": 1024},
   "radar": {

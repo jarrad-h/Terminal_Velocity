@@ -178,6 +178,12 @@ Jarrad attacked Mara Vell's courier until it turned hostile. Mara didn't turn ho
   - missiles in range.
 
   Its target is the last attacker if still in range, else the nearest hostile ship in range. The rule is `MountAim.can_cover`, with a unit test; the scenario checks that a fleeing skittish freighter fires its turret.
+- **Review (godot-reviewer) fixes:**
+  - Pivots wait for the barrel before firing, so beams don't sweep.
+  - Only a hit from a hostile ship arms covering fire, and it lapses after `ai.cover_memory` (15 s).
+  - A fleet's shots pass through its own members.
+  - Hostility is re-checked each frame.
+  - The target scan uses squared distance.
 
 ---
 

@@ -80,6 +80,7 @@ Fields marked **required** have no default.
 | `ai.arrival_arc` | A9: hyperspace arrivals come in anywhere within this many degrees either side of the lane's bearing, on screen or off | `30` |
 | `ai.steer_deadband` | AI steering ignores a velocity error smaller than this fraction of top speed and simply faces where it's going (no sideways coasting, no flipping for tiny corrections) | `0.08` |
 | `ai.orbit_pause`, `ai.shelter_clear_time` | A11: seconds an AI ship holds over a planet (visible, targetable) before docking and after launching; and how long a sheltering ship needs no hostile ship within its sensor range of the planet before it leaves for safety | `3`, `5` |
+| `ai.cover_memory` | A12: seconds after the last hit from a ship it's hostile to that an AI ship keeps returning covering fire while not attacking | `15` |
 | `ai.inside_spawn_band` | …and between these fractions of the edge radius `[min, max]` | `[0.15, 0.7]` |
 | `memory.values.alert`, `memory.values.pirate_presence` | PS6: each system remembers these between visits: `baseline` (where the value rests), `recovery_per_day` (how far it moves back towards the baseline each day) and `max`. A system's `memory` overrides `baseline` and `recovery_per_day` | alert `0`, `10`, `100`; pirate presence `100`, `10`, `200` |
 | `memory.alert_per_record` | PS6: alert raised in the current system per point of record the player loses there (any act that costs record) | `2` |
