@@ -21,6 +21,7 @@ For each slice (one or a few requirement IDs):
 - Run `python tools/check.py`. Fix until it prints GREEN.
 - Run the game through the godot MCP server (run project, read debug output) for at least a few seconds and fix any runtime errors or warnings you introduced.
 - Commit: `m<N>: <IDs> <summary>`.
+- If a slice runs well past its plan (about 30–45 minutes over), a second approach fails, or a requirement hits a design constraint, stop and check in with Jarrad (the `start` skill's check-in rule) rather than grinding on.
 
 ## 3. Hand over for playtest
 - Run the `godot-reviewer` agent on the branch and fix anything it marks `fix first`.

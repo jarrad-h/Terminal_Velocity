@@ -4,6 +4,199 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Phase 2 Milestone 3: Persistence foundation (31 Oct – 2 Nov 2026, merged 2 Nov)
+
+### Stopped at / Next step
+
+Stopped at: P2M3 merged to `main` (2 Nov 2026), check GREEN.
+
+Next step: plan Phase 2 milestone 4 (pilot and saves, SV1–SV4) on `p2m4-<slug>`. Every state added in M3 (entity registry, system memory, news, flags) must be in the save format.
+
+Open questions carried forward:
+- Why Mara's courier once lost its hostility (unexplained; note the callsign if it recurs).
+- The review list (orbital stations and defence, danger memory, in-system map, points of interest as targets).
+
+Branch `p2m3-persistence`, cloud session. The plan was agreed with Jarrad, with a mid-milestone check-in after the first half (A9, A10, PS6). Persistent entities, encounters and news (PS2–PS5, PS7) come after the check-in. Decisions: `docs/decisions.md`, 31 Oct.
+
+### First half (check-in)
+
+- **TR2 change:** a jump is committed once its countdown ends. J and firing no longer cancel during the high-speed run, so a jump can't be used as an in-system dash. Being disabled still aborts it.
+- **A9 AI hyperspace:**
+  - Leaving and fleeing AI ships pick a real neighbouring system, fly out on its map bearing past the jump radius, and fly the same jump sequence as the player (stop, align, countdown, overdrive).
+  - Hits don't stop the jump; being disabled does.
+  - Arrivals appear at the jump radius on the side facing a real neighbour.
+  - A fleeing pirate now has to stop and count down, so it can be caught.
+- **A10 gate traffic:**
+  - Traffic entries take `via: "gate"`. Those ships appear at the gate with a flash, call at one or two ports, then fly back and dock with the gate.
+  - The new `gate_haulers` pool (independent freighters and couriers) runs 2 at a time in each core system.
+- **PS6 system memory:**
+  - Alert (baseline 0) rises by 2 per point of record you lose in a system.
+  - Pirate presence (baseline 100) drops by 5 per pirate disabled and 10 per pirate destroyed, by anyone.
+  - Both recover by 10 a day towards their baseline.
+  - Authority patrols gain one per 25 alert; pirate raids lose one per 50 presence lost.
+  - Disabled ships you leave behind are there again when you come back, for 5 days counted from when you left them. They're still disabled, with their armour, credits and whether you looted them, and they keep their AI, so Assist sends them on their way. Then they're scavenged.
+  - Memory is saved in GameState (`to_dict`).
+  - D13: `memory` console command (`memory alert 50` sets a value in the current system).
+- **Review (godot-reviewer) and fixes:**
+  - **Fixed:**
+    - Gate traffic used gates even when closed. Now closed gates send haulers by hyperspace instead.
+    - Remembered wrecks came back without their AI, so Assist left them stuck. They now keep their pool, personality and armour.
+    - Fleeing ships could pick a neighbour across the system. They now make for the neighbour on their own side.
+    - The trip's days now pass before you arrive, so wrecks and memory recover correctly; the rescue flow too.
+    - Destroying a remembered pirate wreck now counts as a pirate loss.
+    - `ai off` freezes jumping ships, and a new controller clears any jump in progress.
+    - Loader tests added for the memory settings and the `per_point` rule.
+  - **Later:**
+    - The current system's wrecks exist only as ships while you're there, so saves (milestone 4) must record them before writing.
+    - A system's memory baseline isn't checked against the global max.
+  - **To ask Jarrad:** should AI traffic use hidden lanes?
+- **Tests:** unit tests for `SystemMemory` (values, recovery, traffic scaling, wreck ageing, round trip) and the loader's `via` rules; scenario checks for the committed jump, AI departure and arrival by hyperspace, gate arrival and departure, and the whole memory loop.
+
+### Second half (after the check-in, 1 Nov 2026)
+
+Jarrad's check-in: the first half's building blocks are good; small values to tune in the JSON. Arrival offsets and AI use of hidden lanes confirmed.
+
+- **PS2 entities:**
+  - A new `entities/` data type. Each entity has a name, government, AI pool, personality and ships, a start system, orders, an arrival offset, grudge days and an existence condition.
+  - **Orders:** hold, patrol a route (looping), travel to a destination, or follow the player.
+  - `EntityRegistry` (pure, tested) steps every entity once a day.
+  - **Grudges:** hitting a grudge-holder makes it follow you for its grudge days.
+  - **Death:** a destroyed entity is gone for good and makes the news.
+- **PS3 travel:**
+  - Entities use your rules: hyperlane days by the slowest ship's jump speed, and gates that are open and not run by a hostile government (`EntityRouting`).
+  - They pass straight through systems on the way and stay their `stay_days` at stops.
+  - Departures are announced once per trip.
+- **PS4 in your system:**
+  - `EntityPresence` makes entities in your system real ships. They're named on the target panel, fly as their AI pool, and never wander off on their own.
+  - **Same-day arrivals:** they use the arrival offset, either already there or jumping in N seconds after you on the side they came from.
+  - **Same-day departures:** an entity due to leave today departs during your visit, by lane or gate.
+  - **Write-back:** damage and losses go back to the summary when you leave, when you land (days pass) and when all its ships have gone. On take-off the system is rebuilt from the registry.
+  - Ships removed without being destroyed aren't counted as lost. Entity ships aren't recorded as wrecks, and they repair 10% hull a day.
+- **PS5 off-screen encounters:** hostile entities sharing a system you're not in fight once a day.
+  - Each side's strength is its ships' strength × hull, × 1 ± 0.3 randomness.
+  - The loser loses half its ships (rounded up); survivors take damage, never below 40% hull.
+- **PS7 news:** departures, fights and deaths, shown on the landed screen. The last 10 days, newest first, up to 8 items.
+- **D13 console:**
+  - `entities`;
+  - `entity <id>`, `entity <id> move <system>` and `entity <id> grudge`;
+  - `memory` (from the first half).
+  - Debug "Traffic on" also covers entities.
+- **Test entities** (placeholder names):
+  - **Captain Mara Vell:** a freighter and courier on a trade route: Test Nebula, Aster, Drift, Brink, Solace.
+  - **Authority Patrol Group:** two corvettes looping Aster, Test Nebula, Test Graveyard and Lumen, using gates.
+  - **Red Ketch:** two pirate raiders circuiting Redhaven, Ember and Hollow. He holds grudges for 6 days and arrives 15–60 s after you.
+- **Review (godot-reviewer) and fixes:**
+  - **Fixed:**
+    - Fleets duplicated themselves. Ships freed when the system was rebuilt (take-off, rescue, debug moves) reported themselves to the new visit as "departed", doubling the fleet on the next write-back. They're now ignored, with a scenario check.
+    - Grudges chased the system the player had just left during a trip. The trip's destination is now used for grudges and followers, and off-screen fights skip it.
+    - Grudging patrols stopped at their own patrol stops on the way to you.
+    - An entity that came by gate appeared at the edge. It now comes out of the gate (`came_via`).
+    - Debug `days` and `entity … move` now write entities back first.
+    - Entities added to the data after a save are filled in on load.
+    - Ship spacing and the minimum stay before departing are now data (`entities.ship_spacing`, `min_stay_seconds`).
+  - **Later:**
+    - Disabled ships go with their fleet when it departs.
+    - The loader doesn't check that a patrol stop is reachable.
+    - PS2's "cargo" in the summary waits for the economy (milestone 5).
+    - D13 "spawn" is covered by `entity <id> move <your system>`.
+    - The debug-goto destruction news names the wrong system.
+- **Checks:**
+  - unit tests: routing with and without gates, hold, patrol hop by hop, the pace set by the slowest ship, grudges, encounters (including no fight in your system), the existence condition, write-back, round trips and news;
+  - loader tests for entity data;
+  - scenario: materialise, write-back of damage and losses, grudge, a late arrival on the right side, departure during a visit, news, movement over days, D13;
+  - a 60-day dry run: all three move as ordered, and the news reads naturally.
+
+### 2026-11-01 — Playtest notes (Jarrad)
+
+- **Bug: the console's bottom line went off the screen** when long output wrapped. The output is now a fixed-height scrolling panel that always shows the newest line (checked under a virtual display).
+- **Debug: entity lines say when an entity leaves, not just when it arrives.** For example: "in Aster since 3 Jan, leaves 5 Jan for Drift"; "travelling Aster → Drift, arrives 7 Jan, then stays 1–2 days"; "grudge until … (follows you)".
+- **Bug: Red Ketch's grudge didn't work as expected.** Two causes:
+  - A grudge didn't cut the stay short, so he sat out his stop before chasing. Now he sets off the next day.
+  - Once he arrived, his ships only fought inside sensor range. Now they hunt the player anywhere in the system.
+  - Also decided: a ship still disabled when its fleet departs is abandoned as an ordinary wreck, and the fleet loses it.
+  - Destroyed named entities stay dead (confirmed).
+  - Unit and scenario regression checks added.
+- **Design change, built: pirates can be won over (G3).** Governments get `start_record`. Pirates start the player at −60, hostile below −20, friendly from 25 (replacing the 1000 threshold). Assisting pirate ships raises the record; missions will later.
+- **Design change, confirmed and built: entity fleets fly in formation (PS4).**
+  - Each entity has a `formation` in its data: the patrol and Red Ketch fly a wedge, Mara Vell a line.
+  - The first able ship leads; the others hold slots 180 px apart.
+  - Whichever member is hit, the fleet fights or flees together. Jarrad spotted that hitting a wingman could otherwise be a free hit.
+  - When the leader jumps, the fleet jumps; if the leader is lost, the next ship leads.
+  - Checks: `Formation` maths unit-tested; scenario checks the slot is held, the whole fleet engages when the wingman is hit, and the fleet jumps together; a screenshot shows the patrol pair flying in formation.
+
+### 2026-11-01 — Playtest notes (Jarrad, second round)
+
+- **Fixed (TR4, A9): arrivals popped in.** Ships arriving by hyperspace, the player's and AI ships and entities alike, now drop out at hyperdrive speed along their bearing and brake to the arrival speed over `hyperspace.arrival_burn_seconds` (1.2 s), ending where they used to appear. It's a new `ARRIVING` phase of `JumpSequence`, and controls lock only for the burn. Unit test for the burn; scenario checks that player and AI arrivals burn and end in place.
+- **Design change, confirmed and built: less regular replacement traffic.**
+  - **A (live counts):** memory-scaled traffic counts are re-read live.
+  - **B (lull):** a loss puts its pool on a 60–180 s lull (`ai.loss_lull`).
+  - **C (arc):** arrivals spread within ±30° of the lane's bearing (`ai.arrival_arc`), on screen or off.
+  - **D:** danger memory is on the review list for later.
+  - **Also:** fleet leaders now cruise at 85% (`entities.formation_cruise`), because a same-hull wingman could never catch a leader at full speed. Found as a flaky formation check.
+  - **Checks:** scenario checks for the arc, the live count, the lull and the tighter formation slot (within 60 px).
+- **Review list:** named entities need ways to last; an in-system map with selectable points of interest; planets, stations and gates as targets in the target panel.
+
+### 2026-11-02 — Playtest notes (Jarrad, third round)
+
+- **Fixed (A1, A2): coasting ships didn't face where they were going.** Once at cruise, AI steering stopped steering when the velocity error was tiny, so a ship could coast with its nose off its course. Now an error smaller than `ai.steer_deadband` × top speed (0.08) isn't chased: the ship just faces its desired direction of travel. That also removes the tiny flip-and-burn corrections. Unit test `test_coasting_ships_face_where_they_are_going`.
+- **Fixed (PS4): wingmen fussed, flipping and burning to hold their slot (worst for faster hulls).** Station-keeping was rebuilt around a hold radius:
+  - Within `entities.formation_hold` (320 px) of its slot, a wingman faces the leader's heading and only burns forward when falling behind.
+  - Drifting further starts one regroup: it flies back to the slot, turning round to brake if it must, until it has settled within `formation_settle` (40 px) and `formation_settle_speed` (10 px/s).
+  - **Measured (20 s windows, scenario patrol group):**
+
+    | Leader | Before | Now |
+    |---|---|---|
+    | Steady | about 16 rad of turning | 0 in most windows, one regroup (about 7–10 rad) in a few |
+    | U-turn | — | about one regroup on top of following the turn |
+
+  - Larger `formation_hold` = calmer but looser. Tuning is in `game.json`.
+- **Tests:**
+  - The formation checks now assert at most one regroup in 10 s and no fussing while holding.
+  - Two pre-existing flaky checks fixed:
+    - the PS2 grudge check waited exactly one AI think (15 frames), so it now waits 20;
+    - the A9 arc-spread check only looked on one side of the first sample.
+
+### 2026-11-02 — Playtest notes (Jarrad, fourth round): fleet landing and fleeing
+
+Jarrad attacked Mara Vell's courier until it turned hostile. Mara didn't turn hostile and kept trading; the freighter landed and never came back; the courier carried on alone, later lost its hostility, then landed and never took off.
+
+- **Causes:**
+  - A fleet that chose to run didn't mark its other members hostile.
+  - A ship that fled to a planet was removed for good ("ran home and stays there").
+  - With the leader gone, the courier led a fleet of one on its own plan.
+  - The courier's lost hostility is **not explained yet**: nothing clears hostility within a visit. A system rebuild (landing elsewhere) or mistaking an ambient courier for Mara's is the likely cause. Jarrad to note the callsign if it happens again.
+- **Fixed (PS4):** when a fleet runs, every member turns hostile to the attacker, as when it fights.
+- **Design change, agreed (option 3) and built (A11):**
+  - **Orbit pause:** AI ships hold visibly over a planet for `ai.orbit_pause` (3 s) when landing and launching.
+  - **Fleets land together:** fleets land and launch together.
+  - **Sheltering:** a ship that fled to a planet shelters for up to the pool's `shelter_time` (20–60 s). With no hostile ship within its sensor range for `ai.shelter_clear_time` (5 s), it leaves for safety elsewhere; a named entity departs early along its orders. Otherwise it runs the blockade when time is up.
+  - **Review list:** orbital stations as the landing entity, berths, and stations defending client ships, for a later milestone.
+- **Review (godot-reviewer) fixes:**
+  - A ship attacked while launching dived straight back to shelter. That made the blockade loop forever and could strand an entity that had already departed. Launch orbits now ignore attacks, and an entity in transit that sheltered again is sent on.
+  - A stale orbit could resume after a fight; orbits no longer start attacks.
+  - A leader launching cut short a follower's fight.
+  - A follower hit after the leader had docked didn't make the fleet shelter.
+  - Followers flying down to land had started making their own flee decisions.
+- **Checks:** scenario checks for the fleet turning hostile and running, the orbit pause, landing together, sheltering while the player is near, an early departure once clear, and a blockade run that a hit while launching doesn't undo.
+
+### 2026-11-02 — Playtest notes (Jarrad, fifth round): covering fire
+
+- **Confirmed:** hitting the courier now turns the freighter hostile.
+- **Design change, agreed with defaults and built (A12): freighters never fired.** AI ships only fired while attacking, so running traders' turrets stayed silent. Now a ship that isn't attacking returns fire once it has been attacked (fleeing, in orbit, leaving, in formation), whatever its personality. It uses only weapons that can hit without turning:
+  - turrets and pivots inside their arc;
+  - fixed guns within the pool's `fire_angle` of the nose;
+  - missiles in range.
+
+  Its target is the last attacker if still in range, else the nearest hostile ship in range. The rule is `MountAim.can_cover`, with a unit test; the scenario checks that a fleeing skittish freighter fires its turret.
+- **Review (godot-reviewer) fixes:**
+  - Pivots wait for the barrel before firing, so beams don't sweep.
+  - Only a hit from a hostile ship arms covering fire, and it lapses after `ai.cover_memory` (15 s).
+  - A fleet's shots pass through its own members.
+  - Hostility is re-checked each frame.
+  - The target scan uses squared distance.
+
+---
+
 ## Phase 2 Milestone 2: Gates and lighting (30 Oct 2026)
 
 Playtest confirmed by Jarrad on 30 Oct 2026; merged to `main`. Branch `p2m2-gates-lighting`, built in a cloud session (Godot 4.7.2 headless; checked by unit tests and the scenario test, plus measurements and screenshots rendered under a virtual display). Scope widened on 30 Oct to fold in lit ships after the light maps landed (PR #4); first-pass stellar art (PR #5) merged into `main` and wired in here. Decisions: `docs/decisions.md`, 30 Oct entries on lighting and milestone 2.

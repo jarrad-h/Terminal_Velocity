@@ -249,6 +249,30 @@ func test_lighting_errors() -> void:
 	_expect_error(set, ["dim_lit.json", "lighting.star.height", "at most 1"])
 
 
+## PS2: persistent entity definitions.
+func test_entity_errors() -> void:
+	var set: DataSet = _load([BROKEN])
+	_expect_error(set, ["lost_patrol.json", "ships", "at least one ship"])
+	_expect_error(set, ["lost_patrol.json", "orders.route", "at least two systems"])
+	_expect_error(set, ["lost_patrol.json", "exists_if", "flag_name"])
+	_expect_error(set, ["lost_patrol.json", "start_system", "no system definition with id 'nowhere'"])
+	_expect_error(set, ["aimless.json", "orders.destination", "required for travel"])
+	_expect_error(set, ["aimless.json", "grudge_days", "at least 0"])
+
+
+## PS6: memory settings, per-system overrides and traffic memory scaling.
+func test_memory_errors() -> void:
+	var set: DataSet = _load([BROKEN])
+	_expect_error(set, ["game.json", "memory.values.alert.recovery_per_day", "at least 0"])
+	_expect_error(set, ["game.json", "memory.wreck_days", "at least 0"])
+	_expect_error(set, ["game.json", "memory.pirate_governments[0]", "nobody"])
+	_expect_error(set, ["forgetful.json", "memory.alert.baseline", "at least 0"])
+	_expect_error(set, ["forgetful.json", "traffic[0].per_point", "required when 'memory' is set"])
+	_expect_error(set, ["forgetful.json", "traffic[1].memory", "fear"])
+	var lit: SystemDef = _load([BASE]).get_def("systems", "lit")
+	assert_near(float(lit.memory["alert"]["baseline"]), 20.0, "system memory override parsed")
+
+
 func test_system_lighting_overrides() -> void:
 	var set: DataSet = _load([BASE])
 	var defaults: Dictionary = set.settings["lighting"]
@@ -280,6 +304,8 @@ func test_gate_errors() -> void:
 	_expect_error(set, ["badgate.json", "objects[0].fee", "only gates"])
 	_expect_error(set, ["badgate.json", "objects[1].open_condition", "flag_name"])
 	_expect_error(set, ["badart.json", "objects[0].art", "no art set 'planet_nowhere'"])
+	_expect_error(set, ["nogate_traffic.json", "traffic[0].via", "needs a gate"])
+	_expect_error(set, ["badvia.json", "traffic[0].via", "teleport"])
 	_expect_error(set, ["badart.json", "objects[1].art", "gates art, not for a planet"])
 	var galaxy: GalaxyDef = _load([BASE]).get_def("galaxy", "tiny")
 	assert_true(galaxy.gate_links.is_empty(), "gate_links default to none")
@@ -312,7 +338,8 @@ func test_real_game_data_is_valid() -> void:
 	assert_true(set.ids("ships").size() == 6, "5 prototype ships plus target_dummy")
 	assert_true(set.ids("weapons").size() == 6, "3 laser sizes, flak, missile, beam")
 	assert_true(set.ids("governments").size() == 3, "3 governments")
-	assert_true(set.ids("ai_pools").size() == 3, "3 AI pools")
+	assert_true(set.ids("ai_pools").size() == 4, "3 prototype AI pools plus gate_haulers")
+	assert_true(set.ids("entities") == ["authority_patrol_group", "mara_vell", "red_ketch"], "PS2: the three test entities")
 	assert_true(set.ids("scenery").size() == 5, "5 scenery types")
 	assert_true(set.ids("personalities").size() == 5, "5 personalities")
 	assert_true(set.ids("systems").size() == 10, "the 10-system test cluster")

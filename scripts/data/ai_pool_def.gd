@@ -16,6 +16,8 @@ var sensor_range: float
 var stay_time: Vector2
 ## Traders: seconds docked at each planet.
 var dwell_time: Vector2
+## A11: how long a ship that fled to a planet shelters there at most, s.
+var shelter_time: Vector2
 ## Traders: planets visited before leaving (whole numbers).
 var stops: Vector2i
 ## A6: new ships may take off from landable planets instead of arriving at the edge.
@@ -44,6 +46,7 @@ static func parse(r: DefReader) -> AiPoolDef:
 	d.sensor_range = r.number("sensor_range", 1500.0, false, 0.0)
 	d.stay_time = r.range2("stay_time", Vector2(60.0, 120.0), 0.0)
 	d.dwell_time = r.range2("dwell_time", Vector2(6.0, 12.0), 0.0)
+	d.shelter_time = r.range2("shelter_time", Vector2(20.0, 60.0), 0.0)
 	var stops: Vector2 = r.range2("stops", Vector2(1.0, 3.0), 0.0)
 	d.stops = Vector2i(roundi(stops.x), roundi(stops.y))
 	d.spawn_from_planets = r.boolean("spawn_from_planets", d.behaviour == "trader")

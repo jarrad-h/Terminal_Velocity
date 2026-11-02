@@ -5,8 +5,16 @@ extends Def
 var name: String
 var system_seed: int
 var objects: Array[SystemObjectDef] = []
-## [{"pool": String, "count": int}]
+## [{"pool": String, "count": int, "via": "hyperspace" | "gate" (A10),
+##   "memory": "" | memory value name, "per_point": float (PS6)}].
 var traffic: Array[Dictionary] = []
+const VIA: Array[String] = ["hyperspace", "gate"]
+## PS6: the values every system remembers.
+const MEMORY_VALUES: Array[String] = ["alert", "pirate_presence"]
+## A traffic entry's `memory`: none, or one of MEMORY_VALUES.
+const TRAFFIC_MEMORY: Array[String] = ["", "alert", "pirate_presence"]
+## PS6: overrides of game.json memory.values: name -> {"baseline", "recovery_per_day"}.
+var memory: Dictionary = {}
 var backdrop: BackdropDef
 var local_space: Array[LocalSpaceEntry] = []
 ## A6: traffic arrives and leaves at this distance from the system centre, px.
@@ -28,7 +36,22 @@ static func parse(r: DefReader) -> SystemDef:
 	for o: DefReader in r.objects("objects"):
 		d.objects.append(SystemObjectDef.parse(o))
 	for t: DefReader in r.objects("traffic"):
-		d.traffic.append({"pool": t.ref("pool", "ai_pools", "", true), "count": t.integer("count", 1, false, 0)})
+		d.traffic.append({"pool": t.ref("pool", "ai_pools", "", true), "count": t.integer("count", 1, false, 0),
+			"via": t.choice("via", VIA, "hyperspace"),
+			"memory": t.choice("memory", TRAFFIC_MEMORY, ""), "per_point": t.number("per_point", 0.0)})
+		if d.traffic[-1]["memory"] != "" and not t.has("per_point"):
+			t.error("per_point", "is required when 'memory' is set")
+	if r.has("memory"):
+		var m: DefReader = r.object("memory")
+		for name: String in MEMORY_VALUES:
+			if m.has(name):
+				var v: DefReader = m.object(name)
+				var over: Dictionary = {}
+				if v.has("baseline"):
+					over["baseline"] = v.number("baseline", 0.0, false, 0.0)
+				if v.has("recovery_per_day"):
+					over["recovery_per_day"] = v.number("recovery_per_day", 0.0, false, 0.0)
+				d.memory[name] = over
 	d.backdrop = BackdropDef.parse(r.object("backdrop"))
 	for e: DefReader in r.objects("local_space"):
 		d.local_space.append(LocalSpaceEntry.parse(e))
@@ -90,4 +113,6 @@ func validate(_defs: Dictionary, errors: Array[String]) -> void:
 		var pool_id: String = traffic[i]["pool"]
 		if pools.has(pool_id):
 			errors.append("%s: field 'traffic[%d].pool': '%s' is already listed; use one entry with a higher count" % [file, i, pool_id])
+		if traffic[i]["via"] == "gate" and gate() == null:
+			errors.append("%s: field 'traffic[%d].via': gate traffic needs a gate in the system" % [file, i])
 		pools[pool_id] = true

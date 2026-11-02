@@ -211,3 +211,72 @@ Why: found by the godot-reviewer at the milestone 2 handover.
 - 1-day gate links equal to 1-day hyperlane routes are confirmed fine; the Solace trader yard and Redhaven pirate rock stay.
 Why: Jarrad's playtest of milestone 2, 30 Oct 2026.
 - (Same day, while building it) **Glare without blowout:** in the glare the ambient rises to the star light's colour, not white, and the directional light fades to `lighting.star.glare_energy` (0.15), so a ship inside the star is lit evenly in the star's hue with its detail intact; white ambient plus doubled starlight blew hulls out to white.
+
+## 2026-10-31 — Milestone 3 plan: persistence answers; jump commitment (PS2–PS7, A9, A10, TR2)
+- **Grudge:** a pirate captain the player damages or disables (and who survives) gets a grudge for a data number of days and switches to "follow the player" orders, travelling by the same rules; it ends when it expires or he dies.
+- **Death:** a destroyed named entity is gone for good and makes the news; fleets lose ships one by one. Procedurally generated characters and fleets may come later so the cast isn't exhausted.
+- **Off-screen fights:** only persistent entities fight off-screen; generic patrols and pirates come from system memory.
+- **News:** the last 10 days galaxy-wide, newest first, up to 8 items (data).
+- **Alert:** raised by any act that costs the player record with a government, in that system. **Wrecks:** disabled ships left behind stay 5 days (data), then are scavenged.
+- **Gates for entities:** allowed when the gate is open and its government isn't hostile to the entity's.
+- **AI hyperspace:** fleeing ships fly the full sequence; hits don't cancel.
+- **Jump commitment (TR2):** once the countdown ends, J and firing no longer cancel the jump; being disabled still does. Why: Jarrad noticed a jump could be used as a quick in-system dash and then cancelled.
+- **Arrival timing within a day:** proposed (arrival and departure offsets in seconds relative to the player's entry, from data per entity), to confirm before building persistent entities.
+- **Mid-milestone check-in** after A9, A10 and PS6.
+Why: Jarrad's answers, 31 Oct 2026.
+
+## 2026-11-01 — Arrival offsets within a day; AI uses hidden lanes (PS4, A9)
+- **Arrival offsets (PS4):** confirmed as proposed: an entity due in a system the same day gets an offset in seconds relative to the player's entry (negative = already there, positive = arrives later), from a per-entity data range or a game-wide default; departures that day happen in a data window after the player's entry. Days still never pass in real time.
+- **Hidden lanes (A9):** AI traffic and persistent entities use hyperlanes the player hasn't discovered; ships arriving from an unseen direction hint that something is there.
+Why: Jarrad's answers at the milestone 3 check-in, 1 Nov 2026.
+
+## 2026-11-01 — Pirates start hostile but can be won over; grudges hunt; disabled ships abandoned (G3, PS2, PS4)
+- **Pirates (G3):** governments get `start_record`. Pirates start the player at −60 with a crime threshold of −20 and friendly at 25, so they're hostile at first but actions (assisting pirate ships; missions later) can make them neutral and then friendly. Replaces the prototype's threshold of 1000, which made them effectively permanent enemies.
+- **Grudges (PS2):** a grudge cuts the entity's stay short (it sets off after the player the next day), and while it holds, the entity's ships hunt the player anywhere in the system, not only within sensor range.
+- **Disabled ships (PS4):** a ship still disabled when its fleet departs is abandoned: it becomes an ordinary wreck (PS6) and the fleet loses it. Destroyed named entities stay dead.
+Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (Red Ketch didn't follow or chase; pirates couldn't be made friendly).
+
+## 2026-11-01 — Entity fleets fly in formation and fight as one (PS4)
+Per-entity `formation` (`wedge`, `line`, `none`). The first able ship leads; followers hold slots (spacing in `game.json` `entities.formation_spacing`) matching the leader's velocity and heading. Any member attacked makes the fleet's choice: fight (every member treats the attacker as an enemy and engages) or flee (the leader runs, the rest keep formation), so attacking a wingman isn't a free hit (Jarrad's point). When the leader jumps, everyone jumps; the next able ship takes over if the leader is lost. Entities only for now; the same Fleet could drive ambient patrols and escorts later.
+Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (the patrol group should feel like a unified force); answers: always jump together, formation per entity in data, build it now.
+
+## 2026-11-01 — Less regular replacement traffic: live memory counts, a lull after losses, an arrival arc (A6, A9, PS6)
+- **A: live counts.** Memory-scaled traffic targets are re-read whenever replacements are considered, so killing pirates lowers pirate presence and the population during the same visit.
+- **B: lull after a loss.** A traffic ship disabled or destroyed puts its pool on `ai.loss_lull` ([60, 180] s) before a replacement, instead of the system's `respawn_delay`.
+- **C: arrival arc.** Hyperspace arrivals come in within ±`ai.arrival_arc` (30°) of the lane's bearing, on screen or off (Jarrad: not forced off-screen; the arc alone breaks up the camping spot).
+- **D (danger memory)** is on the review list; Jarrad wants it implemented when the time is right.
+- Also: fleet leaders cruise at `entities.formation_cruise` (0.85) of top speed so same-hull wingmen can keep station (found while testing formations).
+Why: Jarrad's milestone 3 playtest, 1 Nov 2026 (kill a raider, the same raider pops in at the same spot soon after).
+
+## 2026-11-02 — AI faces its course when coasting; wingmen hold station loosely and regroup decisively (A1, A2, PS4)
+- **Steering deadband:** an AI ship ignores a velocity error below `ai.steer_deadband` × top speed and faces its intended direction of travel, rather than coasting skewed or flipping for a few px/s.
+- **Formation station-keeping:** with forward-only thrust, slowing down means turning round, so constant small corrections looked like constant flipping. Wingmen now:
+  - hold loosely: within `entities.formation_hold` of the slot they face the leader's heading and only burn forward;
+  - regroup decisively: beyond it they fly back properly (one turn-round at most) until settled (`formation_settle`, `formation_settle_speed`).
+  - **Replaces:** the old continuous slot-chasing and `formation_settle`'s old dual meaning.
+- **Not done:** physics-breaking "station-keeping dampers" (they'd break the kinematic flight rule) and leader-side speed adjustment (it ratchets speeds upward).
+
+Why: Jarrad's milestone 3 playtest, 2 Nov 2026 ("not oriented towards their destination"; "the fleet a bit more stable, it shouldn't be completely static but the constant flipping looks a bit noisy").
+
+## 2026-11-02 — Landing with an orbit pause; fleets land together; fleeing ships shelter, then run (A1, A11, PS4)
+- **Option 3 chosen:**
+  - AI ships hold visibly over a planet for a few seconds when landing and launching, so there's no teleport pop. They're safe and hidden only once docked.
+  - Fleets land and launch together, so no leaderless wingmen are left exposed.
+  - A ship that flees to a planet shelters for 20–60 s instead of vanishing. It then runs for safety elsewhere once the threat has gone (a named fleet departs early along its orders), or runs the blockade if the threat is still there.
+- **Also:** when a fleet chooses to run, every member turns hostile to the attacker, as when it fights.
+- **Review later:** orbital stations as the default landing entity, berths with a docking animation, and stations defending client ships (station weapons, defence fighter patrols, sanctuary as a crime). Jarrad sees more gameplay there.
+
+Why: Jarrad's milestone 3 playtest, 2 Nov 2026. A fleeing freighter vanished on landing; a leaderless courier wandered on alone; hitting a wingman didn't turn the leader hostile when the fleet fled. He recalled Nova's ships pausing in orbit.
+
+Rejected for now:
+- **Option 1:** hidden docking with shelter rules only; it keeps the pop.
+- **Option 2:** fully visible Nova-style orbit with planet sanctuary. It needs law and defence rules that belong with Phase 3 station weapons.
+
+## 2026-11-02 — Covering fire while running (A12)
+A ship that's running, sheltering in orbit, leaving or flying in formation fires turrets, pivots (within their arc), fixed guns that happen to bear, and missiles at a threat, without changing course. It starts only after it has been attacked, so traders still don't open fire on passing pirates or on a merely angry player. All personalities do it, because it costs nothing in the retreat.
+Why: Jarrad's milestone 3 playtest, 2 Nov 2026. Freighters with turrets never fired, because AI ships only fired while attacking.
+Rejected:
+- Firing only in the attack state (the old behaviour).
+- Letting personality decide (a coward still shoots back when it costs nothing).
+- Pivots firing at their arc edge when covering (wasted shots).
+

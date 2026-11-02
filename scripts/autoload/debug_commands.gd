@@ -137,7 +137,7 @@ func switch_system(system_id: String) -> bool:
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
 	if scene == null or DataRegistry.get_system(system_id) == null or not DataRegistry.galaxy().has_system(system_id):
 		return false
-	scene.hyperspace.cancel("Jump cancelled")
+	scene.hyperspace.abort("Jump cancelled")
 	var origin: String = GameState.travel.current_system
 	GameState.travel.route.clear()
 	scene.hyperspace.arrive(system_id, origin)
@@ -147,7 +147,12 @@ func switch_system(system_id: String) -> bool:
 ## D11: advances the date by `days` (each day stepped, TM3).
 func advance_days(days: int) -> void:
 	if OS.is_debug_build():
+		var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+		if scene != null:
+			scene.leave_system()  # PS4: write entities back before they move
 		GameState.advance_days(days)
+		if scene != null:
+			scene.refresh_entities()
 
 
 ## D11 (debug for TR7 reveals): makes a hidden system unexplored.
@@ -165,6 +170,75 @@ func refuel() -> void:
 func _lighting() -> SystemLighting:
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
 	return scene.lighting if scene != null else null
+
+
+## D13: one line about an entity: where it is or is heading, ships, orders.
+func entity_text(id: String) -> String:
+	var def: PersistentEntityDef = DataRegistry.get_entity(id)
+	var s: EntityState = GameState.entities.states.get(id)
+	if def == null or s == null:
+		return "%s: unknown" % id
+	if not s.alive:
+		return "%s (%s): destroyed" % [def.name, id]
+	var start: String = DataRegistry.settings["calendar"]["start_date"]
+	var when: Callable = func(day: int) -> String: return Calendar.date_text(start, day)
+	var where: String
+	if s.in_transit():
+		where = "travelling %s → %s, arrives %s, then stays %d–%d days" % [s.transit_from, s.transit_to, when.call(s.arrive_day),
+			def.stay_days.x, def.stay_days.y]
+	elif def.order_type == "hold" and s.grudge_until < 0:
+		where = "in %s since %s, holding there" % [s.location, when.call(s.arrived_day)]
+	else:
+		where = "in %s since %s, leaves %s for %s" % [s.location, when.call(s.arrived_day), when.call(s.leave_day + 1), _next_stop(s, def)]
+	var hulls: Array[String] = []
+	for ship: Dictionary in s.ships:
+		hulls.append("%s %d%%" % [ship["ship"], roundi(float(ship["hull"]) * 100.0)])
+	var grudge: String = "; grudge until %s (follows you)" % when.call(s.grudge_until) if s.grudge_until >= 0 else ""
+	return "%s (%s): %s; %s; %s%s" % [def.name, id, where, ", ".join(hulls), def.order_type, grudge]
+
+
+## Where an entity in a system goes next, without changing its orders.
+func _next_stop(s: EntityState, def: PersistentEntityDef) -> String:
+	if s.grudge_until >= 0 or def.order_type == "follow":
+		return "you (%s)" % GameState.travel.current_system
+	match def.order_type:
+		"patrol":
+			var i: int = s.route_index
+			if s.location == def.route[i]:
+				i = (i + 1) % def.route.size()
+			return def.route[i]
+		"travel":
+			return def.destination
+	return "nowhere (holding)"
+
+
+## D13: puts an entity in `system_id` now (arrived yesterday, so it's simply
+## there); in the player's system it appears at once.
+func move_entity(id: String, system_id: String) -> bool:
+	var s: EntityState = GameState.entities.states.get(id)
+	var def: PersistentEntityDef = DataRegistry.get_entity(id)
+	if not OS.is_debug_build() or s == null or def == null or not DataRegistry.galaxy().has_system(system_id):
+		return false
+	var today: int = GameState.clock.day
+	s.alive = true
+	s.location = system_id
+	s.transit_to = ""
+	s.transit_from = ""
+	s.came_from = ""
+	s.arrived_day = today - 1
+	s.leave_day = today + def.stay_days.y
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	if scene != null:
+		scene.entity_presence.on_leave()  # it may be leaving the player's system
+		scene.refresh_entities()
+	return true
+
+
+## D13: sets a memory value in the current system (takes effect on the next visit's traffic).
+func set_memory(name: String, value: float) -> void:
+	if OS.is_debug_build():
+		var here: String = GameState.travel.current_system
+		GameState.memory_add(here, name, value - GameState.memory_value(here, name))
 
 
 ## D14: live lighting (star, ambient, lit sprites, point lights) on or off.
@@ -306,6 +380,7 @@ func set_traffic_enabled(enabled: bool) -> void:
 	var traffic: TrafficSpawner = scene.traffic
 	traffic.enabled = enabled
 	traffic.configure(scene.system, true)
+	scene.entity_presence.set_enabled(enabled)  # PS4 entities count as traffic here
 	toggles_changed.emit()
 
 
@@ -379,7 +454,7 @@ func run_command(line: String) -> String:
 	var gov_arg: Callable = func(index: int) -> String: return w[index] if w.size() > index else ""
 	match w[0]:
 		"help":
-			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | flag <name> [n] | light on|off | star angle <deg>|auto | star height <0-1> | reload | " \
+			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | flag <name> [n] | entities | entity <id> [move <system>|grudge] | memory [<value> <n>] | light on|off | star angle <deg>|auto | star height <0-1> | reload | " \
 				+ "time <scale> | pause | resume | step | invuln on|off | ai on|off | traffic on|off | radar all|range | " \
 				+ "kill | disable | clear | credits <n> | record <gov> <n> | overlay <name> on|off | ids <type> | pos"
 		"spawn", "pool":
@@ -408,6 +483,31 @@ func run_command(line: String) -> String:
 				return "Usage: flag <name> [value, default 1; 0 clears]"
 			set_flag(w[1], w[2].to_int() if w.size() > 2 else 1)
 			return "Flag %s = %d" % [w[1], GameState.flag(w[1])]
+		"entities":
+			var rows: Array[String] = []
+			for id: String in DataRegistry.ids("entities"):
+				rows.append(entity_text(id))
+			return "\n".join(rows) if not rows.is_empty() else "No persistent entities"
+		"entity":
+			if w.size() < 2 or DataRegistry.get_entity(w[1]) == null:
+				return "Usage: entity <id> [move <system>|grudge]"
+			if w.size() == 4 and w[2] == "move":
+				return "Moved: %s" % entity_text(w[1]) if move_entity(w[1], w[3]) else "Usage: entity <id> move <system in the galaxy>"
+			if w.size() == 3 and w[2] == "grudge" and GameState.entities.states.has(w[1]):
+				var def: PersistentEntityDef = DataRegistry.get_entity(w[1])
+				GameState.entities.states[w[1]].grudge_until = GameState.clock.day + maxi(def.grudge_days, 1)
+				return "Grudge: %s" % entity_text(w[1])
+			return entity_text(w[1])
+		"memory":
+			var here: String = GameState.travel.current_system
+			if w.size() == 3 and w[1] in SystemDef.MEMORY_VALUES and ConsoleParser.is_number(w[2]):
+				set_memory(w[1], w[2].to_float())
+			elif w.size() != 1:
+				return "Usage: memory [alert|pirate_presence <value>]"
+			var parts: Array[String] = []
+			for name: String in SystemDef.MEMORY_VALUES:
+				parts.append("%s %.0f (base %.0f)" % [name, GameState.memory_value(here, name), float(GameState.memory_rule(here, name)["baseline"])])
+			return "%s: %s; wrecks remembered elsewhere: %d" % [here, ", ".join(parts), GameState.memory.wrecks.values().reduce(func(n: int, l: Array) -> int: return n + l.size(), 0)]
 		"light":
 			var on: int = ConsoleParser.parse_switch(w[1]) if w.size() > 1 else -1
 			if on == -1:

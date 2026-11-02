@@ -9,6 +9,12 @@ extends Node
 class Entry:
 	var pool: AiPoolDef
 	var count: int
+	## A10: "gate" traffic arrives and leaves through the system's gate.
+	var via: String = "hyperspace"
+	## PS6: the system file's count and its memory scaling, re-applied live.
+	var base_count: int = 0
+	var memory: String = ""
+	var per_point: float = 0.0
 	## Every live ship from this entry, disabled ones included (so they can be
 	## freed on clear); only non-disabled ones count towards `count`.
 	var ships: Array = []
@@ -47,7 +53,11 @@ func configure(p_system: SystemDef, fill: bool) -> void:
 	for t: Dictionary in system.traffic:
 		var entry := Entry.new()
 		entry.pool = DataRegistry.get_ai_pool(t["pool"])
-		entry.count = t["count"]
+		entry.base_count = t["count"]
+		entry.memory = t["memory"]
+		entry.per_point = t["per_point"]
+		_update_count(entry)
+		entry.via = t["via"]
 		var old_entry: Entry = keep.get(entry.pool.id)
 		if old_entry != null:
 			entry.ships.assign(old_entry.ships)
@@ -77,6 +87,33 @@ func clear_traffic(free_ships: bool = true) -> void:
 	_entries.clear()
 
 
+## PS6: the system's memory shifts the population (more patrols on alert,
+## fewer pirates once cleared out), re-read live so it applies this visit.
+func _update_count(entry: Entry) -> void:
+	entry.count = entry.base_count
+	if entry.memory != "":
+		var rule: Dictionary = GameState.memory_rule(system.id, entry.memory)
+		entry.count = SystemMemory.scaled_count(entry.base_count, GameState.memory_value(system.id, entry.memory),
+			float(rule["baseline"]), entry.per_point)
+
+
+## Seconds before the entry's next replacement (tests, debug).
+func cooldown_of(pool_id: String) -> float:
+	for entry: Entry in _entries:
+		if entry.pool.id == pool_id:
+			return entry.cooldown
+	return -1.0
+
+
+## PS6: the population an entry aims for this visit (after system memory).
+func target_count(pool_id: String) -> int:
+	for entry: Entry in _entries:
+		if entry.pool.id == pool_id:
+			_update_count(entry)
+			return entry.count
+	return -1
+
+
 ## Ships counting towards the population (not disabled).
 func live_count() -> int:
 	var n: int = 0
@@ -92,13 +129,19 @@ func _physics_process(delta: float) -> void:
 	for entry: Entry in _entries:
 		# Disabled ships stay in space (boarding comes in M5) but no longer count.
 		entry.prune()
+		_update_count(entry)  # PS6: memory counts live (kill pirates, fewer return)
 		if entry.active_count() >= entry.count:
 			continue
 		entry.cooldown -= delta
 		if entry.cooldown <= 0.0:
 			var from_planet: bool = entry.pool.spawn_from_planets and not _landable().is_empty() \
 				and _rng.randf() < _ai("planet_spawn_chance")
-			_spawn(entry, "takeoff" if from_planet else "arrive")
+			if entry.via == "gate" and _gate_open():
+				_spawn(entry, "gate")
+			elif entry.via == "gate":
+				_spawn(entry, "arrive")  # gate closed (TR6): they come by hyperspace
+			else:
+				_spawn(entry, "takeoff" if from_planet else "arrive")
 			entry.cooldown = _respawn_roll()
 
 
@@ -124,24 +167,75 @@ func _spawn(entry: Entry, mode: String) -> void:
 			var planets: Array[SystemObjectDef] = _landable()
 			start_planet = planets[_rng.randi() % planets.size()]
 			at = start_planet.position
+		"gate":
+			# A10: out of the gate's field, stopped.
+			var gate: SystemObjectDef = system.gate()
+			at = gate.position + StellarArt.jump_point(gate)
 		"arrive":
-			var dir: Vector2 = Vector2.from_angle(_rng.randf() * TAU)
-			at = dir * system.edge_radius
+			# A9: in from a real neighbour, at the jump radius on its side (TR4).
+			var dir: Vector2 = arrival_side()
+			at = dir * system.jump_radius
 			heading = Aim.rotation_of(-dir)
 			direction = -dir
 			speed_fraction = _ai("arrival_speed_fraction")
 		_:
 			at = _inside_point(entry.pool)
-	var ship: Ship = _make(entry.pool, at, heading, direction, speed_fraction, mode, start_planet)
+	var ship: Ship = _make(entry.pool, at, heading, direction, speed_fraction, mode, start_planet, "", null, entry.via == "gate")
 	if ship != null:
 		entry.ships.append(ship)
+		# A6: losing a ship (disabled or destroyed) brings a lull before the
+		# next one: word gets round.
+		ship.health.disabled.connect(func() -> void: _lull(entry))
+		ship.health.destroyed.connect(func() -> void: _lull(entry))
 		if mode == "arrive":
-			Flash.spawn(ship.get_parent(), at, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
+			ship.arrive_from_hyperspace(at, direction, ship.body.stats.top_speed * speed_fraction)  # A9
+		if mode == "arrive" or mode == "gate":
+			Flash.spawn(ship.get_parent(), ship.global_position, ship.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
+
+
+func _gate_open() -> bool:
+	var gate: SystemObjectDef = system.gate()
+	return gate != null and GateRules.is_open(gate.open_condition, GameState.flags)
+
+
+## A9: unit vector from the centre to where an arriving ship appears: the
+## side facing a random neighbouring system (any direction if none).
+func arrival_side() -> Vector2:
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	var options: Array[String] = Hyperlanes.neighbours(galaxy, system.id) if galaxy != null and galaxy.has_system(system.id) else []
+	if options.is_empty():
+		return Vector2.from_angle(_rng.randf() * TAU)
+	var origin: String = options[_rng.randi() % options.size()]
+	# Spread around the lane's bearing so arrivals don't all come in at one spot.
+	var arc: float = deg_to_rad(_ai("arrival_arc"))
+	return (-Hyperlanes.bearing(galaxy, origin, system.id)).rotated(_rng.randf_range(-arc, arc))
+
+
+func _lull(entry: Entry) -> void:
+	var lull: Array = DataRegistry.settings["ai"]["loss_lull"]
+	entry.cooldown = maxf(entry.cooldown, _rng.randf_range(float(lull[0]), float(lull[1])))
+
+
+## Spawns one gate arrival of `pool` now (A10; tests).
+func spawn_gate_arrival(pool: AiPoolDef) -> Ship:
+	var entry := Entry.new()
+	entry.pool = pool
+	entry.via = "gate"
+	_spawn(entry, "gate")
+	return entry.ships[0] if not entry.ships.is_empty() else null
+
+
+## Spawns one arrival of `pool` now (A9; also used by tests).
+func spawn_arrival(pool: AiPoolDef) -> Ship:
+	var entry := Entry.new()
+	entry.pool = pool
+	_spawn(entry, "arrive")
+	return entry.ships[0] if not entry.ships.is_empty() else null
 
 
 ## `direction` × `speed_fraction` of the picked ship's top speed is its starting velocity.
 func _make(pool: AiPoolDef, at: Vector2, heading: float, direction: Vector2, speed_fraction: float, mode: String, start_planet: SystemObjectDef,
-		government_override: String = "", personality: PersonalityDef = null) -> Ship:
+		government_override: String = "", personality: PersonalityDef = null, via_gate: bool = false) -> Ship:
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
 	var ship_id: String = pool.ships[WeightedPick.pick(_weights(pool.ships), _rng.randf())]["ship"]
 	var ship: Ship = scene.spawn_ship(ship_id, at, government_override if government_override != "" else pool.government)
@@ -150,6 +244,7 @@ func _make(pool: AiPoolDef, at: Vector2, heading: float, direction: Vector2, spe
 	ship.place(at, heading, direction * ship.body.stats.top_speed * speed_fraction)
 	var controller := AIController.new()
 	controller.setup(pool, personality if personality != null else _pick_personality(pool), system, mode, start_planet, _rng.randi())
+	controller.via_gate = via_gate
 	ship.set_controller(controller)
 	return ship
 

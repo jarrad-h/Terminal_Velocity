@@ -64,8 +64,26 @@ func test_overdrive_lifts_the_cap_only_while_overdriving() -> void:
 	var boosted: FlightStats = seq.flight_stats(_stats())
 	assert_near(boosted.top_speed, 1200.0, "cap lifted to the hyperdrive speed")
 	assert_near(boosted.accel, 1200.0, "overdrive acceleration")
-	seq.cancel()
-	assert_near(seq.flight_stats(_stats()).top_speed, 300.0, "cancelling restores the cap")
+	assert_false(seq.cancel(), "TR2: committed once the countdown ends")
+	seq.abort()
+	assert_near(seq.flight_stats(_stats()).top_speed, 300.0, "being disabled stops it and restores the cap")
+
+
+func test_arrival_burn_brakes_to_its_end_point() -> void:
+	var seq: JumpSequence = JumpSequence.arrival(Vector2.RIGHT, 130.0, 1.2, SETTINGS, _stats())
+	var end := Vector2(8000, 0)
+	var start: Vector2 = JumpSequence.arrival_start(end, Vector2.RIGHT, seq.engage_speed, 130.0, 1.2)
+	var s := FlightState.new(start, Vector2.RIGHT * seq.engage_speed, PI / 2.0)
+	var frames: int = 0
+	while seq.phase == JumpSequence.Phase.ARRIVING and frames < 600:
+		var input: FlightInput = seq.step(s, _stats(), DT)
+		s = FlightModel.step(s, input, seq.flight_stats(_stats()), DT)
+		frames += 1
+	assert_true(seq.phase == JumpSequence.Phase.ARRIVED, "TR4: the burn ends")
+	assert_near(frames * DT, 1.2, "over its data time", 0.05)
+	assert_near(s.velocity.length(), 130.0, "at arrival speed", 0.5)
+	assert_true(s.position.distance_to(end) < 20.0, "where the ship would have appeared (%s)" % s.position)
+	assert_false(seq.cancel(), "the burn can't be cancelled")
 
 
 func test_cancel_stops_the_sequence() -> void:
@@ -75,4 +93,9 @@ func test_cancel_stops_the_sequence() -> void:
 	assert_false(seq.is_engaged(), "never engages")
 	seq.phase = JumpSequence.Phase.ENGAGED
 	seq.cancel()
-	assert_true(seq.is_engaged(), "too late to cancel once engaged")
+	seq.abort()
+	assert_true(seq.is_engaged(), "too late to stop once engaged")
+	for phase: JumpSequence.Phase in [JumpSequence.Phase.STOPPING, JumpSequence.Phase.ALIGNING, JumpSequence.Phase.COUNTDOWN]:
+		var early := JumpSequence.new(Vector2.UP, 3.0, SETTINGS, _stats())
+		early.phase = phase
+		assert_true(early.cancel(), "TR2: can cancel before the countdown ends (%d)" % phase)

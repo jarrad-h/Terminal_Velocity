@@ -68,13 +68,16 @@
     }
   ],
   "traffic": [
+    {"pool": "gate_haulers", "count": 2, "via": "gate"},
     {
       "pool": "trader_traffic",
       "count": 3
     },
     {
       "pool": "authority_patrol",
-      "count": 2
+      "count": 2,
+      "memory": "alert",
+      "per_point": 0.04
     }
   ],
   "backdrop": {

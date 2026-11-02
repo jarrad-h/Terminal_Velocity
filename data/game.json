@@ -9,7 +9,8 @@
     "overdrive_accel_factor": 3,
     "engage_speed_factor": 12,
     "arrival_speed_fraction": 0.5,
-    "arrival_grace_seconds": 2
+    "arrival_grace_seconds": 2,
+    "arrival_burn_seconds": 1.2
   },
   "art_scale": 1.0,
   "mounts": {
@@ -67,7 +68,13 @@
     "planet_spawn_chance": 0.5,
     "arrival_speed_fraction": 0.5,
     "spawn_keep_away_factor": 1.2,
-    "inside_spawn_band": [0.15, 0.7]
+    "inside_spawn_band": [0.15, 0.7],
+    "loss_lull": [60, 180],
+    "arrival_arc": 30,
+    "steer_deadband": 0.08,
+    "orbit_pause": 3,
+    "shelter_clear_time": 5,
+    "cover_memory": 15
   },
   "local_space": {"chunk_size": 1024},
   "radar": {
@@ -88,6 +95,30 @@
     }
   },
   "engine_glow": {"idle": 0.25, "response": 6},
+  "memory": {
+    "values": {
+      "alert": {"baseline": 0, "recovery_per_day": 10, "max": 100},
+      "pirate_presence": {"baseline": 100, "recovery_per_day": 10, "max": 200}
+    },
+    "alert_per_record": 2,
+    "pirate_loss": {"disable": 5, "kill": 10},
+    "pirate_governments": ["pirates"],
+    "wreck_days": 5
+  },
+  "entities": {
+    "arrival_offset": [-90, 120],
+    "departure_window": [20, 150],
+    "min_stay_seconds": 5,
+    "ship_spacing": 160,
+    "formation_spacing": 180,
+    "formation_settle": 40,
+    "formation_cruise": 0.85,
+    "formation_hold": 320,
+    "formation_settle_speed": 10,
+    "encounter": {"randomness": 0.3, "loser_losses": 0.5, "loser_damage": 0.3, "winner_damage": 0.15, "floor_hull": 0.4,
+                  "repair_per_day": 0.1},
+    "news": {"days": 10, "max_items": 8, "keep_days": 60}
+  },
   "stellars": {"cloud_spin": 0.6, "night_only_emission": ["planet_terran", "planet_ocean", "planet_rust"],
     "star_disc_cover": 0.97, "star_disc_colour": "#000000",
     "gate_light": {"colour": "#9a86ff", "energy": 1.6, "radius": 900, "height": 60}},

@@ -57,11 +57,15 @@
     },
     {
       "pool": "authority_patrol",
-      "count": 1
+      "count": 1,
+      "memory": "alert",
+      "per_point": 0.04
     },
     {
       "pool": "pirate_raid",
-      "count": 1
+      "count": 1,
+      "memory": "pirate_presence",
+      "per_point": 0.02
     }
   ],
   "backdrop": {

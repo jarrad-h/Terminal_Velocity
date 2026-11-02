@@ -84,6 +84,12 @@ func _physics_process(delta: float) -> void:
 			mount.barrel.rotation = mount.angle
 		var wants: bool = input.fire_secondary if mount.weapon.kind == "guided" else input.fire_primary
 		wants = wants and _ready_to_fire(mount, target, desired)
+		if wants and input.covering_angle >= 0.0:
+			# A12: only mounts that bear; pivots wait for the barrel to arrive.
+			wants = target != null and MountAim.can_cover(mount.tracks(), mount.weapon.kind == "guided",
+				MountAim.relative_angle(ship.global_rotation, target.global_position - ship.global_transform * mount.point),
+				mount.arc, input.covering_angle) \
+				and (not mount.tracks() or absf(angle_difference(mount.angle, MountAim.clamp_to_arc(desired, mount.arc))) <= _fire_tolerance)
 		if mount.beam != null:
 			if wants:
 				mount.beam.fire(ship, _exclude(), delta)
@@ -125,8 +131,15 @@ func _fire(mount: Mount, target: Ship) -> void:
 		target if mount.weapon.kind == "guided" else null)
 
 
+## Hitboxes shots ignore: this ship's, and its fleet-mates' (PS4: a fleet
+## doesn't shoot through its own formation).
 func _exclude() -> Array[RID]:
-	return [ship.hitbox.get_rid()]
+	var rids: Array[RID] = [ship.hitbox.get_rid()]
+	if ship.controller is AIController and (ship.controller as AIController).fleet != null:
+		for member: Variant in (ship.controller as AIController).fleet.members:
+			if member != ship and is_instance_valid(member):
+				rids.append((member as Ship).hitbox.get_rid())
+	return rids
 
 
 ## AI helpers: longest reach of primary weapons (projectiles, beams), and of

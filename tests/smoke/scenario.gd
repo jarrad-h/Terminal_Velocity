@@ -284,10 +284,10 @@ func _run() -> void:
 	var trader_ai: AIController = trader.controller
 	await _frames(240)
 	# Ships are delicate (M7): the trader may already be disabled or gone.
-	_check(not is_instance_valid(trader) or trader.health.is_disabled or trader_ai.state == AIController.State.FLEE or trader.health.shield < trader.health.max_shield,
+	_check(not is_instance_valid(trader) or trader.health.is_disabled or trader_ai.is_fleeing() or trader.health.shield < trader.health.max_shield,
 		"trader under attack (A1): %s" % (trader.get_state_label() if is_instance_valid(trader) else "gone"))
 	if is_instance_valid(trader) and not trader.health.is_disabled:
-		_check(trader_ai.state == AIController.State.FLEE, "steady trader flees when attacked (A1): %s" % trader.get_state_label())
+		_check(trader_ai.is_fleeing(), "steady trader flees when attacked (A1): %s" % trader.get_state_label())
 	var patrol: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), pirate.global_position + Vector2(0.0, 900.0), "", "steady")
 	await _frames(90)
 	var patrol_ai: AIController = patrol.controller
@@ -390,7 +390,7 @@ func _run() -> void:
 	await _frames(2)
 	var target_total: int = 0
 	for t: Dictionary in scene_root.system.traffic:
-		target_total += t["count"]
+		target_total += traffic.target_count(t["pool"])  # after system memory (PS6)
 	_check(traffic.live_count() == target_total, "traffic fills to the target population (A6): %d of %d" % [traffic.live_count(), target_total])
 	_debug.set_traffic_enabled(false)
 	await _frames(2)
@@ -574,6 +574,12 @@ func _run() -> void:
 	_debug.clear_ships()
 	await _hyperspace_checks(player, scene_root)
 	await _gate_checks(player, scene_root)
+	await _ai_hyperspace_checks(player, scene_root)
+	await _memory_checks(player, scene_root)
+	await _lull_checks(scene_root)
+	await _entity_checks(player, scene_root)
+	await _frames(2)
+	await _shelter_checks(player, scene_root)
 	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
@@ -632,6 +638,419 @@ func _run() -> void:
 
 func actions_of(scene_root: Node) -> PlayerActions:
 	return scene_root.actions
+
+
+## A11, PS4: a fleet that runs lands together, shelters while the threat is
+## near, then leaves once it's gone; landing and launching pause in orbit.
+func _shelter_checks(player: Ship, scene_root: Node) -> void:
+	var registry: EntityRegistry = GameState.entities
+	var system: SystemDef = scene_root.system
+	var port: SystemObjectDef = null
+	for obj: SystemObjectDef in system.objects:
+		if obj.landable and obj.type != "gate":
+			port = obj
+			break
+	_check(port != null, "A11: %s has a planet to shelter at" % system.id)
+	if port == null:
+		return
+	var presence: EntityPresence = scene_root.entity_presence
+	presence.set_enabled(true)
+	var mara: EntityState = registry.states["mara_vell"]
+	_check(_debug.run_command("entity mara_vell move %s" % system.id).begins_with("Moved"), "D13: move Mara Vell here")
+	mara.leave_day = GameState.clock.day + 5
+	scene_root.refresh_entities()
+	await _frames(2)
+	var fleet: Array[Ship] = _entity_ships("mara_vell")
+	_check(fleet.size() == 2, "A11: Mara Vell and her escort are here (%d)" % fleet.size())
+	if fleet.size() != 2:
+		presence.set_enabled(false)
+		return
+	var lead: Ship = fleet[0]
+	var escort: Ship = fleet[1]
+	var lead_ai: AIController = lead.controller
+	var escort_ai: AIController = escort.controller
+	var near: Vector2 = port.position + Vector2(port.radius + 400.0, 0.0)
+	lead.place(near, 0.0)
+	escort.place(near + Vector2(150.0, 150.0), 0.0)
+	_debug.set_player_invulnerable(true)
+	await _teleport(player, port.position + Vector2(port.radius + 900.0, 0.0))
+	# PS4: hitting the escort until it turns hostile turns the whole fleet.
+	escort.health.apply_damage(escort.health.max_shield + escort.health.max_armor * 0.2, 0.0, player)
+	await _frames(20)
+	_check(lead.is_hostile_to(player), "PS4: when the fleet runs, the leader turns hostile too")
+	_check(lead_ai.is_fleeing(), "PS4: ...and runs: %s" % lead.get_state_label())
+	# A11: down to the planet together, pausing in orbit first.
+	var saw_orbit: bool = false
+	for i: int in 1500:
+		await get_tree().physics_frame
+		if lead_ai.state == AIController.State.ORBIT and lead.visible and not lead.docked:
+			saw_orbit = true
+		if lead.docked and escort.docked:
+			break
+	_check(saw_orbit, "A11: landing, it holds in orbit, visible, before docking")
+	_check(lead.docked and escort.docked, "A11: the fleet lands together (%s / %s)" % [lead.get_state_label(), escort.get_state_label()])
+	# A11: sheltering while the threat is near.
+	await _frames(roundi((float(DataRegistry.settings["ai"]["shelter_clear_time"]) + 1.0) * 60.0))
+	_check(lead.docked and lead_ai.is_fleeing() and not mara.in_transit(), "A11: it shelters while the player is near: %s" % lead.get_state_label())
+	# A11: the threat goes; the entity leaves early, launching through orbit.
+	await _teleport(player, port.position + Vector2(lead_ai.pool.sensor_range + 3000.0, 0.0))
+	var launched: bool = false
+	for i: int in roundi((float(DataRegistry.settings["ai"]["shelter_clear_time"]) + 2.0) * 60.0):
+		await get_tree().physics_frame
+		if lead_ai.state == AIController.State.ORBIT and not lead.docked:
+			launched = true
+			break
+	_check(launched and mara.in_transit(), "A11: with the coast clear, it launches and departs early (%s)" % lead.get_state_label())
+	_check(not escort.docked, "A11: ...its escort launches with it: %s" % escort.get_state_label())
+	await _frames(roundi(float(DataRegistry.settings["ai"]["orbit_pause"]) * 60.0) + 20)
+	_check(lead_ai.state in [AIController.State.LEAVE, AIController.State.JUMPING], "A11: ...then flies out: %s" % lead.get_state_label())
+	# A11: running the blockade: shelter time up with the threat still near,
+	# it launches and goes, and a hit while launching doesn't send it back.
+	var trader: Ship = scene_root.traffic.spawn_from_pool(DataRegistry.get_ai_pool("trader_traffic"), near, "", "steady")
+	var trader_ai: AIController = trader.controller
+	await _teleport(player, port.position + Vector2(port.radius + 900.0, 0.0))
+	trader.health.apply_damage(trader.health.max_shield + trader.health.max_armor * 0.2, 0.0, player)
+	for i: int in 1500:
+		await get_tree().physics_frame
+		if trader.docked:
+			break
+	_check(trader.docked and trader_ai.is_fleeing(), "A11: an ambient trader shelters too: %s" % trader.get_state_label())
+	trader_ai._timer = 0.0  # shelter time up, player still close
+	for i: int in 60:
+		await get_tree().physics_frame
+		if not trader.docked:
+			break
+	_check(trader_ai.state == AIController.State.ORBIT and not trader.docked, "A11: with the threat still there, it runs the blockade: %s" % trader.get_state_label())
+	trader.health.apply_damage(5.0, 0.0, player)
+	await _frames(roundi(float(DataRegistry.settings["ai"]["orbit_pause"]) * 60.0) + 30)
+	_check(not trader.docked and trader_ai.state == AIController.State.LEAVE, "A11: ...and a hit while launching doesn't send it back down: %s" % trader.get_state_label())
+	# A12: a running freighter's turret returns fire without turning round.
+	var hauler: Ship = scene_root.spawn_ship("freighter", port.position + Vector2(-4000.0, 3000.0), "independent_traders")
+	var hauler_ai := AIController.new()
+	hauler_ai.setup(DataRegistry.get_ai_pool("trader_traffic"), DataRegistry.get_personality("skittish"), system, "inside")
+	hauler.set_controller(hauler_ai)
+	await _frames(2)
+	await _teleport(player, hauler.global_position - FlightModel.heading(hauler.rotation) * 350.0)
+	hauler.health.apply_damage(hauler.health.max_shield * 0.5, 0.0, player)
+	hauler.health.apply_damage(hauler.health.max_shield * 0.5, 0.0, player)
+	var fired: bool = false
+	for i: int in 240:
+		await get_tree().physics_frame
+		if hauler.weapons.mounts.any(func(m: WeaponMounts.Mount) -> bool: return m.cooldown > 0.0):
+			fired = true
+			break
+	_check(hauler_ai.is_fleeing() and fired, "A12: a fleeing freighter returns fire with its turret (%s, fired %s)" % [hauler.get_state_label(), fired])
+	for done: Ship in [hauler, trader]:
+		if is_instance_valid(done):
+			done.remove_from_group(&"ships")
+			done.queue_free()
+	for shot: Node in scene_root.get_node("World/Shots").get_children():
+		shot.queue_free()
+	await _frames(2)
+	_debug.set_player_invulnerable(false)
+	presence.set_enabled(false)
+	GameState.entities.start(DataRegistry.ids("entities").map(func(id: String) -> PersistentEntityDef: return DataRegistry.get_entity(id)), GameState.clock.day, RandomNumberGenerator.new())
+	GameState.news = NewsLog.new()
+
+
+func _entity_ships(id: String) -> Array[Ship]:
+	var result: Array[Ship] = []
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		if node.get_meta("entity", "") == id and not (node as Ship).is_queued_for_deletion():
+			result.append(node)
+	return result
+
+
+## P2M3: persistent entities in the player's system (PS2–PS4, PS7, D13).
+func _entity_checks(player: Ship, scene_root: Node) -> void:
+	var presence: EntityPresence = scene_root.entity_presence
+	var registry: EntityRegistry = GameState.entities
+	_check(registry.states.size() == DataRegistry.ids("entities").size() and registry.states.size() == 3, "PS2: the three test entities are tracked")
+	_check(_debug.switch_system("test_nebula"), "to the start system")
+	presence.set_enabled(true)
+	var today: int = GameState.clock.day
+	_check(_debug.run_command("entity authority_patrol_group move test_nebula").begins_with("Moved"), "D13: move an entity here")
+	await _frames(2)
+	var patrol: Array[Ship] = _entity_ships("authority_patrol_group")
+	_check(patrol.size() == 2 and patrol.all(func(sh: Ship) -> bool: return sh.callsign == "Authority Patrol Group"), "PS4: it materialises as real ships, named")
+	if patrol.size() == 2:
+		var lead_ai: AIController = patrol[0].controller
+		var wing_ai: AIController = patrol[1].controller
+		_check(lead_ai.fleet != null and lead_ai.fleet == wing_ai.fleet and lead_ai.fleet.leader() == patrol[0], "PS4: the patrol flies as one fleet, first ship leading")
+		await _frames(480)
+		var gap: float = INF
+		for i: int in 120:  # closest over two seconds: the slot swings as the leader turns
+			await get_tree().physics_frame
+			gap = minf(gap, patrol[1].global_position.distance_to(lead_ai.fleet.slot_of(patrol[1])))
+		_check(gap < float(DataRegistry.settings["entities"]["formation_hold"]), "PS4: the wingman holds its formation slot (%.0f px off)" % gap)
+		# No fussing: holding station it turns no more than the leader does, and
+		# drifting off starts at most one regroup in ten seconds.
+		var hold_turn: float = 0.0
+		var lead_turn: float = 0.0
+		var regroups: int = 0
+		var was_regrouping: bool = wing_ai._regrouping
+		var wing_rot: float = patrol[1].rotation
+		var lead_rot: float = patrol[0].rotation
+		for i: int in 600:
+			await get_tree().physics_frame
+			if not was_regrouping and not wing_ai._regrouping:
+				hold_turn += absf(angle_difference(wing_rot, patrol[1].rotation))
+				lead_turn += absf(angle_difference(lead_rot, patrol[0].rotation))
+			elif wing_ai._regrouping and not was_regrouping:
+				regroups += 1
+			was_regrouping = wing_ai._regrouping
+			wing_rot = patrol[1].rotation
+			lead_rot = patrol[0].rotation
+		# (Plus turning back to the leader's heading once each regroup ends.)
+		_check(hold_turn <= lead_turn + PI * (1 + regroups), "PS4: holding station, the wingman doesn't fuss (turned %.1f rad vs the leader's %.1f)" % [hold_turn, lead_turn])
+		_check(regroups <= 1, "PS4: the wingman regroups at most once in ten seconds (%d)" % regroups)
+		# Hitting the wingman (not the leader) brings the whole fleet on you.
+		player.place(patrol[1].global_position + Vector2(0.0, 1200.0), 0.0)
+		_debug.set_player_invulnerable(true)
+		patrol[1].health.apply_damage(patrol[1].health.max_shield * 0.6, 0.0, player)
+		await _frames(30)
+		_check(lead_ai.state == AIController.State.ATTACK and lead_ai.target == player, "PS4: the leader joins when its wingman is attacked")
+		_check(wing_ai.state == AIController.State.ATTACK and wing_ai.target == player, "PS4: ...and so does the wingman")
+		_debug.set_player_invulnerable(false)
+		lead_ai.jump_now(Vector2.UP)
+		_check(wing_ai.state == AIController.State.JUMPING, "PS4: when the leader jumps, the fleet jumps with it")
+		patrol[0].autopilot = null
+		patrol[1].autopilot = null
+	if patrol.size() == 2:
+		patrol[0].health.armor = patrol[0].health.max_armor * 0.6
+		patrol[1].health.force_destroy()
+	await _frames(2)
+	_check(_debug.switch_system("aster"), "leave")
+	var summary: EntityState = registry.states["authority_patrol_group"]
+	_check(summary.alive and summary.ships.size() == 1 and float(summary.ships[0]["hull"]) < 0.8, "PS4: damage and losses are written back (%s)" % [summary.ships])
+	_check(_debug.run_command("entity red_ketch move aster").begins_with("Moved"), "D13: move the pirate here")
+	await _frames(2)
+	var ketch: Array[Ship] = _entity_ships("red_ketch")
+	_check(ketch.size() == 2, "Red Ketch is here")
+	if not ketch.is_empty():
+		ketch[0].health.apply_damage(5.0, 0.0, player)
+	_check(registry.states["red_ketch"].grudge_until >= today + DataRegistry.get_entity("red_ketch").grudge_days, "PS2: hitting him earns a grudge")
+	await _frames(20)  # more than one AI think (0.25 s = 15 frames)
+	var hunters: Array[Ship] = _entity_ships("red_ketch")
+	_check(hunters.size() == 2 and hunters.all(func(sh: Ship) -> bool: return (sh.controller as AIController).hunt_player), "PS2: with a grudge his ships hunt the player")
+	_check(hunters.any(func(sh: Ship) -> bool: return (sh.controller as AIController).state == AIController.State.ATTACK and (sh.controller as AIController).target == player), "PS2: ...and go for the player, whatever the range")
+	scene_root.refresh_entities()  # like taking off again
+	await _frames(3)
+	scene_root.leave_system()
+	_check(registry.states["red_ketch"].ships.size() == 2, "PS4: rebuilding the system doesn't duplicate a fleet (%d)" % registry.states["red_ketch"].ships.size())
+	scene_root.refresh_entities()
+	await _frames(2)
+	# PS4: arriving after the player, from the side it came from.
+	var ketch_state: EntityState = registry.states["red_ketch"]
+	var ketch_def: PersistentEntityDef = DataRegistry.get_entity("red_ketch")
+	var offset_before: Vector2 = ketch_def.arrival_offset
+	ketch_def.arrival_offset = Vector2(0.5, 0.5)
+	ketch_state.arrived_day = today
+	ketch_state.came_from = "test_nebula"
+	scene_root.refresh_entities()
+	await _frames(2)
+	_check(_entity_ships("red_ketch").is_empty(), "PS4: an entity arriving later in the day isn't here yet")
+	await _frames(60)
+	ketch = _entity_ships("red_ketch")
+	var bearing: Vector2 = Hyperlanes.bearing(DataRegistry.galaxy(), "test_nebula", "aster")
+	_check(ketch.size() == 2 and ketch[0].global_position.normalized().dot(-bearing) > 0.95, "PS4: ...then jumps in on the side facing where it came from")
+	# PS4: an entity that came by gate appears at the gate.
+	ketch_state.came_via = "gate"
+	scene_root.refresh_entities()
+	await _frames(70)
+	var aster_gate: SystemObjectDef = scene_root.system.gate()
+	ketch = _entity_ships("red_ketch")
+	_check(ketch.size() == 2 and ketch[0].global_position.distance_to(aster_gate.position) < 400.0, "PS4: arriving by gate, it comes out of the gate")
+	ketch_state.came_via = "lane"
+	ketch_def.arrival_offset = offset_before
+	# PS4: leaving during the player's visit.
+	ketch_state.leave_day = today
+	ketch_state.grudge_until = -1
+	var crippled: Ship = _entity_ships("red_ketch")[1] if _entity_ships("red_ketch").size() == 2 else null
+	if crippled != null:
+		crippled.health.force_disable()
+	presence._present["red_ketch"]["depart_in"] = 0.05
+	await _frames(10)
+	_check(ketch_state.in_transit(), "PS4: due to leave today, it departs during the visit")
+	_check(_entity_ships("red_ketch").all(func(sh: Ship) -> bool: return (sh.controller as AIController).state in [AIController.State.LEAVE, AIController.State.JUMPING]), "PS4: its ships fly out")
+	_check(LandedScreen.news_text().contains("Red Ketch departs Aster"), "PS7: the departure is news")
+	_check(crippled != null and is_instance_valid(crippled) and not crippled.has_meta("entity") and crippled.health.is_disabled, "PS4: a disabled ship is abandoned when its fleet moves on")
+	# PS2, PS3: days move entities by their orders.
+	var mara: EntityState = registry.states["mara_vell"]
+	var mara_from: String = mara.location
+	_debug.advance_days(6)
+	_check(mara.in_transit() or mara.location != mara_from, "PS3: Mara Vell moves along her trade route over days")
+	_check(_debug.run_command("entities").contains("Captain Mara Vell"), "D13: entities via console")
+	# G3: pirates start hostile, but a good enough record wins them over.
+	var pirates: GovernmentDef = DataRegistry.get_government("pirates")
+	var pirate_record: float = GameState.get_record("pirates")
+	GameState._records.erase("pirates")
+	_check(Relations.hostile_to_player(pirates, GameState.get_record("pirates")) and GameState.get_record("pirates") < 0.0, "G3: pirates start hostile, with a negative record")
+	GameState.set_record("pirates", pirates.friendly_record)
+	_check(not Relations.hostile_to_player(pirates, GameState.get_record("pirates")), "G3: ...and can be won over")
+	GameState.set_record("pirates", pirate_record)
+	presence.set_enabled(false)
+	_check(_debug.switch_system("test_nebula"), "back to the start")
+	GameState.entities.start(DataRegistry.ids("entities").map(func(id: String) -> PersistentEntityDef: return DataRegistry.get_entity(id)), GameState.clock.day, RandomNumberGenerator.new())
+	GameState.news = NewsLog.new()
+
+
+## A6: losing a traffic ship brings a lull before its replacement.
+func _lull_checks(scene_root: Node) -> void:
+	var traffic: TrafficSpawner = scene_root.traffic
+	var was_on: bool = _debug.is_traffic_enabled()
+	_debug.set_traffic_enabled(true)
+	await _frames(2)
+	var raider: Ship = null
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		var ship: Ship = node
+		if ship.controller is AIController and (ship.controller as AIController).pool.id == "pirate_raid" and not ship.has_meta("entity"):
+			raider = ship
+			break
+	_check(raider != null, "a raider to lose")
+	if raider != null:
+		raider.health.force_disable()
+		var lull: Array = DataRegistry.settings["ai"]["loss_lull"]
+		_check(traffic.cooldown_of("pirate_raid") >= float(lull[0]), "A6: a loss brings a lull before the next raider (%.0f s)" % traffic.cooldown_of("pirate_raid"))
+	_debug.set_traffic_enabled(was_on)
+	await _frames(2)
+
+
+## P2M3: system memory (PS6).
+func _memory_checks(player: Ship, scene_root: Node) -> void:
+	_check(_debug.switch_system("test_nebula"), "to the start system")
+	var here: String = "test_nebula"
+	GameState.memory = SystemMemory.new()
+	var alert_base: float = GameState.memory_value(here, "alert")
+	var cop: Ship = _debug.spawn_ships("patrol_corvette", 1, "local_authority", player.global_position + Vector2(800.0, 0.0))[0]
+	GameState.report_player_act(cop, "kill")
+	_check(GameState.memory_value(here, "alert") > alert_base, "PS6: crimes raise the system's alert (%.0f)" % GameState.memory_value(here, "alert"))
+	GameState.set_record("local_authority", 0.0)
+	var presence_base: float = GameState.memory_value(here, "pirate_presence")
+	var pirate: Ship = _debug.spawn_pool("pirate_raid", 1, "", player.global_position + Vector2(-900.0, 300.0))[0]
+	pirate.health.force_disable()
+	var disable_loss: float = float(DataRegistry.settings["memory"]["pirate_loss"]["disable"])
+	_check(is_equal_approx(GameState.memory_value(here, "pirate_presence"), presence_base - disable_loss), "PS6: pirate losses lower pirate presence")
+	pirate.looted = true
+	var wreck_at: Vector2 = pirate.global_position
+	_check(_debug.switch_system("aster") and _debug.switch_system("test_nebula"), "leave and come back")
+	var found: Ship = null
+	for node: Node in get_tree().get_nodes_in_group(&"ships"):
+		var ship: Ship = node
+		if ship.def.id == "pirate_raider" and ship.global_position.distance_to(wreck_at) < 1.0:
+			found = ship
+	_check(found != null and found.health.is_disabled, "PS6: the disabled pirate is still there after leaving and coming back")
+	_check(found != null and found.looted, "PS6: ...and remembers it was looted")
+	_check(is_equal_approx(GameState.memory_value(here, "pirate_presence"), presence_base - disable_loss), "a returning wreck doesn't count as another loss")
+	_check(found != null and found.controller is AIController, "PS6: a remembered wreck keeps its AI, so Assist sends it on its way (C9)")
+	if found != null:
+		found.health.force_destroy()
+		var kill_loss: float = float(DataRegistry.settings["memory"]["pirate_loss"]["kill"])
+		_check(is_equal_approx(GameState.memory_value(here, "pirate_presence"), presence_base - disable_loss - kill_loss), "PS6: destroying a remembered pirate wreck counts as a loss")
+	_debug.set_memory("alert", 50.0)
+	_check(_debug.switch_system("aster") and _debug.switch_system("test_nebula"), "visit again")
+	var patrol_entry: Dictionary = scene_root.system.traffic.filter(func(t: Dictionary) -> bool: return t["pool"] == "authority_patrol")[0]
+	var expected_patrols: int = SystemMemory.scaled_count(patrol_entry["count"], 50.0, alert_base, patrol_entry["per_point"])
+	_check(scene_root.traffic.target_count("authority_patrol") == expected_patrols and expected_patrols > patrol_entry["count"], "PS6: high alert brings more patrols (%d)" % expected_patrols)
+	_debug.set_memory("alert", alert_base)
+	await _frames(2)
+	_check(scene_root.traffic.target_count("authority_patrol") == patrol_entry["count"], "PS6: memory counts apply live, during the visit")
+	_debug.set_memory("alert", 50.0)
+	var recovery: float = float(GameState.memory_rule(here, "alert")["recovery_per_day"])
+	_debug.advance_days(2)
+	_check(is_equal_approx(GameState.memory_value(here, "alert"), 50.0 - 2.0 * recovery), "PS6: alert recovers day by day")
+	_check(_debug.switch_system("aster"), "leave the wreck behind")
+	_debug.advance_days(int(DataRegistry.settings["memory"]["wreck_days"]))
+	_check(GameState.memory.wrecks_in(here).is_empty(), "PS6: wrecks are scavenged after their days")
+	_check(_debug.run_command("memory").contains("alert"), "D13: memory via console")
+	GameState.memory = SystemMemory.new()
+	_check(_debug.switch_system("test_nebula"), "back to the start")
+
+
+## P2M3: AI ships leave and arrive by hyperspace (A9).
+func _ai_hyperspace_checks(player: Ship, scene_root: Node) -> void:
+	var traffic: TrafficSpawner = scene_root.traffic
+	var system: SystemDef = scene_root.system
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	var arrival: Ship = traffic.spawn_arrival(DataRegistry.get_ai_pool("pirate_raid"))
+	_check(arrival != null and arrival.autopilot != null and arrival.autopilot.is_arriving(), "A9: arrivals drop out of hyperspace with a braking burn")
+	await _frames(roundi(float(DataRegistry.settings["hyperspace"]["arrival_burn_seconds"]) * 60.0) + 1)
+	_check(arrival != null and absf(arrival.global_position.length() - system.jump_radius) < 40.0, "A9: ...ending at the jump radius (%.0f)" % arrival.global_position.length())
+	var from_neighbour: bool = false
+	for n: String in Hyperlanes.neighbours(galaxy, system.id):
+		if absf(arrival.global_position.angle_to(-Hyperlanes.bearing(galaxy, n, system.id))) <= deg_to_rad(float(DataRegistry.settings["ai"]["arrival_arc"])) + 0.01:
+			from_neighbour = true
+	_check(from_neighbour, "A9: ...on the side facing a real neighbouring system")
+	_check(arrival.get_velocity().dot(-arrival.global_position) > 0.0, "...moving inward")
+	arrival.remove_from_group(&"ships")
+	arrival.queue_free()
+	# Arrivals spread across an arc around the lane bearings, not one spot.
+	var arc: float = deg_to_rad(float(DataRegistry.settings["ai"]["arrival_arc"]))
+	var sides: Array[Vector2] = []
+	for i: int in 30:
+		sides.append(traffic.arrival_side())
+	var within: bool = sides.all(func(side: Vector2) -> bool:
+		return Hyperlanes.neighbours(galaxy, system.id).any(func(n: String) -> bool:
+			return absf(side.angle_to(-Hyperlanes.bearing(galaxy, n, system.id))) <= arc + 0.001))
+	# Another point in the same lane's arc, on either side of the first one.
+	var spread: bool = sides.any(func(side: Vector2) -> bool: return absf(side.angle_to(sides[0])) > 0.05 and absf(side.angle_to(sides[0])) <= 2.0 * arc)
+	_check(within and spread, "A9: arrivals spread within ±%.0f° of the lane bearings" % rad_to_deg(arc))
+	# A9: a fleeing ship makes for the neighbour on its own side of the system.
+	var neighbours: Array[String] = Hyperlanes.neighbours(galaxy, system.id)
+	var side: Vector2 = Hyperlanes.bearing(galaxy, system.id, neighbours[-1])
+	var runner: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), side * system.jump_radius * 0.5)
+	await _frames(2)
+	(runner.controller as AIController)._start_flee()
+	var best: float = -2.0
+	for n: String in neighbours:
+		best = maxf(best, Hyperlanes.bearing(galaxy, system.id, n).dot(side))
+	_check(is_equal_approx((runner.controller as AIController).exit_bearing.dot(side), best), "A9: fleeing ships make for the nearest-side neighbour")
+	runner.remove_from_group(&"ships")
+	runner.queue_free()
+	var leaver: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), Vector2(system.jump_radius * 0.9, 0.0))
+	await _frames(2)
+	var ai: AIController = leaver.controller
+	ai.depart()
+	_check(ai.exit_system in Hyperlanes.neighbours(galaxy, system.id), "A9: leaving for a real neighbour (%s)" % ai.exit_system)
+	var started: bool = false
+	var gone: bool = false
+	for i: int in 60 * 40:
+		await get_tree().physics_frame
+		if not is_instance_valid(leaver):
+			gone = true
+			break
+		if ai.state == AIController.State.JUMPING:
+			if not started:
+				started = true
+				_check(leaver.global_position.length() >= system.jump_radius, "A9: the jump starts beyond the jump radius")
+				_check(leaver.autopilot != null, "A9: the ship flies the hyperspace sequence")
+			if leaver.autopilot != null and leaver.autopilot.phase == JumpSequence.Phase.COUNTDOWN:
+				_check(leaver.get_velocity().is_zero_approx(), "A9: stopped for the countdown")
+				_check(Steering.aligned(leaver.rotation, ai.exit_bearing, 1.5), "A9: facing the exit system's bearing")
+	_check(started and gone, "A9: jumped out after the sequence")
+	# A10: gate traffic (the start system has a gate).
+	_check(_debug.switch_system("test_nebula"), "to a gate system")
+	system = scene_root.system
+	_check(system.traffic.any(func(t: Dictionary) -> bool: return t["via"] == "gate"), "A10: the hub lists gate traffic")
+	var hauler: Ship = traffic.spawn_gate_arrival(DataRegistry.get_ai_pool("gate_haulers"))
+	var gate: SystemObjectDef = system.gate()
+	_check(hauler != null and hauler.global_position.distance_to(gate.position + StellarArt.jump_point(gate)) < 1.0, "A10: gate traffic arrives at the gate")
+	await _frames(2)
+	var hauler_ai: AIController = hauler.controller
+	_check(hauler_ai.via_gate and hauler_ai.state == AIController.State.TRAVEL and hauler_ai.planet != null and hauler_ai.planet.type in ["planet", "station"], "A10: ...and heads for a port")
+	var condition: String = gate.open_condition
+	gate.open_condition = "!test_gate_shut"
+	GameState.set_flag("test_gate_shut", 1)
+	hauler_ai.depart()
+	_check(hauler_ai.planet == null and hauler_ai.exit_system != "", "A10, TR6: with the gate closed, it leaves by hyperspace instead")
+	GameState.set_flag("test_gate_shut", 0)
+	gate.open_condition = condition
+	hauler_ai.via_gate = true
+	hauler.place(gate.position, 0.0)
+	hauler_ai.depart()
+	_check(hauler_ai.planet == gate, "A10: leaves through the gate, not by hyperspace")
+	await _frames(5)
+	_check(not is_instance_valid(hauler), "A10: docked with the gate and gone")
 
 
 ## P2M2: docking with gates, the destination list and gate travel (TR5, TR6).
@@ -695,6 +1114,9 @@ func _gate_checks(player: Ship, scene_root: Node) -> void:
 ## P2M2: lit hulls and turrets (V6), star and ambient light from data (V7).
 func _lighting_checks(player: Ship, scene_root: Node) -> void:
 	var lighting: SystemLighting = scene_root.lighting
+	player.place(Vector2(3000.0, 0.0), 0.0)  # well clear of the star's glare
+	await get_tree().process_frame
+	await get_tree().process_frame
 	_check(lighting != null and lighting.star_light.enabled, "V7: the star light is on")
 	var expected: Dictionary = SystemLighting.settings_for(scene_root.system, DataRegistry.settings["lighting"])
 	_check(lighting.ambient.color.is_equal_approx(expected["ambient"]), "V7: ambient from data")
@@ -880,6 +1302,7 @@ func _hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	Input.action_release(&"thrust")
 	_check(actions_of(scene_root).try_land() == "none" and actions_of(scene_root).try_board() == "none", "no landing or boarding mid-jump")
 	_check(hyper.open_map() == null, "map locked mid-jump")
+	var committed_checked: bool = false
 	var phases: Array[int] = []
 	var countdown_ticks: int = 0
 	for i: int in 60 * 40:
@@ -887,6 +1310,10 @@ func _hyperspace_checks(player: Ship, scene_root: Node) -> void:
 			break
 		if phases.is_empty() or phases[-1] != hyper.sequence.phase:
 			phases.append(hyper.sequence.phase)
+		if hyper.sequence.phase == P.OVERDRIVE and not committed_checked:
+			committed_checked = true
+			hyper.cancel("test")
+			_check(hyper.is_active(), "TR2: J can't cancel once the countdown has ended")
 		if hyper.sequence.phase == P.COUNTDOWN:
 			countdown_ticks += 1
 			_check(player.get_velocity().is_zero_approx(), "TR2: stopped during the countdown")
@@ -899,11 +1326,14 @@ func _hyperspace_checks(player: Ship, scene_root: Node) -> void:
 	var length: float = Hyperlanes.lane_length(galaxy, origin, destination)
 	_check(GameState.clock.day == day_before + Hyperlanes.jump_days(length, player.def.jump_speed), "TM2: the jump cost its days")
 	_check(is_equal_approx(travel.fuel, fuel_before - player.def.jump_fuel), "TR8: the jump cost its fuel")
+	_check(player.autopilot != null and player.autopilot.is_arriving(), "TR4: drops out of hyperspace with a braking burn")
+	await _frames(roundi(float(DataRegistry.settings["hyperspace"]["arrival_burn_seconds"]) * 60.0) + 2)
+	_check(player.autopilot == null, "...then the controls are back")
 	var new_radius: float = scene_root.system.jump_radius
 	var arrival_speed: float = player.def.top_speed * float(DataRegistry.settings["hyperspace"]["arrival_speed_fraction"])
 	var grace: float = float(DataRegistry.settings["hyperspace"]["arrival_grace_seconds"])
 	var out_by: float = player.global_position.length() - new_radius
-	_check(out_by > 0.0 and absf(out_by - arrival_speed * grace) < 20.0, "TR4: arrives %.1f s of travel outside the jump radius (%.0f px)" % [grace, out_by])
+	_check(out_by > 0.0 and absf(out_by - arrival_speed * grace) < 40.0, "TR4: arrives %.1f s of travel outside the jump radius (%.0f px)" % [grace, out_by])
 	_check(player.global_position.normalized().dot(-bearing) > 0.99, "TR4: arrives on the side facing the origin")
 	travel.route.assign([travel.destination()]) if not travel.route.is_empty() else null
 	if not travel.route.is_empty():

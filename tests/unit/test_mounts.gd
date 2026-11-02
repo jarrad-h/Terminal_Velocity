@@ -51,3 +51,14 @@ func test_capsule_gap_alongside_and_end_on() -> void:
 	assert_near(Capsule.gap(Vector2.ZERO, 0.0, size, Vector2.ZERO, Vector2(0, 200), 0.0, size, Vector2.ZERO), 80.0, "end on")
 	# The offset moves the hull: shifted 14 px toward the other ship.
 	assert_near(Capsule.gap(Vector2.ZERO, 0.0, size, Vector2(14, 0), Vector2(100, 0), 0.0, size, Vector2.ZERO), 46.0, "offset hull")
+
+
+func test_covering_fire_only_mounts_that_bear() -> void:
+	# A12: turrets and pivots inside their arc; fixed guns near the nose; missiles always.
+	assert_true(MountAim.can_cover(true, false, deg_to_rad(170.0), 360.0, 8.0), "a 360 turret covers the rear")
+	assert_false(MountAim.can_cover(true, false, deg_to_rad(170.0), 90.0, 8.0), "a 90 degree pivot can't reach behind")
+	assert_true(MountAim.can_cover(true, false, deg_to_rad(40.0), 90.0, 8.0), "...but covers inside its arc")
+	assert_false(MountAim.can_cover(false, false, deg_to_rad(170.0), 0.0, 8.0), "a fixed gun pointing away holds fire")
+	assert_true(MountAim.can_cover(false, false, deg_to_rad(5.0), 0.0, 8.0), "...and fires when the threat is on the nose")
+	assert_true(MountAim.can_cover(false, true, deg_to_rad(170.0), 0.0, 8.0), "missiles fire whatever the facing")
+

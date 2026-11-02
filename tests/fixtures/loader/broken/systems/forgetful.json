@@ -1,0 +1,1 @@
+{"name": "Forgetful", "memory": {"alert": {"baseline": -5}}, "traffic": [{"pool": "raiders", "memory": "alert"}, {"pool": "broke", "memory": "fear", "per_point": 1}]}

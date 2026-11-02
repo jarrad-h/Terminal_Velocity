@@ -23,6 +23,7 @@ Fields marked **required** have no default.
 | `hyperspace.overdrive_accel_factor` | TR2: after the countdown the ship accelerates at its `accel` × this, past its speed cap (more than 0) | `6` |
 | `hyperspace.engage_speed_factor` | TR2: the hyperdrive engages at the ship's `top_speed` × this (more than 1) | `4` |
 | `hyperspace.arrival_speed_fraction` | TR4: arrivals enter at this fraction of top speed (0–1) | `0.5` |
+| `hyperspace.arrival_burn_seconds` | TR4, A9: ships (player and AI) drop out of hyperspace at hyperdrive speed and brake to their arrival speed over this many seconds, ending where they'd otherwise appear; 0 = appear directly | `1.2` |
 | `hyperspace.arrival_grace_seconds` | TR4: arrivals appear this many seconds of inward travel outside the jump radius, so J works straight away for the next leg | `2` |
 | `art_scale` | V1: one scale for all ship art: sprites, hitboxes, hardpoints and engine exits (all written in art px) are multiplied by it. More than 0 | `1.0` |
 | `mounts.arc.pivot`, `mounts.arc.turret` | V3: default total arc in degrees (0–360) for pivot and turret hardpoints, centred on the heading; a hardpoint's `arc` overrides it. Fixed mounts have no arc | `30`, `360` |
@@ -71,11 +72,30 @@ Fields marked **required** have no default.
 | `ai.object_patrol_chance` | Chance a warship's next waypoint is near a system object (else anywhere in `roam_band`) | `0.6` |
 | `ai.object_patrol_offset_factor` | Warship waypoints sit object radius + sensor range × this from the object | `0.3` |
 | `ai.roam_band` | Roaming waypoints lie between these fractions of the edge radius `[min, max]` | `[0.1, 0.6]` |
-| `ai.jump_out_factor` | Leaving ships head for edge radius × this before jumping out (at least 1) | `1.05` |
+| `ai.jump_out_factor` | A9: leaving ships head for a point at jump radius × this on the bearing to a neighbouring system, then fly the hyperspace sequence (at least 1) | `1.05` |
 | `ai.planet_spawn_chance` | For pools with `spawn_from_planets`: chance a replacement takes off from a planet rather than jumping in at the edge | `0.5` |
 | `ai.arrival_speed_fraction` | Ships jumping in at the edge start at this fraction of their top speed | `0.5` |
 | `ai.spawn_keep_away_factor` | Traffic placed at system load starts beyond sensor range × this from the player | `1.2` |
+| `ai.loss_lull` | A6: when a traffic ship is disabled or destroyed, its pool waits this long before a replacement `[min, max]` s (instead of the system's `respawn_delay`) | `[60, 180]` |
+| `ai.arrival_arc` | A9: hyperspace arrivals come in anywhere within this many degrees either side of the lane's bearing, on screen or off | `30` |
+| `ai.steer_deadband` | AI steering ignores a velocity error smaller than this fraction of top speed and simply faces where it's going (no sideways coasting, no flipping for tiny corrections) | `0.08` |
+| `ai.orbit_pause`, `ai.shelter_clear_time` | A11: seconds an AI ship holds over a planet (visible, targetable) before docking and after launching; and how long a sheltering ship needs no hostile ship within its sensor range of the planet before it leaves for safety | `3`, `5` |
+| `ai.cover_memory` | A12: seconds after the last hit from a ship it's hostile to that an AI ship keeps returning covering fire while not attacking | `15` |
 | `ai.inside_spawn_band` | …and between these fractions of the edge radius `[min, max]` | `[0.15, 0.7]` |
+| `memory.values.alert`, `memory.values.pirate_presence` | PS6: each system remembers these between visits: `baseline` (where the value rests), `recovery_per_day` (how far it moves back towards the baseline each day) and `max`. A system's `memory` overrides `baseline` and `recovery_per_day` | alert `0`, `10`, `100`; pirate presence `100`, `10`, `200` |
+| `memory.alert_per_record` | PS6: alert raised in the current system per point of record the player loses there (any act that costs record) | `2` |
+| `memory.pirate_loss` | PS6: pirate presence lost when a pirate ship is disabled (`disable`) or destroyed (`kill`) in the system, by anyone | `5`, `10` |
+| `memory.pirate_governments` | PS6: governments whose losses count as pirate losses | `[]` (data: `["pirates"]`) |
+| `memory.wreck_days` | PS6: disabled ships left behind stay this many days (boardable when the player returns), then are scavenged | `5` |
+| `entities.arrival_offset` | PS4: default arrival offset for entities arriving the same day as the player, seconds `[min, max]` | `[-90, 120]` |
+| `entities.departure_window` | PS4: an entity due to leave on the day the player is there leaves this many seconds after the player's entry `[min, max]` | `[20, 150]` |
+| `entities.min_stay_seconds` | PS4: an entity arriving after the player stays at least this long before a same-day departure | `5` |
+| `entities.ship_spacing` | PS4: gap between an entity's ships when they appear, px | `160` |
+| `entities.formation_spacing` | PS4: gap between slots in an entity's formation, px | `180` |
+| `entities.formation_hold`, `.formation_settle`, `.formation_settle_speed` | PS4: station-keeping. Within `formation_hold` px of its slot a wingman just faces the leader's heading and burns forward when it falls behind (no fussing, no flipping). Drifting further starts one regroup: it flies back to the slot (turning round to brake if it must) until within `formation_settle` px of it and within `formation_settle_speed` px/s of the leader's velocity. Larger hold = calmer but looser | `320`, `40`, `10` |
+| `entities.formation_cruise` | PS4: a fleet's leader cruises at this fraction of its top speed (0–1) so wingmen can keep station; fleeing, it goes flat out | `0.85` |
+| `entities.encounter` | PS5: off-screen fights: `randomness` (each side's strength × 1 ± this), `loser_losses` (share of the loser's ships lost, rounded up), `loser_damage` and `winner_damage` (hull fraction lost by survivors), `floor_hull` (survivors never drop below this; keep it above ships' disable %), `repair_per_day` (entities repair this much hull a day) | `0.3`, `0.5`, `0.3`, `0.15`, `0.4`, `0.1` |
+| `entities.news` | PS7: the landed screen shows news from the last `days` days, at most `max_items`; older than `keep_days` is dropped | `10`, `8`, `60` |
 | `stellars.cloud_spin` | V9: how fast planet cloud layers turn, degrees/s (negative turns the other way) | `0.6` |
 | `stellars.star_disc_cover`, `stellars.star_disc_colour` | V9: the star's emission is additive, so an opaque disc this fraction of its radius (0–1), in this colour, sits under it to hide the backdrop | `0.97`, `"#000000"` |
 | `stellars.gate_light` | V9: an open gate's field lights nearby ships and its own ring: `colour`, `energy`, `radius` (px), `height` (px); off while the gate is closed | `"#9a86ff"`, `1.6`, `900`, `60` |
@@ -150,6 +170,7 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `name` | Display name | **required** |
 | `colour` | Radar/HUD colour | `"#ffffff"` |
 | `allies`, `enemies` | Lists of government IDs (one ID can't be in both) | `[]` |
+| `start_record` | G3: the player's record with this government at the start (e.g. pirates start hostile, below their `crime_threshold`, and the player can raise it); unset = `game.json` `player.record` | unset |
 | `crime_threshold` | Record below which its warships attack the player | `-50` |
 | `friendly_record` | G5: record at or above which its ships show as friendly (radar, target panel); must be above `crime_threshold` | `25` |
 | `penalties` | `{"shoot", "disable", "board", "kill"}`: record lost per act | all `0` |
@@ -170,6 +191,7 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `sensor_range` | How far its ships notice others, px | `1500` |
 | `stay_time` | Warships and pirates leave after this many seconds with nothing to fight `[min, max]` | `[60, 120]` |
 | `dwell_time` | Traders stay docked this long at each planet, s | `[6, 12]` |
+| `shelter_time` | A11: a ship that fled to a planet shelters docked at most this long while a hostile ship stays near, then runs the blockade (leaves the system flat out); a persistent entity departs early along its orders | `[20, 60]` |
 | `stops` | Traders visit this many planets before leaving `[min, max]` | `[1, 3]` |
 | `spawn_from_planets` | New ships may take off from landable planets (chance `ai.planet_spawn_chance`) instead of arriving at the edge | `true` for traders |
 | `fire_angle` | Fire only when aimed within this many degrees | `8` |
@@ -226,6 +248,26 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `hyperlanes` | `[{"from": <system ID>, "to": <system ID>}]`; two-way, each pair once, both ends listed in `systems` | `[]` |
 | `gate_links` | TR5: `[{"from": <system ID>, "to": <system ID>, "days": n}]` between two systems' gates; two-way, each pair once, both systems must have a gate. `days` (at least 1, default 1) must not exceed the fewest-days hyperlane route for the start ship (`player_ship`'s `jump_speed`), and must be fewer whenever that route takes more than a day | `[]` |
 
+## `entities/` — persistent characters and fleets (PS2–PS5)
+
+Tracked across the galaxy at all times: a summary (location or transit, ships' state, orders, grudge) moved one day at a time by the day clock, travelling by the player's rules (hyperlane days by the slowest ship's `jump_speed`; gates where open and not run by a government hostile to the entity's). In the player's system it becomes real ships flying as its AI pool, named with its `name`; when the player leaves, damage and losses are written back. Hostile entities sharing a system the player isn't in fight off-screen (`game.json` `entities.encounter`). Departures and fights are news on the landed screen.
+
+| Field | Meaning | Default |
+| --- | --- | --- |
+| `name` | Shown on the target panel and in the news | **required** |
+| `government` | Government ID | **required** |
+| `pool` | AI pool its ships fly as (behaviour, sensors, wealth) | **required** |
+| `personality` | Personality ID; `""` = neutral | `""` |
+| `ships` | `[{"ship": <ship ID>, "count": n}]`, at least one | **required** |
+| `start_system` | Where it starts (on the galaxy map) | **required** |
+| `orders.type` | `hold` (stays at its start), `patrol` (visits `route` in order and loops; at least two systems), `travel` (to `destination`, then holds) or `follow` (the player) | `"hold"` |
+| `orders.route`, `orders.destination` | Systems for `patrol` and `travel` | `[]`, `""` |
+| `orders.stay_days` | Days it stays at each stop `[min, max]`; it passes straight through systems on the way | `[1, 2]` |
+| `arrival_offset` | PS4: when it arrives on the same day as the player, seconds from the player's entry `[min, max]`; negative = already there, positive = jumps in later (a fixed positive value scripts an ambush) | `game.json` `entities.arrival_offset` |
+| `formation` | PS4: how its ships fly together: `none` (each on its own), `wedge` (alternating right and left, a row back each pair) or `line` (one behind another). The first able ship leads; whichever member is attacked, the whole fleet fights or flees together, and when the leader jumps they all jump | `"none"` |
+| `grudge_days` | PS2: days it follows the player after the player damages one of its ships (0 = never) | `0` |
+| `exists_if` | `""` always, `"flag"` / `"!flag"`: it only exists (moves, appears, fights) while this holds | `""` |
+
 ## `systems/`
 
 | Field | Meaning | Default |
@@ -233,12 +275,13 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | `name` | Display name | **required** |
 | `seed` | Seeds local-space generation; same seed, same scenery | `0` |
 | `objects` | Stars, planets, stations (see below); drawn from milestone 5 | `[]` |
-| `traffic` | `[{"pool": <AI pool ID>, "count": n}]` target population; each pool at most once | `[]` |
+| `traffic` | `[{"pool": <AI pool ID>, "count": n, "via": "hyperspace" \| "gate", "memory": "alert" \| "pirate_presence", "per_point": n}]` target population; with `memory` set (PS6), the count becomes `count` + (that value − its baseline) × `per_point`, rounded, at least 0 (e.g. `per_point` 0.04 on alert adds a patrol per 25 alert); each pool at most once. `via` `"gate"` (A10) ships arrive through the system's gate, call at planets and leave through it (the system needs a gate); `"hyperspace"` ships jump in and out (A9) | `[]`; `via` `"hyperspace"` |
 | `backdrop` | Distant stars and nebula (see below) | all defaults |
 | `local_space` | `[{"scenery": <scenery ID>, "density": d, "region": {…}}]` | `[]` |
-| `edge_radius` | Traffic arrives and leaves this far from the system centre, px (A6) | `6000` |
+| `edge_radius` | Size of the system for traffic: roaming waypoints and ships placed at load use fractions of it (`ai.roam_band`, `ai.inside_spawn_band`), px (A6). Arrivals and departures use `jump_radius` (A9) | `6000` |
 | `respawn_delay` | Seconds before replacing a ship that left or died `[min, max]` | `[5, 15]` |
 | `lighting` | V7: `{"ambient": "#rrggbb", "star": {"colour": "#rrggbb", "energy": n, "height": 0–1}}`, any key optional; overrides `game.json` `lighting` for this system | `{}` |
+| `memory` | PS6: `{"alert": {"baseline": n, "recovery_per_day": n}, "pirate_presence": {…}}`, any key optional; overrides `game.json` `memory.values` for this system | `{}` |
 | `jump_radius` | TR2: hyperlane jumps need the ship at least this far from the centre, px; TR4: arrivals appear at this distance | `8000` |
 
 **`objects[]`:** `id` (**required**, unique in the system), `type` (`star`, `planet`, `station`, `gate`; **required**; at most one gate per system), `name` (**required**), `position` (**required**), `radius` (`100`), `colour` (`"#7f99cc"`, the placeholder's and the star's tint), `art` (V9: art set under `assets/sprites/stellars/`, matching the type: `star`; `planet_terran`, `planet_ocean`, `planet_desert`, `planet_ice`, `planet_volcanic`, `planet_barren`, `planet_rust`, `planet_gas_giant`; `station_authority_ring`, `station_trader_yard`, `station_pirate_rock`; `gate_halo`. Scaled so its disc matches `radius` × 2; `""` draws a flat placeholder; `""`), `description` (`""`), `landable` (`false`), `government` (government ID, `""`), `min_record` (`-1000`), `sells_fuel` (TR8, landable objects only; `true`), `refuel_price` (TR8: credits per unit of fuel; `2`), `landing_days` (TM2: days that pass on landing; `1`), `takeoff_days` (TM2: days that pass on taking off; `0`). Landed activities (trade, missions) will carry their own day costs when they exist. Gates only (TR5, TR6): L docks with a gate (same distance and speed rules as landing) and lists the gates it links to; `min_record` refuses docking below it; `fee` (credits charged to leave through this gate; `0`) and `open_condition` (`""` always open, `"flag_name"` open while that flag is set, `"!flag_name"` open while it isn't; `""`). Gates don't use `landable`, `sells_fuel` or the day fields.

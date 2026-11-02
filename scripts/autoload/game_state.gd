@@ -20,11 +20,26 @@ var _records: Dictionary = {}
 var clock := DayClock.new()
 ## TR6 and later missions (MS1): named flags, name -> int (0 = not set).
 var flags: Dictionary = {}
+## PS6: what each system remembers between visits.
+var memory := SystemMemory.new()
+## PS2: every persistent entity's summary; PS7: the news.
+var entities := EntityRegistry.new()
+var news := NewsLog.new()
+## PS2: during a trip (jump or gate), where the player is going: grudges and
+## followers chase it and off-screen fights don't happen there. "" otherwise.
+var player_heading: String = ""
+var _rng := RandomNumberGenerator.new()
 var travel := TravelState.new()
 
 
 func _ready() -> void:
-	clock.day_passed.connect(func(day: int) -> void: day_passed.emit(day))
+	clock.day_passed.connect(func(day: int) -> void:
+		memory.step_day(_memory_rules())  # TM3: systems recover a day at a time
+		for line: String in entities.step_day(day, entity_context()):  # PS2–PS5
+			news.add(day, line)
+		news.prune(day, int(DataRegistry.settings["entities"]["news"]["keep_days"]))
+		day_passed.emit(day))
+	_rng.randomize()
 	if DataRegistry.load_errors.is_empty():
 		_start_new()
 
@@ -32,6 +47,12 @@ func _ready() -> void:
 func _start_new() -> void:
 	flags.clear()
 	flags_changed.emit()
+	memory = SystemMemory.new()
+	news = NewsLog.new()
+	var defs: Array = []
+	for id: String in DataRegistry.ids("entities"):
+		defs.append(DataRegistry.get_entity(id))
+	entities.start(defs, 0, _rng)
 	credits = int(DataRegistry.settings["player"]["credits"])
 	clock.day = 0
 	travel = TravelState.new()
@@ -72,6 +93,10 @@ func set_fuel(value: float, capacity: float) -> void:
 
 func get_record(government: String) -> float:
 	if not _records.has(government):
+		# G3: a government can start the player off elsewhere (pirates: hostile).
+		var gov: GovernmentDef = DataRegistry.get_government(government)
+		if gov != null and gov.start_record != null:
+			return float(gov.start_record)
 		return float(DataRegistry.settings["player"]["record"])
 	return _records[government]
 
@@ -100,7 +125,80 @@ func report_player_act(target: Ship, act: String) -> void:
 		return
 	target.player_acts[act] = true
 	var gov: GovernmentDef = DataRegistry.get_government(target.government)
-	set_record(target.government, Relations.after_penalty(get_record(target.government), gov, act))
+	var before: float = get_record(target.government)
+	set_record(target.government, Relations.after_penalty(before, gov, act))
+	# PS6: crimes raise the system's alert level.
+	var lost: float = before - get_record(target.government)
+	if lost > 0.0:
+		memory_add(travel.current_system, "alert", lost * float(DataRegistry.settings["memory"]["alert_per_record"]))
+
+
+## PS6: a ship disabled or destroyed in the current system (`act` "disable" or
+## "kill"); pirate losses lower pirate presence. A remembered wreck being
+## restored doesn't count again (its later destruction does).
+func ship_lost(ship: Ship, act: String) -> void:
+	var settings: Dictionary = DataRegistry.settings["memory"]
+	if ship.is_player() or ship.has_meta("restoring") or not ship.government in settings["pirate_governments"]:
+		return
+	memory_add(travel.current_system, "pirate_presence", -float(settings["pirate_loss"][act]))
+
+
+## PS2–PS5: what the entity registry needs from the game (EntityRegistry).
+func entity_context() -> Dictionary:
+	var defs: Dictionary = {}
+	for id: String in DataRegistry.ids("entities"):
+		defs[id] = DataRegistry.get_entity(id)
+	var strength: Dictionary = {}
+	var speed: Dictionary = {}
+	for id: String in DataRegistry.ids("ships"):
+		var ship: ShipDef = DataRegistry.get_ship(id)
+		strength[id] = ship.strength
+		speed[id] = ship.jump_speed
+	var settings: Dictionary = (DataRegistry.settings["entities"]["encounter"] as Dictionary).duplicate()
+	return {"galaxy": DataRegistry.galaxy(), "defs": defs, "ship_strength": strength, "ship_speed": speed,
+		"gate_ok": entity_may_use_gate,
+		"hostile": func(a: String, b: String) -> bool:
+			return Relations.governments_hostile(DataRegistry.get_government(a), DataRegistry.get_government(b)),
+		"exists": func(def: PersistentEntityDef) -> bool: return GateRules.is_open(def.exists_if, flags),
+		"name_of": Hyperspace.system_name, "player_system": player_heading if player_heading != "" else travel.current_system,
+		"rng": _rng, "settings": settings}
+
+
+## PS3: an entity may use a system's gate if it's open and its government
+## isn't hostile to the entity's (decision 2026-10-31).
+func entity_may_use_gate(def: PersistentEntityDef, system_id: String) -> bool:
+	var system: SystemDef = DataRegistry.get_system(system_id)
+	var gate: SystemObjectDef = system.gate() if system != null else null
+	if gate == null or not GateRules.is_open(gate.open_condition, flags):
+		return false
+	return gate.government == "" or not Relations.governments_hostile(DataRegistry.get_government(gate.government), DataRegistry.get_government(def.government))
+
+
+## PS6: {"baseline", "recovery_per_day", "max"} for a value in a system.
+func memory_rule(system_id: String, name: String) -> Dictionary:
+	var rule: Dictionary = (DataRegistry.settings["memory"]["values"][name] as Dictionary).duplicate()
+	var system: SystemDef = DataRegistry.get_system(system_id)
+	if system != null:
+		rule.merge(system.memory.get(name, {}), true)
+	return rule
+
+
+func memory_value(system_id: String, name: String) -> float:
+	return memory.value(system_id, name, float(memory_rule(system_id, name)["baseline"]))
+
+
+func memory_add(system_id: String, name: String, delta: float) -> void:
+	var rule: Dictionary = memory_rule(system_id, name)
+	memory.add(system_id, name, delta, float(rule["baseline"]), float(rule["max"]))
+
+
+func _memory_rules() -> Dictionary:
+	var rules: Dictionary = {}
+	for system_id: String in memory.values:
+		rules[system_id] = {}
+		for name: String in SystemDef.MEMORY_VALUES:
+			rules[system_id][name] = memory_rule(system_id, name)
+	return rules
 
 
 ## H4: shows `text` on the message line.
@@ -121,7 +219,8 @@ func reset() -> void:
 
 ## SV1: everything above as plain values (the saves milestone stores this).
 func to_dict() -> Dictionary:
-	return {"credits": credits, "records": _records.duplicate(), "day": clock.day, "travel": travel.to_dict(), "flags": flags.duplicate()}
+	return {"credits": credits, "records": _records.duplicate(), "day": clock.day, "travel": travel.to_dict(), "flags": flags.duplicate(),
+		"memory": memory.to_dict(), "entities": entities.to_dict(), "news": news.to_dict()}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -130,6 +229,12 @@ func from_dict(data: Dictionary) -> void:
 	clock.day = int(data.get("day", 0))
 	travel = TravelState.from_dict(data.get("travel", {}))
 	flags = (data.get("flags", {}) as Dictionary).duplicate()
+	memory = SystemMemory.from_dict(data.get("memory", {}))
+	entities = EntityRegistry.from_dict(data.get("entities", {}))
+	for id: String in DataRegistry.ids("entities"):
+		if not entities.states.has(id):  # added to the data since the save
+			entities.states[id] = EntityRegistry.new_state(DataRegistry.get_entity(id), clock.day, _rng)
+	news = NewsLog.from_dict(data.get("news", {}))
 	flags_changed.emit()
 	credits_changed.emit(credits)
 

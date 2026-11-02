@@ -6,7 +6,7 @@ extends RefCounted
 ## collected as errors naming the file and field, never thrown.
 
 ## Definition type folders, in load order.
-const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery", "personalities", "galaxy"]
+const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery", "personalities", "galaxy", "entities"]
 
 const SETTINGS_FILE: String = "game.json"
 
@@ -18,7 +18,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"calendar": {"start_date": "3200-01-01"},
 	"hyperspace": {"stop_speed": 2.0, "align_tolerance": 1.0, "thrust_angle": 20.0,
 		"overdrive_accel_factor": 6.0, "engage_speed_factor": 4.0, "arrival_speed_fraction": 0.5,
-		"arrival_grace_seconds": 2.0},
+		"arrival_grace_seconds": 2.0, "arrival_burn_seconds": 1.2},
 	"mounts": {"arc": {"pivot": 30.0, "turret": 360.0}, "traverse": {"pivot": 180.0, "turret": 360.0},
 		"fire_tolerance": 5.0, "turret_sprites": {"small": "", "medium": "", "large": "", "point_defence": ""}},
 	"camera": {"zoom": 1.0, "smoothing_speed": 0.0},
@@ -38,12 +38,24 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"standoff_fraction": 0.4, "think_interval": 0.25, "disengage_factor": 1.5,
 		"waypoint_reached_fraction": 0.1, "object_patrol_chance": 0.6, "object_patrol_offset_factor": 0.3,
 		"roam_band": [0.1, 0.6], "jump_out_factor": 1.05, "planet_spawn_chance": 0.5,
-		"arrival_speed_fraction": 0.5, "spawn_keep_away_factor": 1.2, "inside_spawn_band": [0.15, 0.7]},
+		"arrival_speed_fraction": 0.5, "spawn_keep_away_factor": 1.2, "inside_spawn_band": [0.15, 0.7],
+		"loss_lull": [60.0, 180.0], "arrival_arc": 30.0, "steer_deadband": 0.08,
+		"orbit_pause": 3.0, "shelter_clear_time": 5.0, "cover_memory": 15.0},
 	"radar": {"size": 200.0, "range": 3000.0, "margin": 16.0, "disabled_pale": 0.55, "colours": {
 		"background": "#0a1426c0", "rim": "#5a7aa0", "player": "#ffffff",
 		"neutral": "#b0b0b0", "target": "#ffee40", "scenery": "#8a7a68",
 		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
 	"engine_glow": {"idle": 0.25, "response": 6.0},
+	"memory": {"values": {"alert": {"baseline": 0.0, "recovery_per_day": 10.0, "max": 100.0},
+			"pirate_presence": {"baseline": 100.0, "recovery_per_day": 10.0, "max": 200.0}},
+		"alert_per_record": 2.0, "pirate_loss": {"disable": 5.0, "kill": 10.0},
+		"pirate_governments": [], "wreck_days": 5},
+	"entities": {"arrival_offset": [-90.0, 120.0], "departure_window": [20.0, 150.0], "min_stay_seconds": 5.0, "ship_spacing": 160.0,
+		"formation_spacing": 180.0, "formation_settle": 40.0, "formation_cruise": 0.85,
+		"formation_hold": 320.0, "formation_settle_speed": 10.0,
+		"encounter": {"randomness": 0.3, "loser_losses": 0.5, "loser_damage": 0.3, "winner_damage": 0.15, "floor_hull": 0.4,
+			"repair_per_day": 0.1},
+		"news": {"days": 10, "max_items": 8, "keep_days": 60}},
 	"stellars": {"cloud_spin": 0.6, "night_only_emission": ["planet_terran", "planet_ocean", "planet_rust"],
 		"star_disc_cover": 0.97, "star_disc_colour": "#000000",
 		"gate_light": {"colour": "#9a86ff", "energy": 1.6, "radius": 900.0, "height": 60.0}},
@@ -153,6 +165,8 @@ static func _parse(type: String, reader: DefReader) -> Def:
 			return PersonalityDef.parse(reader)
 		"galaxy":
 			return GalaxyDef.parse(reader)
+		"entities":
+			return PersistentEntityDef.parse(reader)
 	assert(false, "unknown definition type " + type)
 	return null
 
@@ -208,6 +222,36 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		var point: DefReader = lighting.object(kind)
 		for key: String in SETTINGS_DEFAULTS["lighting"][kind]:
 			point.number(key, 0.0, false, 0.0)
+	var memory: DefReader = reader.object("memory")
+	var memory_values: DefReader = memory.object("values")
+	for name: String in SystemDef.MEMORY_VALUES:
+		var v: DefReader = memory_values.object(name)
+		for key: String in ["baseline", "recovery_per_day", "max"]:
+			v.number(key, 0.0, false, 0.0)
+	memory.number("alert_per_record", 0.0, false, 0.0)
+	var losses: DefReader = memory.object("pirate_loss")
+	losses.number("disable", 0.0, false, 0.0)
+	losses.number("kill", 0.0, false, 0.0)
+	memory.ref_array("pirate_governments", "governments")
+	memory.integer("wreck_days", 5, false, 0)
+	var entities: DefReader = reader.object("entities")
+	entities.range2("arrival_offset")
+	entities.range2("departure_window", Vector2.ZERO, 0.0)
+	entities.number("min_stay_seconds", 0.0, false, 0.0)
+	entities.number("ship_spacing", 0.0, false, 0.0)
+	entities.number("formation_spacing", 0.0, false, 0.0)
+	entities.number("formation_settle", 0.0, false, 0.0)
+	entities.number("formation_hold", 0.0, false, 0.0)
+	entities.number("formation_settle_speed", 0.0, false, 0.0)
+	if entities.number("formation_cruise", 1.0, false, 0.0) > 1.0:
+		entities.error("formation_cruise", "must be at most 1")
+	var encounter: DefReader = entities.object("encounter")
+	for key: String in SETTINGS_DEFAULTS["entities"]["encounter"]:
+		if encounter.number(key, 0.0, false, 0.0) > 1.0 and key != "randomness":
+			encounter.error(key, "must be at most 1")
+	var news: DefReader = entities.object("news")
+	for key: String in SETTINGS_DEFAULTS["entities"]["news"]:
+		news.integer(key, 1, false, 1)
 	var stellars: DefReader = reader.object("stellars")
 	stellars.number("cloud_spin", 0.0)
 	stellars.string_array("night_only_emission")
@@ -251,7 +295,9 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 			ai.range2(key, Vector2.ZERO, 0.0)
 		else:
 			# Leaving ships must aim beyond the edge, or they'd never jump out.
-			ai.number(key, 0.0, false, 1.0 if key == "jump_out_factor" else 0.0)
+			var value: float = ai.number(key, 0.0, false, 1.0 if key == "jump_out_factor" else 0.0)
+			if key == "arrival_arc" and value > 180.0:
+				ai.error(key, "must be at most 180")
 	var radar: DefReader = reader.object("radar")
 	for key: String in ["size", "range", "margin"]:
 		radar.number(key, 0.0, false, 0.0)
@@ -317,4 +363,4 @@ static func _merged(base: Dictionary, over: Dictionary) -> Dictionary:
 static func _singular(type: String) -> String:
 	return {"ships": "ship", "weapons": "weapon", "governments": "government",
 		"ai_pools": "AI pool", "systems": "system", "scenery": "scenery",
-		"personalities": "personality", "galaxy": "galaxy"}[type]
+		"personalities": "personality", "galaxy": "galaxy", "entities": "persistent entity"}[type]

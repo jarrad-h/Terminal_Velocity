@@ -41,7 +41,9 @@
     },
     {
       "pool": "pirate_raid",
-      "count": 2
+      "count": 2,
+      "memory": "pirate_presence",
+      "per_point": 0.02
     }
   ],
   "backdrop": {

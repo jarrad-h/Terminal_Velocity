@@ -24,6 +24,8 @@ var autopilot: JumpSequence = null
 ## glow all ask for it, and the autopilot must only step once per tick.
 var _input: FlightInput = FlightInput.new()
 var _input_frame: int = -1
+## PS4: a persistent entity's name shown instead of the hull class ("" = none).
+var callsign: String = ""
 ## Government ID ("" = none). Set at spawn.
 var government: String = ""
 ## AI role from its pool ("trader", "warship", "pirate"); "" for the player and idle ships.
@@ -96,6 +98,7 @@ func setup(ship_def: ShipDef, keep_health: bool = false) -> void:
 
 
 func set_controller(new_controller: Node) -> void:
+	autopilot = null  # a new controller never inherits a jump in progress
 	if controller != null:
 		controller.queue_free()
 	controller = new_controller
@@ -118,10 +121,28 @@ func _compute_flight_input() -> FlightInput:
 	if not can_act():
 		return FlightInput.new()
 	if autopilot != null:
-		return autopilot.step(body.state, body.stats, get_physics_process_delta_time())
+		var input: FlightInput = autopilot.step(body.state, body.stats, get_physics_process_delta_time())
+		if autopilot.phase == JumpSequence.Phase.ARRIVED:
+			autopilot = null  # out of hyperspace: back to its own controls
+		return input
 	if controller == null:
 		return FlightInput.new()
 	return controller.get_flight_input()
+
+
+## TR4, A9: drop in from hyperspace so the ship ends up at `end_position`
+## moving along `direction` at `end_speed`, after a short braking burn
+## (hyperspace.arrival_burn_seconds; 0 = appear there directly).
+func arrive_from_hyperspace(end_position: Vector2, direction: Vector2, end_speed: float) -> void:
+	var settings: Dictionary = DataRegistry.settings["hyperspace"]
+	var seconds: float = float(settings["arrival_burn_seconds"])
+	var heading: float = Aim.rotation_of(direction)
+	if seconds <= 0.0:
+		place(end_position, heading, direction.normalized() * end_speed)
+		return
+	var burn: JumpSequence = JumpSequence.arrival(direction, end_speed, seconds, settings, body.stats)
+	place(JumpSequence.arrival_start(end_position, direction, burn.engage_speed, end_speed, seconds), heading, direction.normalized() * burn.engage_speed)
+	autopilot = burn
 
 
 ## Flight stats for this frame: the hull's, or the jump sequence's overdrive.
@@ -208,6 +229,12 @@ func gov_def() -> GovernmentDef:
 
 ## G1, G3, A8: would this ship fight `other`? For the player, whether `other`
 ## treats the player as hostile.
+## PS4 fleets: treat `attacker` as hostile (a wingman of the ship it hit).
+func provoke(attacker: Ship) -> void:
+	if attacker != null and is_instance_valid(attacker) and attacker != self:
+		_aggressors[attacker] = true
+
+
 func is_hostile_to(other: Ship) -> bool:
 	if other == null or other == self or not is_instance_valid(other):
 		return false
@@ -232,6 +259,11 @@ func is_active() -> bool:
 func standing_to(player_ship: Ship) -> String:
 	var record: float = GameState.get_record(government) if government != "" else 0.0
 	return Relations.standing(player_ship.is_hostile_to(self), grievance, gov_def(), record)
+
+
+## The ship that last damaged this one (null if none or gone).
+func last_attacker() -> Ship:
+	return _last_attacker if is_instance_valid(_last_attacker) else null
 
 
 func forget_aggressor(ship: Ship) -> void:
@@ -284,12 +316,14 @@ func _attacked_by_player() -> bool:
 
 func _on_disabled() -> void:
 	set_tint(DISABLED_TINT)
+	GameState.ship_lost(self, "disable")  # PS6
 	if _attacked_by_player():
 		GameState.report_player_act(self, "disable")
 		GameState.post_message("%s disabled" % def.name, "combat")  # H4
 
 
 func _on_destroyed() -> void:
+	GameState.ship_lost(self, "kill")  # PS6
 	if _attacked_by_player():
 		GameState.report_player_act(self, "kill")
 		if not _scuttled:
@@ -383,6 +417,8 @@ func set_docked(value: bool) -> void:
 
 ## Places the ship and resets interpolation (spawns, take-offs, arrivals).
 func place(at: Vector2, rotation_value: float, velocity: Vector2 = Vector2.ZERO) -> void:
+	if autopilot != null and autopilot.is_arriving():
+		autopilot = null  # placed somewhere new: the arrival burn is over
 	body.state = FlightState.new(at, velocity, rotation_value)
 	position = at
 	rotation = rotation_value

@@ -11,6 +11,8 @@ var enemies: Array[String] = []
 var crime_threshold: float
 ## G5: friendly when the player's record is at or above this.
 var friendly_record: float
+## G3: the player's record with it at the start (null = game.json player.record).
+var start_record: Variant = null
 ## "shoot" / "disable" / "board" / "kill" -> record lost.
 var penalties: Dictionary = {}
 var max_odds: float
@@ -31,6 +33,8 @@ static func parse(r: DefReader) -> GovernmentDef:
 	d.enemies = r.ref_array("enemies", "governments")
 	d.crime_threshold = r.number("crime_threshold", -50.0)
 	d.friendly_record = r.number("friendly_record", 25.0)
+	if r.has("start_record"):
+		d.start_record = r.number("start_record", 0.0)
 	if d.friendly_record <= d.crime_threshold:
 		r.error("friendly_record", "must be above crime_threshold (%s)" % d.crime_threshold)
 	var pen: DefReader = r.object("penalties")
