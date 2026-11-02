@@ -48,9 +48,15 @@ func _ready() -> void:
 	world.add_child(lighting)
 	world.move_child(lighting, 0)
 	lighting.enabled = bool(settings["lighting"]["enabled"])
+	Pilots.ensure_pilot()
+	var restore: Dictionary = Pilots.pending
+	Pilots.pending = {}
 	load_system(GameState.travel.current_system)
 
-	var player: Ship = spawn_ship(settings["player_ship"], Vector2.ZERO)
+	var design: String = settings["player_ship"]
+	if not restore.is_empty():
+		design = ShipRecord.design_of(restore["ship"])  # SV1: the saved ship
+	var player: Ship = spawn_ship(design, Vector2.ZERO)
 	if player != null:
 		player.add_to_group(&"player")
 		player.setup(player.def)  # recolour now it is the player
@@ -59,8 +65,15 @@ func _ready() -> void:
 		camera.target = player
 	hud.player = player
 	hud.actions = actions
+	if not restore.is_empty() and player != null:
+		_restore_player(player, restore)
+	_restore_wrecks()
 	entity_presence.on_enter(system.id)  # PS4
 	hud.hyperspace = hyperspace
+	if not restore.is_empty():
+		var port: SystemObjectDef = system.find_object(str(restore["location"].get("landed", "")))
+		if port != null:
+			actions.resume_landed.call_deferred(port)
 
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
 	if OS.is_debug_build():
@@ -75,6 +88,17 @@ func _ready() -> void:
 			var ship: Ship = spawn_ship(spawn["ship"], Vector2(at[0], at[1]), spawn.get("government", ""))
 			if ship != null:
 				ship.set_controller(IdleController.new())
+
+
+## SV1: puts the player's ship as it was saved (damage, place, heading).
+func _restore_player(player: Ship, restore: Dictionary) -> void:
+	var record: Dictionary = restore["ship"]
+	player.health.shield = player.health.max_shield * clampf(float(record.get("shield", 1.0)), 0.0, 1.0)
+	player.health.armor = player.health.max_armor * clampf(float(record.get("hull", 1.0)), 0.0, 1.0)
+	var where: Dictionary = restore["location"]
+	var at: Array = where.get("position", [0.0, 0.0])
+	var moving: Array = where.get("velocity", [0.0, 0.0])
+	player.place(Vector2(float(at[0]), float(at[1])), float(where.get("rotation", 0.0)), Vector2(float(moving[0]), float(moving[1])))
 
 
 ## Switches the backdrop and local space to another system definition.

@@ -75,11 +75,24 @@ func land_at(port: SystemObjectDef, intro: String = "") -> void:
 	var player: Ship = _player()
 	player.place(port.position, player.rotation)
 	player.set_target(null)
+	Pilots.landed_at = port.id
 	dialog = LandedScreen.open(scene, port, player, func() -> void: _take_off(port), intro)
+	dialog.closed.connect(func() -> void: dialog = null)
+	Pilots.autosave()  # SV2, SV3: every landing
+
+
+## SV1: back on the landed screen at `port` after loading a save (no days pass).
+func resume_landed(port: SystemObjectDef) -> void:
+	scene.entity_presence.on_leave()
+	var player: Ship = _player()
+	player.place(port.position, player.rotation)
+	Pilots.landed_at = port.id
+	dialog = LandedScreen.open(scene, port, player, func() -> void: _take_off(port))
 	dialog.closed.connect(func() -> void: dialog = null)
 
 
 func _take_off(port: SystemObjectDef) -> void:
+	Pilots.landed_at = ""
 	GameState.advance_days(port.takeoff_days)  # TM2
 	scene.refresh_entities()  # PS4: who's here now
 	var player: Ship = _player()
@@ -277,7 +290,7 @@ func on_player_destroyed(player: Ship) -> void:
 	_end_boarding()
 	if dialog != null:
 		dialog.close()
-	if not bool(DataRegistry.settings["player"]["escape_pod"]):
+	if not bool(Pilots.pilot.get("escape_pod", DataRegistry.settings["player"]["escape_pod"])):  # SV1: the pilot's pod
 		_lost_with_all_hands()
 		return
 	var pod := EscapePod.launch(scene.world, player.global_position, FlightModel.heading(player.global_rotation), player.get_velocity())
@@ -304,7 +317,7 @@ func _rescue(pod: EscapePod) -> void:
 	# scenery returns and traffic refills; remembered wrecks still in date stay (PS6).
 	scene.reset_visit()
 	# Insured: like for like. Uninsured: a basic hull.
-	var insured: bool = bool(settings["insured"])
+	var insured: bool = bool(Pilots.pilot.get("insured", settings["insured"]))  # SV1: the pilot's insurance
 	var hull: ShipDef = player.def if insured else DataRegistry.get_ship(settings["uninsured_ship"])
 	player.setup(hull)
 	player.place(port.position if port != null else Vector2.ZERO, 0.0)
@@ -323,11 +336,24 @@ func _rescue(pod: EscapePod) -> void:
 
 
 func _lost_with_all_hands() -> void:
-	dialog = Dialog.open(scene, "Lost with all hands", "Your ship was destroyed and there was no escape pod aboard.")
-	dialog.add_choice("restart", "Restart", func() -> void:
-		dialog.close()
-		GameState.reset()
-		DebugCommands.reset_session()
-		get_tree().paused = false
-		get_tree().reload_current_scene())
+	var text: String = "Your ship was destroyed and there was no escape pod aboard."
+	if bool(Pilots.pilot.get("ironman", false)):
+		Pilots.mark_dead()  # SV3: an ironman pilot's story ends here
+		text += "\n\n%s's record is kept in the pilot list." % Pilots.pilot.get("name", "Your pilot")
+	dialog = Dialog.open(scene, "Lost with all hands", text)
+	if Pilots.has_pilot():
+		if not bool(Pilots.pilot.get("ironman", false)) and not Pilots.list_slots(Pilots.pilot_id).is_empty():
+			dialog.add_choice("load", "Load latest save", func() -> void:
+				dialog.close()
+				Pilots.load_save(Pilots.pilot_id, Pilots.list_slots(Pilots.pilot_id)[0]["id"]))
+		dialog.add_choice("menu", "Main menu", func() -> void:
+			dialog.close()
+			Pilots.quit_to_menu(false))
+	else:
+		dialog.add_choice("restart", "Restart", func() -> void:
+			dialog.close()
+			GameState.reset()
+			DebugCommands.reset_session()
+			get_tree().paused = false
+			get_tree().reload_current_scene())
 	dialog.closed.connect(func() -> void: dialog = null)

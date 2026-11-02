@@ -30,6 +30,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"engine": {"energy": 1.5, "radius": 90.0, "height": 12.0}},
 	"player": {"credits": 0, "record": 0.0, "escape_pod": true, "insured": true, "uninsured_ship": "shuttle",
 		"rescue_fee_pct": 10.0, "rescue_days": [2.0, 5.0], "pod_speed": 600.0, "pod_time": 3.0},
+	"saves": {"root": "user://pilots", "max_pilots": 5, "max_slots": 10},
 	"landing": {"max_speed": 60.0, "radius_fraction": 0.6, "repair_cost_per_point": 0.0},
 	"boarding": {"range": 60.0, "max_speed": 40.0, "time": 2.0, "assist_armor_pct": 50.0},
 	"combat": {"friendly_fire_pct": 100.0, "disabled_drag": 30.0},
@@ -281,6 +282,10 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		var sub: DefReader = reader.object(section)
 		for key: String in SETTINGS_DEFAULTS[section]:
 			sub.number(key, 0.0, false, 0.0)
+	var saves: DefReader = reader.object("saves")
+	saves.integer("max_pilots", 5, false, 1)
+	saves.integer("max_slots", 10, false, 1)
+	saves.string("root")
 	var boarding: DefReader = reader.object("boarding")
 	if boarding.has("time") and float(boarding.data["time"]) <= 0.0:
 		boarding.error("time", "must be more than 0")

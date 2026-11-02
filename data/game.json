@@ -35,6 +35,7 @@
     "pod_speed": 600,
     "pod_time": 3
   },
+  "saves": {"root": "user://pilots", "max_pilots": 5, "max_slots": 10},
   "landing": {"max_speed": 60, "radius_fraction": 0.6, "repair_cost_per_point": 0},
   "boarding": {
     "range": 60,

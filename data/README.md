@@ -38,6 +38,7 @@ Fields marked **required** have no default.
 | `player.rescue_fee_pct` | C10: share of credits charged by the rescuer, 0–100 | `10` |
 | `player.rescue_days` | C10: days that pass before rescue `[min, max]` (shown in the report) | `[2, 5]` |
 | `player.pod_speed`, `player.pod_time` | C10: escape pod speed (px/s, added to the ship's) and flight time (s) | `600`, `3` |
+| `saves.root`, `saves.max_pilots`, `saves.max_slots` | SV1–SV2: where pilot folders live (`user://` is Godot's user data folder; on Windows `%APPDATA%\Godot\app_userdata\Terminal Velocity`); how many pilots may exist at once; manual save slots per normal pilot (plus one autosave) | `"user://pilots"`, `5`, `10` |
 | `landing.max_speed` | S2: land only below this speed (player and AI), px/s | `60` |
 | `landing.radius_fraction` | S2: …and within this fraction of the planet's radius of its centre | `0.6` |
 | `landing.repair_cost_per_point` | S3: credits per missing shield/armour point; 0 = free repairs | `0` |

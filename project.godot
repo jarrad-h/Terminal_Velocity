@@ -15,6 +15,7 @@ config/features=PackedStringArray("4.7")
 DataRegistry="*res://scripts/autoload/data_registry.gd"
 GameState="*res://scripts/autoload/game_state.gd"
 DebugCommands="*res://scripts/autoload/debug_commands.gd"
+Pilots="*res://scripts/autoload/pilots.gd"
 
 [display]
 

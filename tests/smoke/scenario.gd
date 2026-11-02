@@ -525,12 +525,12 @@ func _run() -> void:
 	await _frames(2)
 	_check(not get_tree().paused, "take off after rescue")
 	# No escape pod: lost with all hands.
-	DataRegistry.settings["player"]["escape_pod"] = false
+	Pilots.pilot["escape_pod"] = false  # SV1: the pod is the pilot's
 	player.health.force_destroy()
 	await _frames(2)
 	_check(actions.dialog != null and actions.dialog.has_choice("restart"), "no pod: lost with all hands (C10)")
 	actions.dialog.close()
-	DataRegistry.settings["player"]["escape_pod"] = true
+	Pilots.pilot["escape_pod"] = true
 	_debug.swap_player_ship("courier")
 	await _frames(2)
 
@@ -580,6 +580,8 @@ func _run() -> void:
 	await _entity_checks(player, scene_root)
 	await _frames(2)
 	await _shelter_checks(player, scene_root)
+	await _frames(2)
+	await _save_checks(player)
 	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
@@ -751,6 +753,74 @@ func _shelter_checks(player: Ship, scene_root: Node) -> void:
 	presence.set_enabled(false)
 	GameState.entities.start(DataRegistry.ids("entities").map(func(id: String) -> PersistentEntityDef: return DataRegistry.get_entity(id)), GameState.clock.day, RandomNumberGenerator.new())
 	GameState.news = NewsLog.new()
+
+
+## SV1–SV4: a save made mid-route brings back the route, the date, an entity
+## in transit and the player's ship; slot limits and ironman rules hold.
+func _save_checks(player: Ship) -> void:
+	var root_before: String = Pilots.root
+	var pilot_before: Dictionary = Pilots.pilot
+	var id_before: String = Pilots.pilot_id
+	Pilots.root = "user://test_pilots"
+	for entry: Dictionary in Pilots.list_pilots():
+		Pilots.delete_pilot(entry["id"])
+	Pilots.pilot_id = "test_ace"
+	Pilots.pilot = PilotSave.new_pilot("Test Ace", false, DataRegistry.settings["player"])
+	Pilots._write_pilot()
+	# Mid-route, with an entity in transit and some damage.
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	var here: String = GameState.travel.current_system
+	var next: String = Hyperlanes.neighbours(galaxy, here)[0]
+	GameState.travel.route = [next] as Array[String]
+	var mara: EntityState = GameState.entities.states["mara_vell"]
+	mara.location = ""
+	mara.transit_from = here
+	mara.transit_to = next
+	mara.arrive_day = GameState.clock.day + 3
+	GameState.credits = 4321
+	player.health.armor = player.health.max_armor * 0.5
+	_check(Pilots.save_manual("Before the run") == "", "SV2: a manual save")
+	var day: int = GameState.clock.day
+	# Change everything, then read the save back.
+	GameState.credits = 1
+	GameState.advance_days(4)
+	GameState.travel.route.clear()
+	var result: Dictionary = Pilots.read("test_ace", "before_the_run")
+	_check(result["ok"], "SV1: the save reads back: %s" % result["error"])
+	var data: Dictionary = result["data"]
+	GameState.from_dict(data["game"])
+	var back: EntityState = GameState.entities.states["mara_vell"]
+	_check(GameState.credits == 4321 and GameState.clock.day == day, "SV1: credits and date restored (%d, day %d)" % [GameState.credits, GameState.clock.day])
+	_check(GameState.travel.route == ([next] as Array[String]), "SV1: the plotted route is restored")
+	_check(back.in_transit() and back.transit_to == next and back.arrive_day == day + 3, "SV1: an entity in transit is still in transit")
+	_check(ShipRecord.design_of(data["player"]["ship"]) == player.def.id and is_equal_approx(float(data["player"]["ship"]["hull"]), 0.5), "SV1: the player's ship as a design plus damage")
+	_check(str(data["player"]["location"]["system"]) == here, "SV1: where the player was")
+	_check(Pilots.list_slots("test_ace").size() == 1 and str(Pilots.list_slots("test_ace")[0]["slot"]) == "Before the run", "SV2: the slot is listed by name")
+	# SV2: ten manual slots, then only overwriting.
+	for i: int in 9:
+		Pilots.save_manual("Slot %d" % i)
+	_check(Pilots.manual_slots("test_ace").size() == 10, "SV2: ten manual slots")
+	_check(Pilots.save_manual("Eleventh") != "", "SV2: an eleventh is refused")
+	_check(Pilots.save_manual("Slot 3") == "", "SV2: ...but a slot can be overwritten")
+	_check(Pilots.autosave() == "" and Pilots.list_slots("test_ace").size() == 11, "SV2: the autosave is extra")
+	# SV3: ironman.
+	Pilots.pilot["ironman"] = true
+	_check(Pilots.save_manual("Cheat") != "", "SV3: ironman can't save by hand")
+	_check(Pilots.autosave() == "" and FileAccess.file_exists(Pilots.root.path_join("test_ace/ironman.json")), "SV3: ironman autosaves to its one slot")
+	_check(Pilots.load_save("test_ace", "before_the_run") != "", "SV3: ironman can't load an older save")
+	Pilots.mark_dead()
+	_check(Pilots.load_save("test_ace", PilotSave.IRONMAN) != "", "SV3: a dead pilot can't be loaded")
+	# SV2: at most five pilots.
+	for i: int in 4:
+		# (create_pilot resets the game, so write the pilot folders directly)
+		DirAccess.make_dir_recursive_absolute(Pilots.root.path_join("extra_%d" % i))
+		Pilots._write_json(Pilots.root.path_join("extra_%d/pilot.json" % i), PilotSave.new_pilot("Extra", false, {}))
+	_check(Pilots.create_pilot("Sixth", false) != "", "SV2: a sixth pilot is refused")
+	for entry: Dictionary in Pilots.list_pilots():
+		Pilots.delete_pilot(entry["id"])
+	Pilots.root = root_before
+	Pilots.pilot = pilot_before
+	Pilots.pilot_id = id_before
 
 
 func _entity_ships(id: String) -> Array[Ship]:

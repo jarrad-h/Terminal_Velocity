@@ -81,6 +81,14 @@ static func parse(r: DefReader) -> SystemDef:
 
 
 ## TR5: the system's gate, or null (at most one per system).
+## The object with `id`, or null.
+func find_object(id: String) -> SystemObjectDef:
+	for obj: SystemObjectDef in objects:
+		if obj.id == id and id != "":
+			return obj
+	return null
+
+
 func gate() -> SystemObjectDef:
 	for o: SystemObjectDef in objects:
 		if o.type == "gate":

@@ -144,6 +144,8 @@ func _complete(player: Ship) -> void:
 	if not travel.route.is_empty():
 		text += "; next jump %s" % system_name(travel.route[0])
 	GameState.post_message(text)
+	if bool(Pilots.pilot.get("ironman", false)):
+		Pilots.autosave()  # SV3: ironman autosaves on each jump
 
 
 ## TR4: puts the player in `system_id`, arriving from `origin` (any system on
