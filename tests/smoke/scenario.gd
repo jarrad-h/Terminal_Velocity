@@ -779,6 +779,9 @@ func _save_checks(player: Ship) -> void:
 	mara.arrive_day = GameState.clock.day + 3
 	GameState.credits = 4321
 	player.health.armor = player.health.max_armor * 0.5
+	var hulk: Array[Ship] = _debug.spawn_ships("freighter", 1, "")
+	if not hulk.is_empty():
+		hulk[0].health.force_disable()
 	_check(Pilots.save_manual("Before the run") == "", "SV2: a manual save")
 	var day: int = GameState.clock.day
 	# Change everything, then read the save back.
@@ -795,13 +798,18 @@ func _save_checks(player: Ship) -> void:
 	_check(back.in_transit() and back.transit_to == next and back.arrive_day == day + 3, "SV1: an entity in transit is still in transit")
 	_check(ShipRecord.design_of(data["player"]["ship"]) == player.def.id and is_equal_approx(float(data["player"]["ship"]["hull"]), 0.5), "SV1: the player's ship as a design plus damage")
 	_check(str(data["player"]["location"]["system"]) == here, "SV1: where the player was")
+	_check(data["game"]["memory"]["wrecks"].get(here, []).any(func(w: Dictionary) -> bool: return ShipRecord.design_of(w) == "freighter"), "SV1, PS6: the system's wrecks are in the save")
+	for ship: Ship in hulk:
+		ship.remove_from_group(&"ships")
+		ship.queue_free()
 	_check(Pilots.list_slots("test_ace").size() == 1 and str(Pilots.list_slots("test_ace")[0]["slot"]) == "Before the run", "SV2: the slot is listed by name")
 	# SV2: ten manual slots, then only overwriting.
 	for i: int in 9:
 		Pilots.save_manual("Slot %d" % i)
 	_check(Pilots.manual_slots("test_ace").size() == 10, "SV2: ten manual slots")
 	_check(Pilots.save_manual("Eleventh") != "", "SV2: an eleventh is refused")
-	_check(Pilots.save_manual("Slot 3") == "", "SV2: ...but a slot can be overwritten")
+	_check(Pilots.save_manual("slot 3!") != "", "SV2: a new save never silently replaces one with the same name")
+	_check(Pilots.save_manual("Slot 3", true) == "", "SV2: ...but a slot can be overwritten")
 	_check(Pilots.autosave() == "" and Pilots.list_slots("test_ace").size() == 11, "SV2: the autosave is extra")
 	# D15: from the console.
 	_check(_debug.run_command("save Slot 3").begins_with("Saved"), "D15: save from the console")

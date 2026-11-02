@@ -96,8 +96,9 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed(&"ui_cancel") or DebugCommands.console_open or actions == null:
 		return
-	if actions.dialog != null or hyperspace.map != null or not Pilots.has_pilot():
-		return
+	var player: Ship = get_tree().get_first_node_in_group(&"player")
+	if actions.dialog != null or hyperspace.map != null or not Pilots.has_pilot() or player == null or player.health.is_destroyed:
+		return  # (not while the escape pod is out: SV3)
 	get_viewport().set_input_as_handled()
 	var iron: bool = bool(Pilots.pilot.get("ironman", false))
 	var menu := Dialog.open(self, "Paused", "Your ironman save is written as you leave." if iron else "Progress since your last save will be lost.")
@@ -193,6 +194,11 @@ func _enter(system_id: String, arrival: FlightState) -> void:
 func leave_system() -> void:
 	_record_wrecks()
 	entity_presence.on_leave()
+
+
+## SV1: write this system's wrecks into memory now (saving), as leaving does.
+func remember_wrecks() -> void:
+	_record_wrecks()
 
 
 ## PS4: after days passed while landed, entities move on or arrive: their

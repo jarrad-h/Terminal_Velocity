@@ -21,7 +21,7 @@ static func open_save(parent: Node, on_done: Callable = Callable()) -> Dialog:
 	for meta: Dictionary in slots:
 		var slot_name: String = str(meta.get("slot", meta["id"]))
 		dialog.add_choice("over_" + str(meta["id"]), "Overwrite: %s" % describe(meta), func() -> void:
-			_finish(dialog, Pilots.save_manual(slot_name), on_done))
+			_finish(dialog, Pilots.save_manual(slot_name, true), on_done))
 	dialog.add_choice("back", "Back", func() -> void: dialog.close())
 	return dialog
 

@@ -14,7 +14,7 @@ func test_ship_record_shape() -> void:
 
 
 func test_v0_migrates_to_v1() -> void:
-	var v0: Dictionary = {"credits": 50, "day": 12,
+	var v0: Dictionary = {"credits": 50, "day": 12, "travel": {"current_system": "aster"},
 		"entities": {"states": {"mara": {"id": "mara", "ships": [{"ship": "freighter", "hull": 0.9, "shield": 1.0}]}}},
 		"memory": {"values": {}, "wrecks": {"aster": [{"ship": "brig", "armor_pct": 0.1, "days_left": 2}]}}}
 	var result: Dictionary = SaveMigrations.upgrade(v0)
@@ -25,6 +25,7 @@ func test_v0_migrates_to_v1() -> void:
 	assert_eq(ShipRecord.design_of(data["game"]["entities"]["states"]["mara"]["ships"][0]), "freighter", "entity ships become ship records")
 	assert_eq(ShipRecord.design_of(data["game"]["memory"]["wrecks"]["aster"][0]), "brig", "so do wrecks")
 	assert_true(data.has("stats") and data.has("missions") and data.has("ratings"), "reserved blocks exist")
+	assert_eq(str(data["player"]["location"]["system"]), "aster", "the player's system comes from the travel state")
 
 
 func test_newer_and_too_old_saves_are_refused() -> void:

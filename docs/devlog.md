@@ -4,6 +4,53 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Phase 2 Milestone 4: Pilot and saves (in playtest, from 2 Nov 2026)
+
+Branch `p2m4-saves`, cloud session. The plan and answers are in `docs/decisions.md` (2 Nov).
+
+### Built
+
+- **SV1 (the pilot file):**
+  - Readable JSON under `user://pilots/<pilot>/`: a `pilot.json` block plus one file per slot. Each save holds a version, menu summary meta, the pilot (name, ironman, dead, escape pod, insurance), the whole `GameState` (credits, records, date, route and fuel, flags, system memory, entities, news), and the player's ship and location (system, plus landed port or position, velocity and heading). It also has reserved `stats`, `ratings` and `missions` blocks.
+  - Every ship is a `ShipRecord`: a design plus instance state (name, hull, shield, fitted, cargo). Entities' ships and remembered wrecks use it too.
+  - Saving writes the current system's wrecks first. Loading checks the save against the data: a missing ship design becomes the uninsured hull with a warning, wrecks of missing designs are dropped, and a missing current system refuses the load.
+- **SV2 (menus and slots):**
+  - The main menu is the boot scene: Continue, New pilot, Load (pilots → saves; delete pilot) and Quit.
+  - Up to 5 pilots. A normal pilot has an autosave (written on creation and every landing) plus 10 named manual slots; a new save never silently replaces one, and a full set means overwriting.
+  - The landed screen has Save, Load and Main menu. Esc in space opens Resume / Quit to main menu.
+  - Escape pod and insurance now come from the pilot.
+- **SV3 (ironman):**
+  - One slot, written on creation, every landing, every jump and gate trip, quitting to the menu and closing the window. No Save or Load, and no loading an older state.
+  - Lost with all hands and no pod: marked dead, and kept in the list as a memorial. Esc is blocked while the escape pod is out.
+- **SV4 (versions):** format version 1, with ordered migrations (version 0, the milestone 3 shape, upgrades); newer or too-old saves are refused with a message. Writes go to a temp file that is then swapped in.
+- **D15:** console `save [name]` (no name = the autosave slot), `load <slot>`, `pilots`, `savepath`.
+- **Tests:**
+  - `tests/unit/test_saves.gd`: records, migration, refusals, load-time checks, slot rules, slugs.
+  - Scenario `_save_checks`: a mid-route save with an entity in transit and wrecks reads back; limits for slots, ironman and pilots; D15.
+  - New `tests/smoke/menu_flow.tscn` (run by `check.py`): new pilot → land → save → menu → Continue, back landed, mid-route with Mara in transit; ironman has no Save or Load.
+
+### Review (godot-reviewer) fixes
+
+- An ironman could dodge the rescue by quitting while the pod was out. Now there's no saving from a destroyed ship and no Esc menu then.
+- Landed saves lost the system's wrecks.
+- Loading from inside a game let the old visit's entities write over the loaded state.
+- "Save as new" with an existing name overwrote that save.
+- An ironman could close the window to rewind; closing now writes the slot.
+- Number keys could fall through a Save dialog to the landed screen and softlock the pause.
+- Pod and insurance are now taken from the save.
+- A version 0 save had no location.
+- Atomic writes; ironman autosaves after gate trips.
+
+### What to look at (playtest)
+
+See the checklist in the handover message. The main menu and dialogs haven't been seen in a window yet: Jarrad's run is the first visual check.
+
+### Known gaps and questions
+
+- Killing the game process (not closing the window) while the escape pod is out still lets an ironman pilot reload the last autosave. This is accepted for now.
+- On Windows, pilot or save names that are reserved device names (CON, NUL…) fail with an error message.
+- The memorial lists no achievements yet; the `stats` block fills in with progression (milestone 8).
+
 ## Phase 2 Milestone 3: Persistence foundation (31 Oct – 2 Nov 2026, merged 2 Nov)
 
 ### Stopped at / Next step

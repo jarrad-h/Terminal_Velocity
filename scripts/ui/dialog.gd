@@ -145,6 +145,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var index: int = (event as InputEventKey).keycode - KEY_1
-		if index >= 0 and index < _choices.size():
-			choose(_choices[index]["id"])
-			get_viewport().set_input_as_handled()
+		if index >= 0 and index < 9:
+			if index < _choices.size():
+				choose(_choices[index]["id"])
+			get_viewport().set_input_as_handled()  # the top dialog takes every number key

@@ -137,6 +137,8 @@ func _travel_by_gate(gate: SystemObjectDef, system_id: String, days: int) -> voi
 	GameState.advance_days(days)
 	GameState.player_heading = ""
 	scene.hyperspace.arrive_at_gate(system_id)
+	if bool(Pilots.pilot.get("ironman", false)):
+		Pilots.autosave()  # SV3: a gate trip is a jump too
 	GameState.post_message("Through %s to %s after %d day%s" % [gate.name, Hyperspace.system_name(system_id), days, "" if days == 1 else "s"])
 
 

@@ -48,4 +48,6 @@ static func _v0_to_v1(data: Dictionary) -> Dictionary:
 	for key: String in ["pilot", "player"]:
 		if data.has(key):
 			out[key] = data[key]
+	if str(out["player"]["location"].get("system", "")) == "":
+		out["player"]["location"]["system"] = str(game.get("travel", {}).get("current_system", ""))
 	return out

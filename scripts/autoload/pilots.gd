@@ -26,6 +26,24 @@ func _ready() -> void:
 	root = str(_settings().get("root", "user://pilots"))
 
 
+## SV3: closing the window writes an ironman's slot, as quitting to the menu does.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_write_ironman()
+
+
+func _write_ironman() -> void:
+	if not bool(pilot.get("ironman", false)) or bool(pilot.get("dead", false)) or not has_pilot():
+		return
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	var player: Ship = get_tree().get_first_node_in_group(&"player")
+	if scene == null or player == null or player.health.is_destroyed:
+		return
+	if landed_at == "":
+		scene.leave_system()  # entities and wrecks written back first
+	autosave()
+
+
 func _settings() -> Dictionary:
 	return DataRegistry.settings.get("saves", {})
 
@@ -120,7 +138,7 @@ func list_slots(id: String) -> Array[Dictionary]:
 	if dir == null:
 		return out
 	for file: String in dir.get_files():
-		if not file.ends_with(".json") or file == "pilot.json":
+		if not file.ends_with(".json") or file == "pilot.json":  # (.tmp files are skipped too)
 			continue
 		var data: Dictionary = _read_json(root.path_join(id).path_join(file))
 		var meta: Dictionary = data.get("meta", {}).duplicate()
@@ -135,11 +153,14 @@ func manual_slots(id: String) -> Array:
 		func(s: String) -> bool: return s != PilotSave.AUTOSAVE and s != PilotSave.IRONMAN)
 
 
-## SV2: a manual save into slot `slot_name` (new or overwritten). Returns "" or why not.
-func save_manual(slot_name: String) -> String:
+## SV2: a manual save into slot `slot_name`. A new save never replaces an
+## existing one unless `overwrite` (the Overwrite buttons). Returns "" or why not.
+func save_manual(slot_name: String, overwrite: bool = false) -> String:
 	if not has_pilot():
 		return "No pilot to save (start from the main menu)."
 	var slot: String = PilotSave.slug(slot_name) if slot_name.strip_edges() != "" else ""
+	if not overwrite and manual_slots(pilot_id).has(slot):
+		return "There's already a save called that: pick another name, or overwrite it."
 	if not PilotSave.can_save_manual(pilot, slot, manual_slots(pilot_id), max_slots()):
 		if bool(pilot.get("ironman", false)):
 			return "Ironman pilots can't save by hand."
@@ -168,8 +189,11 @@ func _save(slot: String, label: String) -> String:
 ## SV1: the live game as a pilot file.
 func capture(label: String) -> Dictionary:
 	var player: Ship = get_tree().get_first_node_in_group(&"player")
-	if player == null:
-		return {}
+	if player == null or player.health.is_destroyed:
+		return {}  # SV3: no saving out of a destroyed ship (the pod's fate comes first)
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	if scene != null:
+		scene.remember_wrecks()  # PS6: this system's wrecks live as ships until written down
 	var record: Dictionary = ShipRecord.make(player.def.id, player.health.armor / maxf(player.health.max_armor, 0.001),
 		player.health.shield / maxf(player.health.max_shield, 0.001))
 	var where: Dictionary = PilotSave.location(GameState.travel.current_system, landed_at,
@@ -206,8 +230,14 @@ func load_save(id: String, slot: String) -> String:
 	if not result["ok"]:
 		return result["error"]
 	var data: Dictionary = result["data"]
+	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
+	if scene != null:
+		scene.entity_presence.on_leave()  # the old visit writes back now, not into the loaded state
 	pilot_id = id
-	pilot = block
+	pilot = block.duplicate()
+	for key: String in ["escape_pod", "insured"]:  # SV1: as they were in this save
+		if data["pilot"].has(key):
+			pilot[key] = data["pilot"][key]
 	GameState.from_dict(data["game"])
 	pending = data["player"]
 	landed_at = ""
@@ -231,11 +261,18 @@ func latest() -> Dictionary:
 
 func _write_json(path: String, data: Dictionary) -> String:
 	DirAccess.make_dir_recursive_absolute(path.get_base_dir())
-	var file := FileAccess.open(path, FileAccess.WRITE)
+	# Write a temporary file, then swap it in, so a crash mid-write never
+	# leaves a half-written save (an ironman has only one).
+	var temp: String = path + ".tmp"
+	var file := FileAccess.open(temp, FileAccess.WRITE)
 	if file == null:
 		return "Couldn't write %s (%s)." % [path, error_string(FileAccess.get_open_error())]
 	file.store_string(JSON.stringify(data, "  "))
-	return ""
+	file.close()
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)
+	var error: Error = DirAccess.rename_absolute(temp, path)
+	return "" if error == OK else "Couldn't write %s (%s)." % [path, error_string(error)]
 
 
 func _read_json(path: String) -> Dictionary:
@@ -248,11 +285,8 @@ func _read_json(path: String) -> Dictionary:
 ## SV3: back to the main menu; an ironman's slot is written first
 ## (`write_ironman`), so quitting never loses or rewinds its story.
 func quit_to_menu(write_ironman: bool = true) -> void:
-	if write_ironman and bool(pilot.get("ironman", false)) and not bool(pilot.get("dead", false)):
-		var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
-		if scene != null and landed_at == "":
-			scene.leave_system()  # entities and wrecks written back first
-		autosave()
+	if write_ironman:
+		_write_ironman()
 	pilot_id = ""
 	pilot = {}
 	pending = {}

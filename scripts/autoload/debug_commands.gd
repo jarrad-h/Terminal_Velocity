@@ -488,7 +488,7 @@ func run_command(line: String) -> String:
 			if not Pilots.has_pilot():
 				return "No pilot (start from the main menu)"
 			var name_given: String = " ".join(w.slice(1))
-			var error: String = Pilots.save_manual(name_given) if name_given != "" else Pilots.autosave()
+			var error: String = Pilots.save_manual(name_given, true) if name_given != "" else Pilots.autosave()
 			return error if error != "" else "Saved %s" % (name_given if name_given != "" else "(autosave)")
 		"load":
 			if w.size() < 2 or not Pilots.has_pilot():
