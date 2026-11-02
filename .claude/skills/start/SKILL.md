@@ -14,6 +14,15 @@ Jarrad works across two Windows PCs (project at `C:\Dev\Terminal_Velocity` on bo
 - **Design talk lands in the repo the same session.** Anything agreed in chat (behaviour, keys, day costs, data shape) goes into the phase spec and `docs/decisions.md` before or with the code.
 - **Playtest method.** Jarrad plays in the Godot editor on his PC and reports feel ("turning is too slow", "drift feels floaty"). Follow the `playtest` skill and CLAUDE.md: tuning changes JSON in `data/`; code changes only for bugs, or to add a data field when the value isn't in data yet (with loader validation and a `data/README.md` default).
 - **Keep commands portable.** The check uses `GODOT_PATH` (the exe) and `--path .` (the repo root), so it works on both PCs and in the cloud; don't hard-code a machine's path in CLAUDE.md or tools.
+- **Check in when a fix stops being straightforward** (agreed 2 Nov 2026, after a small wingman-flipping fix took over 3 hours of silent trial and error). Stop and report to Jarrad, then let him choose fix now, polish pass or a different approach, if any of these happen:
+  - A fix or slice takes more than about 30–45 minutes beyond the plan.
+  - A second approach has failed.
+  - The real cause turns out to be a design constraint rather than a bug (e.g. forward-only thrust means braking always needs a flip).
+
+  The report covers what's known, the trade-off and a recommendation.
+  - **Think before tuning:** work out the constraint and the intended behaviour before sweeping numbers.
+  - **Test fast:** measure with a fast, deterministic test (a unit test or a small fixed setup), not repeated runs of the random full scenario.
+  - **Ship the easy part first:** when notes are mixed, commit the easy ones before digging into the hard one.
 - **Future-proof data shapes.** When Jarrad picks a simple rule for now (e.g. flat fuel per jump), structure the data so a richer rule can replace it later without a format change, and say how.
 
 ## Steps
