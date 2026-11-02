@@ -8,6 +8,8 @@
 5. Scenario test: tests/smoke/scenario.tscn flies, fights, streams scenery and drives
    every debug command, then exits non-zero on any failed check. Its negative checks
    (unknown IDs) print expected errors, so only the exit code counts.
+6. Menu flow test: tests/smoke/menu_flow.tscn drives the main menu, a new pilot, saving,
+   quitting and continuing (SV2, SV3) in its own pilots folder.
 
 Exit code 0 = green. Claude Code runs this before every commit.
 """
@@ -84,6 +86,12 @@ if os.path.exists(os.path.join(ROOT, "tests", "smoke", "scenario.tscn")):
     step("scenario test", code == 0 and not fails, "\n".join(fails[:30] or text.splitlines()[-20:]))
 else:
     print("[SKIP] scenario test: tests/smoke/scenario.tscn not found")
+
+# 6. Menu flow (SV2, SV3): main menu, pilots, saving and loading end to end
+if os.path.exists(os.path.join(ROOT, "tests", "smoke", "menu_flow.tscn")):
+    code, text = run_godot(["res://tests/smoke/menu_flow.tscn"], timeout=180)
+    fails = [l for l in text.splitlines() if l.startswith("FAIL") or "SCRIPT ERROR" in l]
+    step("menu flow test", code == 0 and not fails, "\n".join(fails[:30] or text.splitlines()[-20:]))
 
 print("\nGREEN" if not failed else f"\nRED: {', '.join(failed)}")
 sys.exit(1 if failed else 0)

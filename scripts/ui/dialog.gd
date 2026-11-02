@@ -12,6 +12,7 @@ const THEME_PATH: String = "res://assets/ui/theme.tres"
 var _title: Label
 var _body: Label
 var _buttons: BoxContainer
+var _extras: VBoxContainer
 var _panel: PanelContainer
 var _choices: Array[Dictionary] = []  # {"id", "button", "action"}
 var _was_paused: bool = false
@@ -53,6 +54,9 @@ func _init() -> void:
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.custom_minimum_size = Vector2(520.0, 0.0)
 	box.add_child(_body)
+	_extras = VBoxContainer.new()
+	_extras.add_theme_constant_override("separation", 8)
+	box.add_child(_extras)
 	_buttons = BoxContainer.new()
 	_buttons.add_theme_constant_override("separation", 10)
 	box.add_child(_buttons)
@@ -87,6 +91,26 @@ func add_choice(id: String, text: String, action: Callable, enabled: bool = true
 	button.pressed.connect(func() -> void: choose(id))
 	_buttons.add_child(button)
 	_choices.append({"id": id, "button": button, "action": action})
+
+
+## A text field above the choices (SV2: pilot and save names).
+func add_field(placeholder: String, text: String = "") -> LineEdit:
+	var field := LineEdit.new()
+	field.placeholder_text = placeholder
+	field.text = text
+	field.max_length = 40
+	_extras.add_child(field)
+	field.grab_focus.call_deferred()
+	return field
+
+
+## A tick box above the choices (SV3: ironman).
+func add_check(text: String) -> CheckBox:
+	var check := CheckBox.new()
+	check.text = text
+	check.focus_mode = Control.FOCUS_NONE
+	_extras.add_child(check)
+	return check
 
 
 func clear_choices() -> void:

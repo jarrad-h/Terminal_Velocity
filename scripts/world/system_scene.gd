@@ -74,6 +74,8 @@ func _ready() -> void:
 		var port: SystemObjectDef = system.find_object(str(restore["location"].get("landed", "")))
 		if port != null:
 			actions.resume_landed.call_deferred(port)
+	elif Pilots.has_pilot() and Pilots.list_slots(Pilots.pilot_id).is_empty():
+		Pilots.autosave.call_deferred()  # SV2: a new pilot exists on disk from the start
 
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
 	if OS.is_debug_build():
@@ -88,6 +90,22 @@ func _ready() -> void:
 			var ship: Ship = spawn_ship(spawn["ship"], Vector2(at[0], at[1]), spawn.get("government", ""))
 			if ship != null:
 				ship.set_controller(IdleController.new())
+
+
+## SV2, SV3: Esc in space: resume, or back to the main menu.
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed(&"ui_cancel") or DebugCommands.console_open or actions == null:
+		return
+	if actions.dialog != null or hyperspace.map != null or not Pilots.has_pilot():
+		return
+	get_viewport().set_input_as_handled()
+	var iron: bool = bool(Pilots.pilot.get("ironman", false))
+	var menu := Dialog.open(self, "Paused", "Your ironman save is written as you leave." if iron else "Progress since your last save will be lost.")
+	menu.use_shared_theme()
+	actions.dialog = menu
+	menu.closed.connect(func() -> void: actions.dialog = null)
+	menu.add_choice("resume", "Resume", func() -> void: menu.close())
+	menu.add_choice("menu", "Save and quit to menu" if iron else "Quit to main menu", func() -> void: Pilots.quit_to_menu())
 
 
 ## SV1: puts the player's ship as it was saved (damage, place, heading).

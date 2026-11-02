@@ -53,7 +53,8 @@ addons/gut/   GUT unit-test framework (vendored, 9.7.1 for Godot 4.7)
 tests/
   unit/       GUT tests (test_*.gd) for scripts/sim and the data loader
   fixtures/   Data folders the loader tests read
-  smoke/      smoke.tscn (boot + spawn every ship, must print no errors) and scenario.tscn (scripted end-to-end checks)
+  smoke/      smoke.tscn (boot + spawn every ship, must print no errors), scenario.tscn (scripted end-to-end checks)
+              and menu_flow.tscn (main menu, pilots, saving and loading)
 tools/        check.py (one health check), hooks/post_edit.py (edit hook), hardpoint-editor/ (browser tool that writes hull.json),
               ship-designer/ (browser tool: compose hulls from a parts kit, writes .design.json and hull.json), shared/ (marker code both tools load)
 docs/         phase2-spec.md (current), spec.md (Phase 1), decisions.md, devlog.md
@@ -70,7 +71,7 @@ docs/         phase2-spec.md (current), spec.md (Phase 1), decisions.md, devlog.
 
 ## Checking work
 
-- `python tools/check.py` is the one health check: JSON parses, the project imports cleanly, GUT unit tests pass, the smoke scene prints no errors or warnings, and the scenario test passes. GREEN before every commit.
+- `python tools/check.py` is the one health check: JSON parses, the project imports cleanly, GUT unit tests pass, the smoke scene prints no errors or warnings, the scenario test passes, and the menu flow test (main menu, pilots, save and load) passes. GREEN before every commit.
 - Godot comes from `GODOT_PATH` (the console exe on Windows), else `godot` on PATH. A fresh clone imports on the first check run.
 - Single pieces: unit tests `"$GODOT_PATH" --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -ginclude_subdirs -gexit`; smoke `"$GODOT_PATH" --headless --path . res://tests/smoke/smoke.tscn --quit-after 600`.
 - `--quit` exits 0 even after script errors, so read output for `SCRIPT ERROR`/`ERROR` lines (check.py does). Invalid data makes the game exit 1 headless.
