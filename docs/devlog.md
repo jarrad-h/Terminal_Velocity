@@ -4,7 +4,17 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
-## Phase 2 Milestone 3: Persistence foundation (in progress, from 31 Oct 2026)
+## Phase 2 Milestone 3: Persistence foundation (31 Oct – 2 Nov 2026, merged 2 Nov)
+
+### Stopped at / Next step
+
+Stopped at: P2M3 merged to `main` (2 Nov 2026), check GREEN.
+
+Next step: plan Phase 2 milestone 4 (pilot and saves, SV1–SV4) on `p2m4-<slug>`. Every state added in M3 (entity registry, system memory, news, flags) must be in the save format.
+
+Open questions carried forward:
+- Why Mara's courier once lost its hostility (unexplained; note the callsign if it recurs).
+- The review list (orbital stations and defence, danger memory, in-system map, points of interest as targets).
 
 Branch `p2m3-persistence`, cloud session. The plan was agreed with Jarrad, with a mid-milestone check-in after the first half (A9, A10, PS6). Persistent entities, encounters and news (PS2–PS5, PS7) come after the check-in. Decisions: `docs/decisions.md`, 31 Oct.
 
