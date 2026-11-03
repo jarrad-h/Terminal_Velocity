@@ -84,11 +84,13 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
   - **Guided missiles:** fire when in range.
   - **Target:** the ship that last hit it if it's still in range and hostile, else the nearest ship in weapon range that it is hostile to.
 
+- A13: Finishing off disabled ships (milestone 4 playtest, 3 Nov 2026). Each government says what its ships do to an enemy they've disabled: `kill` (keep firing until it's destroyed) or `leave` (move on), and may set a `kill_record`: a player whose record with it is at or below that is killed even by a `leave` government. In the test cluster pirates kill, the Local Authority leaves disabled ships but kills a player at −300 or below, and Independent Traders leave. The same rule applies AI against AI, so a disabled ship to board is a lucky find or the player's own careful work. After a kill the ship carries on with what it was doing. Personality doesn't change it yet.
+
 **Saves (SV)**
 
-- SV1: A pilot file holds everything persistent: player ship and outfits, cargo, credits, records, ratings, flags, missions, the date, the galaxy simulation state and system memory. The current system is saved as its persistent parts only. Every ship, the player's included, is saved as a design reference plus instance state (name, damage, fitted items, cargo); premade ships are designs too, so player-made designs can be saved later without a format change.
-- SV2: The player saves and loads from the main menu and when landed; the game autosaves on landing.
-- SV3: Ironman is chosen when the pilot is created and cannot be changed. An ironman pilot has one save slot, autosaves on landing and on each jump, and cannot load an older state. Death follows the same escape-pod and insurance rules as normal play.
+- SV1: A pilot file holds everything persistent: player ship and outfits, cargo, credits, records, ratings, flags, missions, the date, the galaxy simulation state and system memory. The current system is saved as its persistent parts only. Every ship, the player's included, is saved as a design reference plus instance state (name, damage, fitted items, cargo); premade ships are designs too, so player-made designs can be saved later without a format change. Persistent entities' ships use the same shape. The escape pod and insurance are pilot properties in the save, starting from the `game.json` values. Saves are readable JSON under the user data folder. A save naming a ship design that no longer exists loads with the uninsured hull in its place and a warning; a missing current system refuses with a message.
+- SV2: The player saves and loads from the main menu and when landed; the game autosaves on landing. Up to 5 pilots exist at once (delete one to make another), and each normal pilot has one autosave plus up to 10 manual save slots, named by the player; a full set of slots means overwriting one (limits in `game.json`, so saving stays a deliberate choice).
+- SV3: Ironman is chosen when the pilot is created and cannot be changed. An ironman pilot has one save slot, autosaves on landing and on each jump, and cannot load an older state; it has no manual save, and quitting to the menu writes its slot. Death follows the same escape-pod and insurance rules as normal play; an ironman pilot who dies with no escape pod is marked dead and stays in the pilot list as a memorial that can't be loaded.
 - SV4: The save format carries a version number; older saves are migrated or refused with a clear message.
 
 **Economy (EC)**
@@ -140,6 +142,7 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
 - D12: View and edit flags, ratings and records; list available missions and why others are not available.
 - D13: Inspect the persistent-entity registry and system memory; spawn or move a persistent entity.
 - D14: Lighting on and off, and live control of the star's direction and height.
+- D15: Save and load from the console (`save [slot]`, `load <slot>`, `pilots`, `savepath`).
 
 ## Persistence model
 
@@ -213,7 +216,7 @@ Eight milestones, each ending in a playtest; persistence comes before saves so t
 1. ✅ (merged 2026-10-30) **Galaxy, hyperlanes and the day clock:** galaxy data, the test cluster's systems, hyperlane jumps with edge rule and countdown, arrival, fuel and refuelling, galaxy map with route plotting, day costs. Done when TR1–TR4, TR7–TR8 and TM1–TM3 work (TM3 with nothing yet to step).
 2. ✅ (merged 2026-10-30) **Gates and lighting:** gate stellars, destination list, fee and record check, closable by flag, gate links on the map; lit ships (V6), star and ambient light from system data (V7), weapon and engine lights (V8), lit stellars on placeholders until the art lands (V9), the shared UI theme for the gate list (H5) and the lighting debug controls (D14). Done when TR5–TR6 work, the map shows gate links, ships light correctly at every heading, shots light nearby hulls, performance is unchanged and the check is GREEN. Gate, station and planet art comes from Jarrad's parallel `art/*` session and merges when its branch passes the check (see "Art requests for milestone 2").
 3. ✅ (merged 2026-11-02) **Persistence foundation:** entity registry, travel by the player's rules, materialise and write-back, off-screen encounters, system memory with recovery, news. AI traffic flies the hyperspace sequence (A9) and hub systems get gate traffic (A10), both from the milestone 2 playtest. Mid-milestone check-in after A9, A10 and system memory (PS6). Done when PS1–PS7, A9 and A10 work with the test cluster's three persistent entities. Playtests added fleets (PS4), landing and sheltering (A11) and covering fire (A12).
-4. **Pilot and saves:** pilot creation (name, ironman), save/load, autosave, versioned format. Done when SV1–SV4 work and a save made mid-route restores entities in transit.
+4. ✅ (merged 2026-11-03) **Pilot and saves:** pilot creation (name, ironman), save/load, autosave, versioned format. Done when SV1–SV4 work and a save made mid-route restores entities in transit. Playtests added D15, finishing off disabled ships (A13), the 15% disable band (C7) and safe rescues (C10).
 5. **Economy:** commodities, market tiers, price events, cargo hold, trade screen, cargo jettison. Done when EC1–EC4 work and a pure trading run across four systems turns a profit.
 6. **Shipyard and outfitter:** buying hulls with trade-in, fitting by hardpoint, free mass, the modifier system and the trader escape kit. Moves hull geometry into manifests first (OF7). Done when OF1–OF9 work and the shuttle has a visible upgrade path.
 7. **Mission engine:** flags, the condition grammar, declarative missions, script hooks, templates, mission log, persistent mission targets and escorts. Done when MS1–MS6 work with the four templates.
@@ -278,7 +281,8 @@ An art phase follows Phase 2 to build an expanded asset library, so Phase 3 cont
 
 - Dynamic supply and demand, replacing or layering on fixed tiers.
 - Fauna, including leviathans, when fauna is introduced.
-- Contraband scanning, escorts, hailing and bribes, AI finishing off disabled ships, point defence (C13).
+- Contraband scanning, escorts, hailing and bribes, point defence (C13). (AI finishing off disabled ships became A13.)
+- After a kill: pirates leaving the system (raid done), or lingering to loot the wreck once cargo and AI boarding exist (A13 follow-ups).
 - HUD restyle to Amber Glass (dark scene, translucent panels, amber accents); until then new screens use the shared `Theme` (H5).
 - Light maps for the pirate raider (its painter bakes light per plate; needs plate facings as normals and its hot parts as glow).
 - Cast shadows (ships and stations blocking starlight onto each other, Godot light occluders) as a visual uplift, if the performance cost is small.
@@ -292,6 +296,7 @@ An art phase follows Phase 2 to build an expanded asset library, so Phase 3 cont
   - Stations defend client ships where it makes sense: station weapons, and local defence fighter patrols.
   - Attacking a ship sheltering in orbit is a crime with the planet's government.
   - Much is still to work out; ties in with station weapons in Phase 3.
+- **Pilot memorial and lifetime stats** (Jarrad, milestone 4 planning): a dead pilot's entry lists their record: kills, money made through trade, planets landed on, highest standing reached with each faction. The save carries an empty `stats` block from milestone 4; the counters arrive with progression (milestone 8, PR).
 - Points of interest as targets: planets, stations and gates selectable like ships and shown in the target panel (name, government, landable or dockable, distance) (milestone 3 playtest).
 
 **Carried over from the prototype devlog**

@@ -11,7 +11,7 @@ Argument: a milestone number or a list of requirement IDs.
 - Read `docs/phase2-spec.md`, `docs/spec.md`, `docs/decisions.md`, the tail of `docs/devlog.md`, and the code the work touches.
 - Create branch `m<N>-<slug>` from `main` (or continue it if it exists).
 - Present a plan: requirement IDs covered, files to add/change, data schema changes, tests to add, and anything in the spec that is ambiguous. Ask the ambiguous questions now, in one batch.
-- Wait for Jarrad's go-ahead before writing code.
+- Wait for Jarrad's go-ahead before writing code. Every open question needs his explicit answer first; a default you announced ("I'll go with X unless you say otherwise") is not an answer.
 
 ## 2. Build in vertical slices
 For each slice (one or a few requirement IDs):

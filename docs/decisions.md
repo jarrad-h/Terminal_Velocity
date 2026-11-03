@@ -280,3 +280,45 @@ Rejected:
 - Letting personality decide (a coward still shoots back when it costs nothing).
 - Pivots firing at their arc edge when covering (wasted shots).
 
+## 2026-11-02 — Milestone 4 plan: pilots, slots and the save file (SV1–SV4, D15)
+- **Limits:** up to 5 pilots at once; each normal pilot has one autosave (on landing) and up to 10 named manual slots. A full set means overwriting a slot, to keep saving deliberate. Both limits are in `game.json`.
+- **Ironman:** one slot, written by autosaves (landing, each jump) and on quitting to the menu; no manual save; no loading an older state. A death with no escape pod marks the pilot dead, and it stays in the list as a memorial.
+- **File:** readable JSON under `user://pilots/<pilot>/`, with a version number and ordered migrations; newer or unknown versions are refused with a message.
+- **Ships:** saved as a design reference plus instance state, entities' ships included (migrated from the milestone 3 shape).
+- **Missing data:** a missing ship design loads as the uninsured hull with a warning; a missing current system refuses to load.
+- **Escape pod and insurance:** become pilot properties in the save, ready for the outfitter (milestone 6).
+- **Debug:** D15 adds save and load from the console.
+- **Later:** a dead pilot's memorial lists lifetime achievements (kills, trade profit, planets landed on, highest faction standing). The save reserves an empty `stats` block now; the counters come with progression in milestone 8.
+Why: Jarrad's answers to the milestone 4 plan, 2 Nov 2026 ("don't want to encourage over saving").
+
+## 2026-11-03 — Who finishes off disabled ships; a narrower disable band (A13, C7)
+- **Policy:** governments choose `kill` or `leave` for enemies they've disabled, plus a `kill_record` threshold for the player. In the test cluster:
+  - pirates kill;
+  - the Local Authority leaves disabled ships but kills a player at a record of −300 or below;
+  - traders leave.
+- **Same rules for AI against AI.** After a kill, the ship carries on (option a).
+- **Disable band:** narrowed from 33% to 15% armour (`combat.disable_armor_pct`; ships may override).
+- **Personality** stays out for now.
+
+Why: Jarrad's milestone 4 playtest, 3 Nov 2026. AI never killed anything, so the player was only ever disabled and death, the escape pod and ironman memorials couldn't be tested. A capturable disabled ship should be a lucky break or earned with skill.
+
+Rejected or later:
+- **b:** a pirate leaves the system after a kill; a per-government option if pirates feel too sticky.
+- **c:** a pirate loots the wreck first; needs cargo and AI boarding.
+- **Personality-driven killing.**
+
+## 2026-11-03 — Rescue only by a friendly or neutral party; carried out of hostile systems (C10)
+- **Where you wake:** at the nearest port that accepts you. If none in the system does, the rescuer takes you to the nearest system (by travel days, hidden lanes included) that has one, adding that trip's days.
+- **Who rescues you:** the receiving port's government, else "a passing freighter".
+- **Last resort:** the start system's first landable port, with a warning.
+- **Unchanged:** the rescue fee.
+
+Why: Jarrad's milestone 4 playtest, 3 Nov 2026. Dying in a pirate system woke him on the pirate planet without landing rights, "saved by a passing pirate", which is an exploit.
+Rejected: the old fallback to any landable port.
+
+## 2026-11-03 — Rescue reveals the hidden path; secret systems excluded (C10)
+- **Revealing:** hidden systems a rescuer carries the player through are revealed, so the player can route back. A hyperlane with `rescue_reveals: false` keeps its far end hidden.
+- **Excluding:** a galaxy system with a closed `rescue_if` condition is never a rescue destination or stopover. The condition uses the gate grammar, so a mission flag can unlock it later.
+Why: Jarrad, 3 Nov 2026 (option b for revealing; per-lane flag and condition field as recommended).
+Rejected: a per-system reveal flag; a plain true/false instead of a condition.
+

@@ -54,22 +54,48 @@ static func rescue_fee(credits: int, fee_pct: float) -> int:
 
 
 ## C10: index of the nearest landable object that accepts the player (G4),
-## else the nearest landable one, else -1. `records`: government -> record.
+## else -1 (no hostile party rescues the player). `records`: government -> record.
 static func rescue_port(objects: Array[SystemObjectDef], from: Vector2, records: Dictionary, default_record: float) -> int:
-	var best_ok: int = -1
-	var best_any: int = -1
+	var best: int = -1
 	for i: int in objects.size():
 		var obj: SystemObjectDef = objects[i]
-		if not obj.landable:
+		if not obj.landable or obj.type == "gate":
 			continue
-		var d2: float = from.distance_squared_to(obj.position)
-		if best_any == -1 or d2 < from.distance_squared_to(objects[best_any].position):
-			best_any = i
 		var record: float = records.get(obj.government, default_record)
 		if landing_allowed(obj.government, record, obj.min_record):
-			if best_ok == -1 or d2 < from.distance_squared_to(objects[best_ok].position):
-				best_ok = i
-	return best_ok if best_ok != -1 else best_any
+			if best == -1 or from.distance_squared_to(obj.position) < from.distance_squared_to(objects[best].position):
+				best = i
+	return best
+
+
+## C10: the nearest system by travel days (then jumps, then id) among
+## `havens` (system id -> true: it has a port that accepts the player),
+## along any lane, hidden ones too, never into or through a `closed` system
+## (id -> true: its rescue_if is closed).
+## {"system": "" if none reachable, "days", "route": [systems after start]}.
+static func nearest_haven(galaxy: GalaxyDef, start: String, havens: Dictionary, jump_speed: float, closed: Dictionary = {}) -> Dictionary:
+	if havens.has(start) and not closed.has(start):
+		return {"system": start, "days": 0, "route": []}
+	var best: Dictionary = {"system": "", "days": 0, "route": []}
+	var blocked: Dictionary = closed.duplicate()
+	blocked.erase(start)  # dying in a closed system: the rescuer still sets off from it
+	var best_cost := Vector2i(-1, -1)
+	var ids: Array = havens.keys()
+	ids.sort()
+	for id: String in ids:
+		var route: Array[String] = Hyperlanes.plot_route(galaxy, start, id, jump_speed, blocked)
+		if route.is_empty():
+			continue
+		var days: int = 0
+		var at: String = start
+		for hop: String in route:
+			days += Hyperlanes.jump_days(Hyperlanes.lane_length(galaxy, at, hop), jump_speed)
+			at = hop
+		var cost := Vector2i(days, route.size())
+		if best_cost.x < 0 or cost.x < best_cost.x or (cost.x == best_cost.x and cost.y < best_cost.y):
+			best_cost = cost
+			best = {"system": id, "days": days, "route": route}
+	return best
 
 
 ## S3: repair cost for the missing shield and armour points.

@@ -32,7 +32,7 @@ static func new_state(def: PersistentEntityDef, day: int, rng: RandomNumberGener
 	s.leave_day = day + rng.randi_range(def.stay_days.x, def.stay_days.y)
 	for entry: Dictionary in def.ships:
 		for i: int in int(entry["count"]):
-			s.ships.append({"ship": entry["ship"], "hull": 1.0, "shield": 1.0})
+			s.ships.append(ShipRecord.make(entry["ship"]))
 	if def.order_type == "patrol":
 		s.route_index = maxi(def.route.find(def.start_system), 0)
 	return s
@@ -204,5 +204,5 @@ func _encounters(ctx: Dictionary) -> Array[String]:
 func _speed(s: EntityState, ctx: Dictionary) -> float:
 	var speed: float = INF
 	for ship: Dictionary in s.ships:
-		speed = minf(speed, float(ctx["ship_speed"].get(ship["ship"], 150.0)))
+		speed = minf(speed, float(ctx["ship_speed"].get(ShipRecord.design_of(ship), 150.0)))
 	return speed if speed < INF else 150.0

@@ -114,7 +114,7 @@ func _materialise(s: EntityState, def: PersistentEntityDef, arriving: bool) -> v
 	for i: int in s.ships.size():
 		var summary: Dictionary = s.ships[i]
 		var at: Vector2 = centre + side.orthogonal() * (i - (s.ships.size() - 1) / 2.0) * spacing
-		var ship: Ship = scene.spawn_ship(summary["ship"], at, def.government)
+		var ship: Ship = scene.spawn_ship(ShipRecord.design_of(summary), at, def.government)
 		if ship == null:
 			continue
 		ship.callsign = def.name
@@ -143,7 +143,7 @@ func _materialise(s: EntityState, def: PersistentEntityDef, arriving: bool) -> v
 func _apply_summary(ship: Ship, summary: Dictionary) -> void:
 	ship.health.shield = ship.health.max_shield * clampf(float(summary.get("shield", 1.0)), 0.0, 1.0)
 	var hull: float = clampf(float(summary.get("hull", 1.0)), 0.0, 1.0)
-	if hull <= ship.def.disable_armor_pct / 100.0:
+	if hull <= ship.disable_fraction():
 		ship.health.force_disable()
 	ship.health.armor = ship.health.max_armor * hull
 
@@ -234,14 +234,14 @@ func _write_back(id: String) -> void:
 
 
 static func _summary(ship: Ship) -> Dictionary:
-	return {"ship": ship.def.id, "hull": ship.health.armor / maxf(ship.health.max_armor, 0.001),
-		"shield": ship.health.shield / maxf(ship.health.max_shield, 0.001)}
+	return ShipRecord.make(ship.def.id, ship.health.armor / maxf(ship.health.max_armor, 0.001),
+		ship.health.shield / maxf(ship.health.max_shield, 0.001))
 
 
 func _speed(s: EntityState) -> float:
 	var speed: float = INF
 	for ship: Dictionary in s.ships:
-		var def: ShipDef = DataRegistry.get_ship(ship["ship"])
+		var def: ShipDef = DataRegistry.get_ship(ShipRecord.design_of(ship))
 		if def != null:
 			speed = minf(speed, def.jump_speed)
 	return speed if speed < INF else 150.0

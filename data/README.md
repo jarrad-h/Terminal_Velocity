@@ -38,6 +38,7 @@ Fields marked **required** have no default.
 | `player.rescue_fee_pct` | C10: share of credits charged by the rescuer, 0–100 | `10` |
 | `player.rescue_days` | C10: days that pass before rescue `[min, max]` (shown in the report) | `[2, 5]` |
 | `player.pod_speed`, `player.pod_time` | C10: escape pod speed (px/s, added to the ship's) and flight time (s) | `600`, `3` |
+| `saves.root`, `saves.max_pilots`, `saves.max_slots` | SV1–SV2: where pilot folders live (`user://` is Godot's user data folder; on Windows `%APPDATA%\Godot\app_userdata\Terminal Velocity`); how many pilots may exist at once; manual save slots per normal pilot (plus one autosave) | `"user://pilots"`, `5`, `10` |
 | `landing.max_speed` | S2: land only below this speed (player and AI), px/s | `60` |
 | `landing.radius_fraction` | S2: …and within this fraction of the planet's radius of its centre | `0.6` |
 | `landing.repair_cost_per_point` | S3: credits per missing shield/armour point; 0 = free repairs | `0` |
@@ -46,6 +47,7 @@ Fields marked **required** have no default.
 | `boarding.time` | C9: seconds the boarding progress bar runs (more than 0) | `2` |
 | `boarding.assist_armor_pct` | C9 Assist: patched-up ships get back to this % of max armour, up to 100 (keep it above ships' `disable_armor_pct`) | `50` |
 | `combat.disabled_drag` | C7: a disabled ship (any ship, the player's too) loses this much speed per second until it stops, px/s²; 0 = drifts forever | `30` |
+| `combat.disable_armor_pct` | C7: default % of max armour at or below which a ship is disabled (ships may set their own `disable_armor_pct`); narrow, so taking a ship intact takes skill | `15` |
 | `combat.friendly_fire_pct` | % damage AI shots do to their own and allied governments' ships (C11); 0 = off. Player shots always do full damage | `100` |
 | `lighting.enabled` | V7: live lighting on (star, ambient, lit sprites); off draws everything flat | `true` |
 | `lighting.ambient` | V7: colour the unlit side of lit things is darkened to (a `CanvasModulate`); things without light maps, the backdrop and the HUD aren't darkened. A system's `lighting.ambient` overrides it | `"#4b5161"` |
@@ -123,7 +125,7 @@ Fields marked **required** have no default.
 | `shield`, `shield_regen` | Shield points and recharge per second (no recharge while disabled) | `0`, `0` |
 | `shield_recharge_delay` | Seconds without taking damage before shields start recharging; any hit resets it (C6) | `3` |
 | `armor` | Armour points | `100` |
-| `disable_armor_pct` | Disabled (drifts, can't fire) at or below this % of max armour; destroyed at 0 | `33` |
+| `disable_armor_pct` | Disabled (drifts, can't fire) at or below this % of max armour; destroyed at 0 (absent = `game.json` `combat.disable_armor_pct`) | game.json |
 | `strength` | Combat strength for AI odds | `1` |
 | `crew` | Crew count | `1` |
 | `hit_size` | V2: capsule hitbox `[width, length]` in art px, running along the hull (width ≤ length; equal values make a circle). Cover the hull body, not ornaments. Also sizes the placeholder arrow | `[32, 32]` |
@@ -175,6 +177,8 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `friendly_record` | G5: record at or above which its ships show as friendly (radar, target panel); must be above `crime_threshold` | `25` |
 | `penalties` | `{"shoot", "disable", "board", "kill"}`: record lost per act | all `0` |
 | `max_odds` | Engages only if enemy strength ÷ own strength ≤ this | `1` |
+| `on_disabled` | A13: what its ships do to an enemy they've disabled: `"kill"` (keep firing until destroyed) or `"leave"` (move on) | `"leave"` |
+| `kill_record` | A13: a player whose record with this government is at or below this is killed even when `on_disabled` is `"leave"` (absent = never) | none |
 | `flee_shield_pct` | Retreats below this shield % | `25` |
 | `tolerance_pct` | A8: how much of a ship's total shield + armour the player can damage before that ship turns hostile (grievance) | `10` |
 | `forgiveness_pct_per_s` | A8: how fast grievance drains, % per second | `0.5` |
@@ -244,8 +248,8 @@ Solid scenery takes weapon damage to its armour. Destroyed scenery stays destroy
 | --- | --- | --- |
 | `name` | Display name | **required** |
 | `start_system` | System the player starts in; must be listed and not `hidden` | **required** |
-| `systems` | `[{"system": <system ID>, "position": [x, y], "map_state": …}]`, each system once. `position` is in map units (+y is down, as in space); `map_state` is how it starts on the map: `explored` (name, government and system view shown), `unexplored` (shown as "Unexplored" until visited) or `hidden` (not drawn or routable, nor its lanes, until revealed) | **required**; `map_state` `"unexplored"` |
-| `hyperlanes` | `[{"from": <system ID>, "to": <system ID>}]`; two-way, each pair once, both ends listed in `systems` | `[]` |
+| `systems` | `[{"system": <system ID>, "position": [x, y], "map_state": …}]`, each system once. `position` is in map units (+y is down, as in space); `map_state` is how it starts on the map: `explored` (name, government and system view shown), `unexplored` (shown as "Unexplored" until visited) or `hidden` (not drawn or routable, nor its lanes, until revealed); `rescue_if` (C10) is the condition under which a rescue may take the player to or through it: `""` always, `"flag"` only once that flag is set, `"!flag"` only while it isn't (use `"!never"` for a secret system that's never a rescue destination) | **required**; `map_state` `"unexplored"`; `rescue_if` `""` |
+| `hyperlanes` | `[{"from": <system ID>, "to": <system ID>, "rescue_reveals": bool}]`; two-way, each pair once, both ends listed in `systems`. C10: a rescuer carrying the player along a lane reveals a hidden system at its far end unless `rescue_reveals` is false (the system the player is set down in is always explored: they're standing in it) | `[]`; `rescue_reveals` `true` |
 | `gate_links` | TR5: `[{"from": <system ID>, "to": <system ID>, "days": n}]` between two systems' gates; two-way, each pair once, both systems must have a gate. `days` (at least 1, default 1) must not exceed the fewest-days hyperlane route for the start ship (`player_ship`'s `jump_speed`), and must be fewer whenever that route takes more than a day | `[]` |
 
 ## `entities/` — persistent characters and fleets (PS2–PS5)

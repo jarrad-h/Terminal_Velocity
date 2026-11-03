@@ -4,6 +4,99 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Phase 2 Milestone 4: Pilot and saves (2–3 Nov 2026, merged 3 Nov)
+
+### Stopped at / Next step
+
+Stopped at: P2M4 merged to `main` (3 Nov 2026), check GREEN.
+
+Next step: plan Phase 2 milestone 5 (economy, EC1–EC4) on `p2m5-<slug>`. Cargo goes into the existing `ShipRecord.cargo` and save slots without a format change.
+
+Open questions carried forward:
+- Rescue in place in a closed system; the fallback's `rescue_if`.
+- Whether Authority ships arriving late finish off a wanted, disabled player (A13).
+- Why Mara's courier once lost hostility.
+
+Branch `p2m4-saves`, cloud session. The plan and answers are in `docs/decisions.md` (2 Nov).
+
+### Built
+
+- **SV1 (the pilot file):**
+  - Readable JSON under `user://pilots/<pilot>/`: a `pilot.json` block plus one file per slot. Each save holds a version, menu summary meta, the pilot (name, ironman, dead, escape pod, insurance), the whole `GameState` (credits, records, date, route and fuel, flags, system memory, entities, news), and the player's ship and location (system, plus landed port or position, velocity and heading). It also has reserved `stats`, `ratings` and `missions` blocks.
+  - Every ship is a `ShipRecord`: a design plus instance state (name, hull, shield, fitted, cargo). Entities' ships and remembered wrecks use it too.
+  - Saving writes the current system's wrecks first. Loading checks the save against the data: a missing ship design becomes the uninsured hull with a warning, wrecks of missing designs are dropped, and a missing current system refuses the load.
+- **SV2 (menus and slots):**
+  - The main menu is the boot scene: Continue, New pilot, Load (pilots → saves; delete pilot) and Quit.
+  - Up to 5 pilots. A normal pilot has an autosave (written on creation and every landing) plus 10 named manual slots; a new save never silently replaces one, and a full set means overwriting.
+  - The landed screen has Save, Load and Main menu. Esc in space opens Resume / Quit to main menu.
+  - Escape pod and insurance now come from the pilot.
+- **SV3 (ironman):**
+  - One slot, written on creation, every landing, every jump and gate trip, quitting to the menu and closing the window. No Save or Load, and no loading an older state.
+  - Lost with all hands and no pod: marked dead, and kept in the list as a memorial. Esc is blocked while the escape pod is out.
+- **SV4 (versions):** format version 1, with ordered migrations (version 0, the milestone 3 shape, upgrades); newer or too-old saves are refused with a message. Writes go to a temp file that is then swapped in.
+- **D15:** console `save [name]` (no name = the autosave slot), `load <slot>`, `pilots`, `savepath`.
+- **Tests:**
+  - `tests/unit/test_saves.gd`: records, migration, refusals, load-time checks, slot rules, slugs.
+  - Scenario `_save_checks`: a mid-route save with an entity in transit and wrecks reads back; limits for slots, ironman and pilots; D15.
+  - New `tests/smoke/menu_flow.tscn` (run by `check.py`): new pilot → land → save → menu → Continue, back landed, mid-route with Mara in transit; ironman has no Save or Load.
+
+### Review (godot-reviewer) fixes
+
+- An ironman could dodge the rescue by quitting while the pod was out. Now there's no saving from a destroyed ship and no Esc menu then.
+- Landed saves lost the system's wrecks.
+- Loading from inside a game let the old visit's entities write over the loaded state.
+- "Save as new" with an existing name overwrote that save.
+- An ironman could close the window to rewind; closing now writes the slot.
+- Number keys could fall through a Save dialog to the landed screen and softlock the pause.
+- Pod and insurance are now taken from the save.
+- A version 0 save had no location.
+- Atomic writes; ironman autosaves after gate trips.
+
+### What to look at (playtest)
+
+See the checklist in the handover message. The main menu and dialogs haven't been seen in a window yet: Jarrad's run is the first visual check.
+
+### Known gaps and questions
+
+- Killing the game process (not closing the window) while the escape pod is out still lets an ironman pilot reload the last autosave. This is accepted for now.
+- On Windows, pilot or save names that are reserved device names (CON, NUL…) fail with an error message.
+- The memorial lists no achievements yet; the `stats` block fills in with progression (milestone 8).
+
+### 2026-11-03 — Playtest notes (Jarrad)
+
+- **Fixed (SV1): visual glitches when loading** (landed, loading one planet's save then another's and back).
+  - **Cause:** the camera started each loaded game at the system centre, and the landed screen paused the game on the next frame, so it never flew to the player. Behind the dialog you saw the star (glare, sun) and whatever else was near the centre, different for each system.
+  - **Same issue in plain landings:** the camera was a little off-centre there too.
+  - **Fix:** `FollowCamera.snap()` on load, landing, resuming landed and rescue. The menu flow test checks the camera is on the port after Continue.
+- **Design change, agreed (defaults, option a) and built (A13, C7):**
+  - **Policy:** a government's `on_disabled` is `kill` or `leave`, plus `kill_record` for the player. Pirates kill. The Local Authority leaves disabled ships (capturable wrecks) but kills a player at −300 or below. Traders leave.
+  - **AI against AI:** the same rules.
+  - **After a kill:** the ship carries on.
+  - **Disable band:** narrowed to 15% (`game.json` `combat.disable_armor_pct`; ships may override).
+  - **Tests:** the rule is `Behaviour.finishes_off` (unit test). The scenario checks that a pirate destroys a disabled trader, that the Authority leaves a disabled pirate, and the decisions against a disabled player.
+  - **Now testable:** death, the escape pod and the ironman memorial, by letting pirates catch you.
+- **Review (godot-reviewer):** ready for playtest. Follow-ups made:
+  - the camera snap also resets physics interpolation;
+  - loader tests for `on_disabled`, `kill_record` and the disable band (game.json below 100, ships 0–99 or left out);
+  - one shared default;
+  - `tools/balance.py` reads the band from `game.json`.
+- **Open question:** Authority ships arriving after a wanted player is already disabled don't start on them; only ships already fighting finish the job. This matches "an enemy they've disabled" in A13.
+- **Process:** "I'll go ahead unless you say otherwise" isn't confirmation. Every open option now waits for Jarrad's explicit answer (start, playtest, design and milestone skills).
+- **Exploit fixed by a design change, agreed (defaults) and built (C10): rescued by pirates onto a pirate planet.**
+  - **Who rescues you:** only a port that accepts the player takes them in, and its government is the rescuer.
+  - **No port here:** the rescuer carries them to the nearest system by travel days with an accepting port (hidden lanes too), adding the trip's days and replotting the route.
+  - **Nowhere at all:** the start system's first port, with a warning.
+  - **Tests:** `PortRules.nearest_haven` has a unit test. The scenario dies in Redhaven and checks a non-pirate rescuer carries the player out to a port that takes them.
+  - **Review fixes:** the rescue checks records through `GameState.get_record`, so start records count (G3); the route is replotted after the new hull is fitted.
+  - **Answered (option b and the recommendations):**
+    - hidden systems on the rescue path are revealed, unless their lane sets `rescue_reveals: false`;
+    - a galaxy system's `rescue_if` condition (gate grammar) keeps secret or locked systems out of rescues as destinations or stopovers.
+    - Unit and loader tests cover both.
+  - **Review fix:** dying inside a closed system no longer strands the player at the start system; the rescuer sets off from it.
+  - **Open questions (current behaviour kept for now):**
+    - Dying in a closed system that has a port accepting the player: they're rescued in place.
+    - The last-resort fallback goes to the start system even if its `rescue_if` is closed.
+
 ## Phase 2 Milestone 3: Persistence foundation (31 Oct – 2 Nov 2026, merged 2 Nov)
 
 ### Stopped at / Next step

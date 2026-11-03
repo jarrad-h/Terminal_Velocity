@@ -49,6 +49,14 @@ static func _refresh(dialog: Dialog, port: SystemObjectDef, player: Ship, on_tak
 			GameState.add_credits(-fill["cost"])
 			GameState.set_fuel(GameState.travel.fuel + fill["units"], player.def.fuel)
 			_refresh(dialog, port, player, on_take_off, "Refuelled."), fill["units"] > 0.0)
+	if Pilots.has_pilot():
+		# SV2, SV3: save and load while landed (not ironman), or leave for the menu.
+		if not bool(Pilots.pilot.get("ironman", false)):
+			dialog.add_choice("save", "Save", func() -> void: SaveScreens.open_save(dialog.get_parent()))
+			dialog.add_choice("load", "Load", func() -> void:
+				SaveScreens.open_pilot(dialog.get_parent(), {"id": Pilots.pilot_id, "pilot": Pilots.pilot,
+					"slots": Pilots.list_slots(Pilots.pilot_id)}, Callable(), false))
+		dialog.add_choice("menu", "Main menu", func() -> void: Pilots.quit_to_menu())
 	dialog.add_choice("take_off", "Take off", func() -> void:
 		dialog.close()
 		on_take_off.call())

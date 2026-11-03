@@ -524,13 +524,31 @@ func _run() -> void:
 	actions.dialog.choose("take_off")
 	await _frames(2)
 	_check(not get_tree().paused, "take off after rescue")
+	# C10: dying where no port takes the player in: carried out by a non-hostile rescuer.
+	var home: String = GameState.travel.current_system
+	_check(_debug.switch_system("redhaven"), "to the pirate system")
+	await _frames(2)
+	player.health.force_destroy()
+	await _frames(roundi(float(DataRegistry.settings["player"]["pod_time"]) * 60.0) + 10)
+	var report: String = actions.dialog._body.text if actions.dialog != null else ""
+	_check(GameState.travel.current_system != "redhaven", "C10: carried out of the pirate system (now in %s)" % GameState.travel.current_system)
+	_check(report.contains("took you out of") and not report.contains("Pirate"), "C10: a non-hostile rescuer says where it took you: %s" % report.left(160))
+	if actions.dialog != null:
+		actions.dialog.choose("continue")
+		await _frames(3)
+		_check(actions.dialog != null and Pilots.landed_at != "", "C10: ...and you wake landed where you're accepted")
+		if actions.dialog != null:
+			actions.dialog.choose("take_off")
+	await _frames(2)
+	_check(_debug.switch_system(home), "back home")
+	await _frames(2)
 	# No escape pod: lost with all hands.
-	DataRegistry.settings["player"]["escape_pod"] = false
+	Pilots.pilot["escape_pod"] = false  # SV1: the pod is the pilot's
 	player.health.force_destroy()
 	await _frames(2)
 	_check(actions.dialog != null and actions.dialog.has_choice("restart"), "no pod: lost with all hands (C10)")
 	actions.dialog.close()
-	DataRegistry.settings["player"]["escape_pod"] = true
+	Pilots.pilot["escape_pod"] = true
 	_debug.swap_player_ship("courier")
 	await _frames(2)
 
@@ -580,6 +598,10 @@ func _run() -> void:
 	await _entity_checks(player, scene_root)
 	await _frames(2)
 	await _shelter_checks(player, scene_root)
+	await _frames(2)
+	await _save_checks(player)
+	await _frames(2)
+	await _kill_checks(player, scene_root)
 	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
@@ -751,6 +773,127 @@ func _shelter_checks(player: Ship, scene_root: Node) -> void:
 	presence.set_enabled(false)
 	GameState.entities.start(DataRegistry.ids("entities").map(func(id: String) -> PersistentEntityDef: return DataRegistry.get_entity(id)), GameState.clock.day, RandomNumberGenerator.new())
 	GameState.news = NewsLog.new()
+
+
+## SV1–SV4: a save made mid-route brings back the route, the date, an entity
+## in transit and the player's ship; slot limits and ironman rules hold.
+func _save_checks(player: Ship) -> void:
+	var root_before: String = Pilots.root
+	var pilot_before: Dictionary = Pilots.pilot
+	var id_before: String = Pilots.pilot_id
+	Pilots.root = "user://test_pilots"
+	for entry: Dictionary in Pilots.list_pilots():
+		Pilots.delete_pilot(entry["id"])
+	Pilots.pilot_id = "test_ace"
+	Pilots.pilot = PilotSave.new_pilot("Test Ace", false, DataRegistry.settings["player"])
+	Pilots._write_pilot()
+	# Mid-route, with an entity in transit and some damage.
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	var here: String = GameState.travel.current_system
+	var next: String = Hyperlanes.neighbours(galaxy, here)[0]
+	GameState.travel.route = [next] as Array[String]
+	var mara: EntityState = GameState.entities.states["mara_vell"]
+	mara.location = ""
+	mara.transit_from = here
+	mara.transit_to = next
+	mara.arrive_day = GameState.clock.day + 3
+	GameState.credits = 4321
+	player.health.armor = player.health.max_armor * 0.5
+	var hulk: Array[Ship] = _debug.spawn_ships("freighter", 1, "")
+	if not hulk.is_empty():
+		hulk[0].health.force_disable()
+	_check(Pilots.save_manual("Before the run") == "", "SV2: a manual save")
+	var day: int = GameState.clock.day
+	# Change everything, then read the save back.
+	GameState.credits = 1
+	GameState.advance_days(4)
+	GameState.travel.route.clear()
+	var result: Dictionary = Pilots.read("test_ace", "before_the_run")
+	_check(result["ok"], "SV1: the save reads back: %s" % result["error"])
+	var data: Dictionary = result["data"]
+	GameState.from_dict(data["game"])
+	var back: EntityState = GameState.entities.states["mara_vell"]
+	_check(GameState.credits == 4321 and GameState.clock.day == day, "SV1: credits and date restored (%d, day %d)" % [GameState.credits, GameState.clock.day])
+	_check(GameState.travel.route == ([next] as Array[String]), "SV1: the plotted route is restored")
+	_check(back.in_transit() and back.transit_to == next and back.arrive_day == day + 3, "SV1: an entity in transit is still in transit")
+	_check(ShipRecord.design_of(data["player"]["ship"]) == player.def.id and is_equal_approx(float(data["player"]["ship"]["hull"]), 0.5), "SV1: the player's ship as a design plus damage")
+	_check(str(data["player"]["location"]["system"]) == here, "SV1: where the player was")
+	_check(data["game"]["memory"]["wrecks"].get(here, []).any(func(w: Dictionary) -> bool: return ShipRecord.design_of(w) == "freighter"), "SV1, PS6: the system's wrecks are in the save")
+	for ship: Ship in hulk:
+		ship.remove_from_group(&"ships")
+		ship.queue_free()
+	_check(Pilots.list_slots("test_ace").size() == 1 and str(Pilots.list_slots("test_ace")[0]["slot"]) == "Before the run", "SV2: the slot is listed by name")
+	# SV2: ten manual slots, then only overwriting.
+	for i: int in 9:
+		Pilots.save_manual("Slot %d" % i)
+	_check(Pilots.manual_slots("test_ace").size() == 10, "SV2: ten manual slots")
+	_check(Pilots.save_manual("Eleventh") != "", "SV2: an eleventh is refused")
+	_check(Pilots.save_manual("slot 3!") != "", "SV2: a new save never silently replaces one with the same name")
+	_check(Pilots.save_manual("Slot 3", true) == "", "SV2: ...but a slot can be overwritten")
+	_check(Pilots.autosave() == "" and Pilots.list_slots("test_ace").size() == 11, "SV2: the autosave is extra")
+	# D15: from the console.
+	_check(_debug.run_command("save Slot 3").begins_with("Saved"), "D15: save from the console")
+	_check(_debug.run_command("pilots").contains("test_ace") and _debug.run_command("pilots").contains("slot_3"), "D15: pilots lists pilots and slots")
+	_check(_debug.run_command("savepath").contains("test_pilots"), "D15: savepath shows the folder")
+	# SV3: ironman.
+	Pilots.pilot["ironman"] = true
+	_check(Pilots.save_manual("Cheat") != "", "SV3: ironman can't save by hand")
+	_check(Pilots.autosave() == "" and FileAccess.file_exists(Pilots.root.path_join("test_ace/ironman.json")), "SV3: ironman autosaves to its one slot")
+	_check(Pilots.load_save("test_ace", "before_the_run") != "", "SV3: ironman can't load an older save")
+	Pilots.mark_dead()
+	_check(Pilots.load_save("test_ace", PilotSave.IRONMAN) != "", "SV3: a dead pilot can't be loaded")
+	# SV2: at most five pilots.
+	for i: int in 4:
+		# (create_pilot resets the game, so write the pilot folders directly)
+		DirAccess.make_dir_recursive_absolute(Pilots.root.path_join("extra_%d" % i))
+		Pilots._write_json(Pilots.root.path_join("extra_%d/pilot.json" % i), PilotSave.new_pilot("Extra", false, {}))
+	_check(Pilots.create_pilot("Sixth", false) != "", "SV2: a sixth pilot is refused")
+	for entry: Dictionary in Pilots.list_pilots():
+		Pilots.delete_pilot(entry["id"])
+	Pilots.root = root_before
+	Pilots.pilot = pilot_before
+	Pilots.pilot_id = id_before
+
+
+## A13: pirates finish off what they disable; the authority leaves it (but
+## not a wanted player); C7: the narrow default disable band.
+func _kill_checks(player: Ship, scene_root: Node) -> void:
+	var traffic: TrafficSpawner = scene_root.traffic
+	var far := Vector2(-6000.0, -6000.0)
+	_check(is_equal_approx(player.disable_fraction(), float(DataRegistry.settings["combat"]["disable_armor_pct"]) / 100.0), "C7: ships use game.json's disable band by default")
+	var pirate: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), far, "", "steady")
+	var victim: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("trader_traffic"), far + Vector2(300.0, 0.0), "", "steady")
+	victim.health.force_disable()
+	(pirate.controller as AIController).join_attack(victim)
+	for i: int in 900:
+		await get_tree().physics_frame
+		if not is_instance_valid(victim) or victim.health.is_destroyed:
+			break
+	_check(not is_instance_valid(victim) or victim.health.is_destroyed, "A13: a pirate finishes off the trader it disabled")
+	var law: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), far + Vector2(0.0, 600.0), "", "steady")
+	var law_ai: AIController = law.controller
+	pirate.health.force_disable()
+	law_ai.join_attack(pirate)
+	await _frames(40)
+	_check(law_ai.state != AIController.State.ATTACK and is_instance_valid(pirate) and not pirate.health.is_destroyed, "A13: the authority leaves a disabled pirate for capture: %s" % law.get_state_label())
+	# Against the player: the authority kills only a wanted one.
+	var record: float = GameState.get_record("local_authority")
+	player.health.force_disable()
+	_check(not law_ai._attack_target_ok(player), "A13: the authority leaves a disabled player in good standing")
+	GameState.set_record("local_authority", float(DataRegistry.get_government("local_authority").kill_record))
+	_check(law_ai._attack_target_ok(player), "A13: ...but kills one at its kill record")
+	var raider: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), far, "", "steady")
+	_check((raider.controller as AIController)._attack_target_ok(player), "A13: pirates kill a disabled player")
+	GameState.set_record("local_authority", record)
+	player.health.repair_full()
+	player.set_tint(Color.WHITE)
+	for ship: Variant in [pirate, law, raider]:
+		if is_instance_valid(ship):
+			(ship as Ship).remove_from_group(&"ships")
+			(ship as Ship).queue_free()
+	for shot: Node in scene_root.get_node("World/Shots").get_children():
+		shot.queue_free()
+	await _frames(2)
 
 
 func _entity_ships(id: String) -> Array[Ship]:

@@ -6,6 +6,7 @@
   "enemies": ["pirates"],
   "crime_threshold": -100,
   "penalties": {"shoot": 3, "disable": 10, "board": 20, "kill": 30},
+  "on_disabled": "leave",
   "max_odds": 0.5,
   "tolerance_pct": 12,
   "forgiveness_pct_per_s": 0.6,

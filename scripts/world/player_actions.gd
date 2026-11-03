@@ -75,11 +75,26 @@ func land_at(port: SystemObjectDef, intro: String = "") -> void:
 	var player: Ship = _player()
 	player.place(port.position, player.rotation)
 	player.set_target(null)
+	scene.camera.snap()
+	Pilots.landed_at = port.id
 	dialog = LandedScreen.open(scene, port, player, func() -> void: _take_off(port), intro)
+	dialog.closed.connect(func() -> void: dialog = null)
+	Pilots.autosave()  # SV2, SV3: every landing
+
+
+## SV1: back on the landed screen at `port` after loading a save (no days pass).
+func resume_landed(port: SystemObjectDef) -> void:
+	scene.entity_presence.on_leave()
+	var player: Ship = _player()
+	player.place(port.position, player.rotation)
+	scene.camera.snap()
+	Pilots.landed_at = port.id
+	dialog = LandedScreen.open(scene, port, player, func() -> void: _take_off(port))
 	dialog.closed.connect(func() -> void: dialog = null)
 
 
 func _take_off(port: SystemObjectDef) -> void:
+	Pilots.landed_at = ""
 	GameState.advance_days(port.takeoff_days)  # TM2
 	scene.refresh_entities()  # PS4: who's here now
 	var player: Ship = _player()
@@ -124,6 +139,8 @@ func _travel_by_gate(gate: SystemObjectDef, system_id: String, days: int) -> voi
 	GameState.advance_days(days)
 	GameState.player_heading = ""
 	scene.hyperspace.arrive_at_gate(system_id)
+	if bool(Pilots.pilot.get("ironman", false)):
+		Pilots.autosave()  # SV3: a gate trip is a jump too
 	GameState.post_message("Through %s to %s after %d day%s" % [gate.name, Hyperspace.system_name(system_id), days, "" if days == 1 else "s"])
 
 
@@ -277,7 +294,7 @@ func on_player_destroyed(player: Ship) -> void:
 	_end_boarding()
 	if dialog != null:
 		dialog.close()
-	if not bool(DataRegistry.settings["player"]["escape_pod"]):
+	if not bool(Pilots.pilot.get("escape_pod", DataRegistry.settings["player"]["escape_pod"])):  # SV1: the pilot's pod
 		_lost_with_all_hands()
 		return
 	var pod := EscapePod.launch(scene.world, player.global_position, FlightModel.heading(player.global_rotation), player.get_velocity())
@@ -295,24 +312,80 @@ func _rescue(pod: EscapePod) -> void:
 	GameState.add_credits(-fee)
 	var days: Array = settings["rescue_days"]
 	var days_passed: int = _rng.randi_range(roundi(days[0]), roundi(days[1]))
+	# C10: only a port that accepts the player takes them in; if none here,
+	# the rescuer carries them to the nearest system that has one.
+	var here: String = scene.system.id
+	var records: Dictionary = {}
+	for gov_id: String in DataRegistry.ids("governments"):
+		records[gov_id] = GameState.get_record(gov_id)  # G3: start records count, as when landing
+	var default_record: float = float(settings["record"])
+	var index: int = PortRules.rescue_port(scene.system.objects, from, records, default_record)
+	var target: SystemDef = scene.system
+	var trip_days: int = 0
+	var stranded: bool = false
+	if index < 0:
+		var galaxy: GalaxyDef = DataRegistry.galaxy()
+		var havens: Dictionary = {}
+		var closed: Dictionary = {}  # secret and locked systems: never a destination or stopover
+		for system_id: String in DataRegistry.ids("systems"):
+			var other: SystemDef = DataRegistry.get_system(system_id)
+			if not galaxy.has_system(system_id):
+				continue
+			if not GateRules.is_open(galaxy.rescue_if.get(system_id, ""), GameState.flags):
+				closed[system_id] = true
+			elif PortRules.rescue_port(other.objects, Vector2.ZERO, records, default_record) >= 0:
+				havens[system_id] = true
+		var haven: Dictionary = PortRules.nearest_haven(galaxy, here, havens, player.def.jump_speed, closed)
+		if haven["system"] != "":
+			target = DataRegistry.get_system(haven["system"])
+			trip_days = int(haven["days"])
+			# Hidden systems on the way are revealed, unless their lane says not to.
+			var at: String = here
+			for hop: String in haven["route"]:
+				if galaxy.lane_reveals(at, hop):
+					GameState.travel.reveal(galaxy, hop)
+				at = hop
+			index = PortRules.rescue_port(target.objects, Vector2.ZERO, records, default_record)
+		else:
+			stranded = true  # nowhere takes them: the start system's first port
+			target = DataRegistry.get_system(galaxy.start_system)
+			index = target.objects.find_custom(func(o: SystemObjectDef) -> bool: return o.landable and o.type != "gate")
+	var port: SystemObjectDef = target.objects[index] if index >= 0 else null
 	scene.leave_system()  # PS4, PS6: wrecks age and entities move while the pod drifts
-	GameState.advance_days(days_passed)  # TM2: the days adrift pass on the calendar
-	var objects: Array[SystemObjectDef] = scene.system.objects
-	var index: int = PortRules.rescue_port(objects, from, GameState.records(), float(settings["record"]))
-	var port: SystemObjectDef = objects[index] if index >= 0 else null
-	# Days pass: like leaving and coming back. Every other ship goes, destroyed
-	# scenery returns and traffic refills; remembered wrecks still in date stay (PS6).
-	scene.reset_visit()
+	GameState.player_heading = target.id
+	GameState.advance_days(days_passed + trip_days)  # TM2: the days adrift (and the trip) pass
+	GameState.player_heading = ""
+	if target.id == here:
+		# Days pass: like leaving and coming back. Every other ship goes, destroyed
+		# scenery returns and traffic refills; remembered wrecks still in date stay (PS6).
+		scene.reset_visit()
+	else:
+		GameState.travel.current_system = target.id
+		GameState.travel.mark_explored(target.id)
+		scene.enter_system_at(target.id, port.position if port != null else Vector2.ZERO)
+	var goal: String = GameState.travel.route[-1] if target.id != here and not GameState.travel.route.is_empty() else ""
 	# Insured: like for like. Uninsured: a basic hull.
-	var insured: bool = bool(settings["insured"])
+	var insured: bool = bool(Pilots.pilot.get("insured", settings["insured"]))  # SV1: the pilot's insurance
 	var hull: ShipDef = player.def if insured else DataRegistry.get_ship(settings["uninsured_ship"])
 	player.setup(hull)
+	if target.id != here:
+		GameState.travel.route.clear()
+		if goal != "" and goal != target.id:
+			scene.hyperspace.plot_to(goal)  # with the new hull's jump speed
 	player.place(port.position if port != null else Vector2.ZERO, 0.0)
 	scene.camera.target = player
+	scene.camera.snap()
 	var gov: GovernmentDef = DataRegistry.get_government(port.government) if port != null and port.government != "" else null
 	var rescuer: String = "a %s ship" % gov.name if gov != null else "a passing freighter"
 	var where: String = port.name if port != null else "the middle of the system"
-	var text: String = "Your ship was destroyed. Your escape pod drifted for %d days before you were picked up by %s and brought to %s.\n\nRescue fee: %d credits." % [days_passed, rescuer, where, fee]
+	var text: String
+	if stranded:
+		text = "Your ship was destroyed. Your escape pod drifted for %d days. Nobody would take you in; %s carried you to %s in %s and left you there." % [days_passed + trip_days, rescuer, where, target.name]
+	elif target.id != here:
+		text = "Your ship was destroyed. Your escape pod drifted for %d days before you were picked up by %s, who took you out of %s and set you down at %s in %s." % [days_passed + trip_days, rescuer, Hyperspace.system_name(here), where, target.name]
+	else:
+		text = "Your ship was destroyed. Your escape pod drifted for %d days before you were picked up by %s and brought to %s." % [days_passed, rescuer, where]
+	text += "\n\nRescue fee: %d credits." % fee
 	text += "\n\nYour insurer has replaced your %s." % hull.name if insured else "\n\nYou weren't insured. All you could get was a %s." % hull.name
 	dialog = Dialog.open(scene, "Rescued", text)
 	dialog.add_choice("continue", "Continue", func() -> void:
@@ -323,11 +396,24 @@ func _rescue(pod: EscapePod) -> void:
 
 
 func _lost_with_all_hands() -> void:
-	dialog = Dialog.open(scene, "Lost with all hands", "Your ship was destroyed and there was no escape pod aboard.")
-	dialog.add_choice("restart", "Restart", func() -> void:
-		dialog.close()
-		GameState.reset()
-		DebugCommands.reset_session()
-		get_tree().paused = false
-		get_tree().reload_current_scene())
+	var text: String = "Your ship was destroyed and there was no escape pod aboard."
+	if bool(Pilots.pilot.get("ironman", false)):
+		Pilots.mark_dead()  # SV3: an ironman pilot's story ends here
+		text += "\n\n%s's record is kept in the pilot list." % Pilots.pilot.get("name", "Your pilot")
+	dialog = Dialog.open(scene, "Lost with all hands", text)
+	if Pilots.has_pilot():
+		if not bool(Pilots.pilot.get("ironman", false)) and not Pilots.list_slots(Pilots.pilot_id).is_empty():
+			dialog.add_choice("load", "Load latest save", func() -> void:
+				dialog.close()
+				Pilots.load_save(Pilots.pilot_id, Pilots.list_slots(Pilots.pilot_id)[0]["id"]))
+		dialog.add_choice("menu", "Main menu", func() -> void:
+			dialog.close()
+			Pilots.quit_to_menu(false))
+	else:
+		dialog.add_choice("restart", "Restart", func() -> void:
+			dialog.close()
+			GameState.reset()
+			DebugCommands.reset_session()
+			get_tree().paused = false
+			get_tree().reload_current_scene())
 	dialog.closed.connect(func() -> void: dialog = null)

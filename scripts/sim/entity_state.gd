@@ -23,7 +23,7 @@ var transit_via: String = ""
 var came_via: String = ""
 ## Patrol: index of the route stop it's heading for or at.
 var route_index: int = 0
-## [{"ship": String, "hull": 0–1, "shield": 0–1}]
+## ShipRecord dictionaries (design, hull 0–1, shield 0–1…).
 var ships: Array = []
 ## Follows the player until this day (-1 = no grudge).
 var grudge_until: int = -1

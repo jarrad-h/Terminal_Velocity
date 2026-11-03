@@ -16,6 +16,11 @@ var start_record: Variant = null
 ## "shoot" / "disable" / "board" / "kill" -> record lost.
 var penalties: Dictionary = {}
 var max_odds: float
+## A13: "kill" (finish off disabled enemies) or "leave".
+var on_disabled: String = "leave"
+## A13: a player at or below this record is killed even when on_disabled is "leave".
+var kill_record: float = 0.0
+var has_kill_record: bool = false
 var flee_shield_pct: float
 ## A8: grievance (% of a ship's total shield + armour damaged by the player)
 ## its ships tolerate before turning hostile, and how fast it drains (%/s).
@@ -41,6 +46,10 @@ static func parse(r: DefReader) -> GovernmentDef:
 	for kind: String in PENALTY_KINDS:
 		d.penalties[kind] = pen.number(kind, 0.0, false, 0.0)
 	d.max_odds = r.number("max_odds", 1.0, false, 0.0)
+	d.on_disabled = r.choice("on_disabled", ["leave", "kill"], "leave")
+	if r.has("kill_record"):
+		d.kill_record = r.number("kill_record", 0.0)
+		d.has_kill_record = true
 	d.flee_shield_pct = r.number("flee_shield_pct", 25.0, false, 0.0)
 	d.tolerance_pct = r.number("tolerance_pct", 10.0, false, 0.0)
 	d.forgiveness_pct_per_s = r.number("forgiveness_pct_per_s", 0.5, false, 0.0)

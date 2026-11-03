@@ -37,3 +37,13 @@ func test_weighted_pick() -> void:
 	assert_true(WeightedPick.pick(zero, 0.5) == -1, "no weight")
 	var skip: Array[float] = [0.0, 2.0]
 	assert_true(WeightedPick.pick(skip, 0.0) == 1, "zero weights never picked")
+
+
+func test_finishing_off_disabled_ships() -> void:
+	# A13: the government's policy, and the player's record escalating to kill.
+	assert_true(Behaviour.finishes_off("kill", false, 0.0, false, 0.0), "a killer government finishes off AI ships")
+	assert_true(Behaviour.finishes_off("kill", true, 50.0, false, 0.0), "...and the player, whatever the record")
+	assert_false(Behaviour.finishes_off("leave", false, -999.0, true, -300.0), "a leaving government leaves AI ships")
+	assert_false(Behaviour.finishes_off("leave", true, -299.0, true, -300.0), "...and a player above its kill record")
+	assert_true(Behaviour.finishes_off("leave", true, -300.0, true, -300.0), "...but kills a player at or below it")
+	assert_false(Behaviour.finishes_off("leave", true, -9999.0, false, -300.0), "no kill record: never")

@@ -14,7 +14,12 @@ var start_system: String
 var system_ids: Array[String] = []
 var positions: Dictionary[String, Vector2] = {}
 var start_states: Dictionary[String, String] = {}
-## [{"from": String, "to": String}], each pair once in either direction.
+## C10: condition under which a rescue may take the player to (or through) a
+## system ("" always; "flag"; "!flag"), by system id.
+var rescue_if: Dictionary[String, String] = {}
+## [{"from": String, "to": String, "rescue_reveals": bool}], each pair once in
+## either direction. C10: rescue_reveals false keeps a rescue from revealing
+## the far end of this lane.
 var lanes: Array[Dictionary] = []
 ## TR5: [{"from": String, "to": String, "days": int}] between systems' gates,
 ## two-way, each pair once.
@@ -33,8 +38,12 @@ static func parse(r: DefReader) -> GalaxyDef:
 		d.system_ids.append(id)
 		d.positions[id] = s.vec2("position", Vector2.ZERO, true)
 		d.start_states[id] = s.choice("map_state", MAP_STATES, "unexplored")
+		d.rescue_if[id] = s.string("rescue_if")
+		if not GateRules.is_valid_condition(d.rescue_if[id]):
+			s.error("rescue_if", "expected \"\", \"flag_name\" or \"!flag_name\" (lowercase snake_case)")
 	for l: DefReader in r.objects("hyperlanes"):
-		d.lanes.append({"from": l.string("from", "", true), "to": l.string("to", "", true)})
+		d.lanes.append({"from": l.string("from", "", true), "to": l.string("to", "", true),
+			"rescue_reveals": l.boolean("rescue_reveals", true)})
 	for g: DefReader in r.objects("gate_links"):
 		d.gate_links.append({"from": g.string("from", "", true), "to": g.string("to", "", true),
 			"days": g.integer("days", 1, false, 1)})
@@ -52,6 +61,14 @@ func gate_destinations(system_id: String) -> Array[Dictionary]:
 			result.append({"system": link["from"], "days": link["days"]})
 	result.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["system"] < b["system"])
 	return result
+
+
+## C10: may a rescue reveal `to` when carrying the player along the lane from `from`?
+func lane_reveals(from: String, to: String) -> bool:
+	for lane: Dictionary in lanes:
+		if (lane["from"] == from and lane["to"] == to) or (lane["from"] == to and lane["to"] == from):
+			return bool(lane.get("rescue_reveals", true))
+	return false
 
 
 func has_system(system_id: String) -> bool:

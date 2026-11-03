@@ -48,9 +48,15 @@ func _ready() -> void:
 	world.add_child(lighting)
 	world.move_child(lighting, 0)
 	lighting.enabled = bool(settings["lighting"]["enabled"])
+	Pilots.ensure_pilot()
+	var restore: Dictionary = Pilots.pending
+	Pilots.pending = {}
 	load_system(GameState.travel.current_system)
 
-	var player: Ship = spawn_ship(settings["player_ship"], Vector2.ZERO)
+	var design: String = settings["player_ship"]
+	if not restore.is_empty():
+		design = ShipRecord.design_of(restore["ship"])  # SV1: the saved ship
+	var player: Ship = spawn_ship(design, Vector2.ZERO)
 	if player != null:
 		player.add_to_group(&"player")
 		player.setup(player.def)  # recolour now it is the player
@@ -59,8 +65,18 @@ func _ready() -> void:
 		camera.target = player
 	hud.player = player
 	hud.actions = actions
+	if not restore.is_empty() and player != null:
+		_restore_player(player, restore)
+		camera.snap()
+	_restore_wrecks()
 	entity_presence.on_enter(system.id)  # PS4
 	hud.hyperspace = hyperspace
+	if not restore.is_empty():
+		var port: SystemObjectDef = system.find_object(str(restore["location"].get("landed", "")))
+		if port != null:
+			actions.resume_landed.call_deferred(port)
+	elif Pilots.has_pilot() and Pilots.list_slots(Pilots.pilot_id).is_empty():
+		Pilots.autosave.call_deferred()  # SV2: a new pilot exists on disk from the start
 
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
 	if OS.is_debug_build():
@@ -75,6 +91,34 @@ func _ready() -> void:
 			var ship: Ship = spawn_ship(spawn["ship"], Vector2(at[0], at[1]), spawn.get("government", ""))
 			if ship != null:
 				ship.set_controller(IdleController.new())
+
+
+## SV2, SV3: Esc in space: resume, or back to the main menu.
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed(&"ui_cancel") or DebugCommands.console_open or actions == null:
+		return
+	var player: Ship = get_tree().get_first_node_in_group(&"player")
+	if actions.dialog != null or hyperspace.map != null or not Pilots.has_pilot() or player == null or player.health.is_destroyed:
+		return  # (not while the escape pod is out: SV3)
+	get_viewport().set_input_as_handled()
+	var iron: bool = bool(Pilots.pilot.get("ironman", false))
+	var menu := Dialog.open(self, "Paused", "Your ironman save is written as you leave." if iron else "Progress since your last save will be lost.")
+	menu.use_shared_theme()
+	actions.dialog = menu
+	menu.closed.connect(func() -> void: actions.dialog = null)
+	menu.add_choice("resume", "Resume", func() -> void: menu.close())
+	menu.add_choice("menu", "Save and quit to menu" if iron else "Quit to main menu", func() -> void: Pilots.quit_to_menu())
+
+
+## SV1: puts the player's ship as it was saved (damage, place, heading).
+func _restore_player(player: Ship, restore: Dictionary) -> void:
+	var record: Dictionary = restore["ship"]
+	player.health.shield = player.health.max_shield * clampf(float(record.get("shield", 1.0)), 0.0, 1.0)
+	player.health.armor = player.health.max_armor * clampf(float(record.get("hull", 1.0)), 0.0, 1.0)
+	var where: Dictionary = restore["location"]
+	var at: Array = where.get("position", [0.0, 0.0])
+	var moving: Array = where.get("velocity", [0.0, 0.0])
+	player.place(Vector2(float(at[0]), float(at[1])), float(where.get("rotation", 0.0)), Vector2(float(moving[0]), float(moving[1])))
 
 
 ## Switches the backdrop and local space to another system definition.
@@ -153,6 +197,11 @@ func leave_system() -> void:
 	entity_presence.on_leave()
 
 
+## SV1: write this system's wrecks into memory now (saving), as leaving does.
+func remember_wrecks() -> void:
+	_record_wrecks()
+
+
 ## PS4: after days passed while landed, entities move on or arrive: their
 ## ships are rebuilt from the registry as the player takes off.
 func refresh_entities() -> void:
@@ -178,12 +227,13 @@ func _record_wrecks() -> void:
 		if expires <= today:
 			continue
 		var ai: AIController = ship.controller as AIController
-		list.append({"ship": ship.def.id, "government": ship.government,
+		var wreck: Dictionary = ShipRecord.make(ship.def.id, ship.health.armor / maxf(ship.health.max_armor, 0.001), 0.0)
+		wreck.merge({"government": ship.government,
 			"pool": ai.pool.id if ai != null else "", "personality": ai.personality.id if ai != null else "",
-			"armor_pct": ship.health.armor / maxf(ship.health.max_armor, 0.001),
 			"position": [ship.global_position.x, ship.global_position.y], "rotation": ship.global_rotation,
 			"credits": ship.credits_aboard, "looted": ship.looted, "acts": ship.player_acts.keys(),
 			"days_left": expires - today})
+		list.append(wreck)
 	GameState.memory.set_wrecks(system.id, list)
 
 
@@ -195,7 +245,7 @@ func _restore_wrecks() -> void:
 	var today: int = GameState.clock.day
 	for wreck: Dictionary in GameState.memory.wrecks_in(system.id):
 		var at := Vector2(wreck["position"][0], wreck["position"][1])
-		var ship: Ship = spawn_ship(wreck["ship"], at, wreck["government"])
+		var ship: Ship = spawn_ship(ShipRecord.design_of(wreck), at, wreck["government"])
 		if ship == null:
 			continue
 		ship.set_meta("wreck_expires", today + int(wreck["days_left"]))
@@ -214,7 +264,7 @@ func _restore_wrecks() -> void:
 			ship.player_acts[str(act)] = true
 		ship.set_meta("restoring", true)  # not a new loss (PS6)
 		ship.health.force_disable()
-		ship.health.armor = minf(ship.health.armor, ship.health.max_armor * float(wreck.get("armor_pct", 1.0)))
+		ship.health.armor = minf(ship.health.armor, ship.health.max_armor * float(wreck.get("hull", 1.0)))
 		ship.remove_meta("restoring")
 	GameState.memory.set_wrecks(system.id, [])
 

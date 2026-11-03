@@ -9,7 +9,7 @@ extends RefCounted
 static func strength(ships: Array, ship_strength: Dictionary) -> float:
 	var total: float = 0.0
 	for s: Dictionary in ships:
-		total += float(ship_strength.get(s["ship"], 1.0)) * float(s["hull"])
+		total += float(ship_strength.get(ShipRecord.design_of(s), 1.0)) * float(s["hull"])
 	return total
 
 
