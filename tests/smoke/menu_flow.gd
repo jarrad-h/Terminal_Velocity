@@ -97,6 +97,8 @@ func _run() -> void:
 	var back: EntityState = game.entities.states["mara_vell"]
 	_check(back.in_transit() and back.transit_to == next, "SV1: Mara Vell is still in transit to %s" % next)
 	_check(_actions() != null and _actions().dialog != null and pilots.landed_at == port.id, "SV1: back on the landed screen at %s" % port.name)
+	var cam: Camera2D = get_tree().current_scene.camera
+	_check(cam.global_position.distance_to(port.position) < 50.0, "SV1: the camera is on the port, not stuck at the star (%.0f px off)" % cam.global_position.distance_to(port.position))
 	# SV3: an ironman pilot.
 	pilots.quit_to_menu()
 	await _frames(10)

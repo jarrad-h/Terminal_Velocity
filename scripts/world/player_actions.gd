@@ -75,6 +75,7 @@ func land_at(port: SystemObjectDef, intro: String = "") -> void:
 	var player: Ship = _player()
 	player.place(port.position, player.rotation)
 	player.set_target(null)
+	scene.camera.snap()
 	Pilots.landed_at = port.id
 	dialog = LandedScreen.open(scene, port, player, func() -> void: _take_off(port), intro)
 	dialog.closed.connect(func() -> void: dialog = null)
@@ -86,6 +87,7 @@ func resume_landed(port: SystemObjectDef) -> void:
 	scene.entity_presence.on_leave()
 	var player: Ship = _player()
 	player.place(port.position, player.rotation)
+	scene.camera.snap()
 	Pilots.landed_at = port.id
 	dialog = LandedScreen.open(scene, port, player, func() -> void: _take_off(port))
 	dialog.closed.connect(func() -> void: dialog = null)
@@ -324,6 +326,7 @@ func _rescue(pod: EscapePod) -> void:
 	player.setup(hull)
 	player.place(port.position if port != null else Vector2.ZERO, 0.0)
 	scene.camera.target = player
+	scene.camera.snap()
 	var gov: GovernmentDef = DataRegistry.get_government(port.government) if port != null and port.government != "" else null
 	var rescuer: String = "a %s ship" % gov.name if gov != null else "a passing freighter"
 	var where: String = port.name if port != null else "the middle of the system"

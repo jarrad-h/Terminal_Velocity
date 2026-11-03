@@ -51,6 +51,14 @@ See the checklist in the handover message. The main menu and dialogs haven't bee
 - On Windows, pilot or save names that are reserved device names (CON, NUL…) fail with an error message.
 - The memorial lists no achievements yet; the `stats` block fills in with progression (milestone 8).
 
+### 2026-11-03 — Playtest notes (Jarrad)
+
+- **Fixed (SV1): visual glitches when loading** (landed, loading one planet's save then another's and back).
+  - **Cause:** the camera started each loaded game at the system centre, and the landed screen paused the game on the next frame, so it never flew to the player. Behind the dialog you saw the star (glare, sun) and whatever else was near the centre, different for each system.
+  - **Same issue in plain landings:** the camera was a little off-centre there too.
+  - **Fix:** `FollowCamera.snap()` on load, landing, resuming landed and rescue. The menu flow test checks the camera is on the port after Continue.
+- **Design change, agreed (defaults, option a), being built on this branch:** governments choose whether to finish off disabled enemies, records escalate to killing, and the disable band narrows to 15% (see decisions, 3 Nov).
+
 ## Phase 2 Milestone 3: Persistence foundation (31 Oct – 2 Nov 2026, merged 2 Nov)
 
 ### Stopped at / Next step

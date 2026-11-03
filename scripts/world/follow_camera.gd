@@ -15,3 +15,15 @@ func configure(settings: Dictionary) -> void:
 func _physics_process(_delta: float) -> void:
 	if target != null:
 		global_position = target.global_position
+
+
+## Jump straight to the target, no smoothing: after the player is placed and
+## the game pauses at once (loading a save, landing, rescue), the camera would
+## otherwise stay where it was (SV1: it sat on the star, glare and all).
+func snap() -> void:
+	if target == null:
+		return
+	global_position = target.global_position
+	reset_smoothing()
+	force_update_scroll()
+

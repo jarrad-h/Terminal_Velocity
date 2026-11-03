@@ -67,6 +67,7 @@ func _ready() -> void:
 	hud.actions = actions
 	if not restore.is_empty() and player != null:
 		_restore_player(player, restore)
+		camera.snap()
 	_restore_wrecks()
 	entity_presence.on_enter(system.id)  # PS4
 	hud.hyperspace = hyperspace
