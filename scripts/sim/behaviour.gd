@@ -37,3 +37,13 @@ static func starts_fights(role: String, setting: String) -> bool:
 		"never":
 			return false
 	return role == "warship" or role == "pirate"
+
+
+## A13: keep firing on a disabled enemy until it's destroyed? `policy`:
+## the government's on_disabled ("kill" or "leave"). Against the player, a
+## record at or below `kill_record` (when `has_kill_record`) means kill anyway.
+static func finishes_off(policy: String, target_is_player: bool, record: float, has_kill_record: bool, kill_record: float) -> bool:
+	if policy == "kill":
+		return true
+	return target_is_player and has_kill_record and record <= kill_record
+

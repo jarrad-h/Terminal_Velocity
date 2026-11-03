@@ -70,6 +70,13 @@ func _ready() -> void:
 ## Applies a ship definition. Call after adding to the tree. Calling it again
 ## keeps position, velocity and heading. A ship swap (D2) restores full shield
 ## and armour; a data reload (D8, `keep_health`) keeps current damage and the
+## C7: armour fraction at or below which this ship is disabled: its own
+## disable_armor_pct, or game.json combat.disable_armor_pct.
+func disable_fraction() -> float:
+	var pct: float = def.disable_armor_pct if def.disable_armor_pct >= 0.0 else float(DataRegistry.settings["combat"]["disable_armor_pct"])
+	return pct / 100.0
+
+
 ## disabled state, so reloading never heals or revives anything.
 func setup(ship_def: ShipDef, keep_health: bool = false) -> void:
 	def = ship_def
@@ -84,11 +91,11 @@ func setup(ship_def: ShipDef, keep_health: bool = false) -> void:
 	weapons.setup(def, art_scale)
 	_build_visual()
 	if keep_health:
-		health.retune(def.shield, def.armor, def.shield_regen, def.disable_armor_pct / 100.0, def.shield_recharge_delay)
+		health.retune(def.shield, def.armor, def.shield_regen, disable_fraction(), def.shield_recharge_delay)
 		if health.is_disabled:
 			set_tint(DISABLED_TINT)
 	else:
-		health.setup(def.shield, def.armor, def.shield_regen, def.disable_armor_pct / 100.0, def.shield_recharge_delay)
+		health.setup(def.shield, def.armor, def.shield_regen, disable_fraction(), def.shield_recharge_delay)
 		hitbox_shape.set_deferred(&"disabled", false)
 		visible = true
 		set_tint(Color.WHITE)

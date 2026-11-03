@@ -57,7 +57,13 @@ See the checklist in the handover message. The main menu and dialogs haven't bee
   - **Cause:** the camera started each loaded game at the system centre, and the landed screen paused the game on the next frame, so it never flew to the player. Behind the dialog you saw the star (glare, sun) and whatever else was near the centre, different for each system.
   - **Same issue in plain landings:** the camera was a little off-centre there too.
   - **Fix:** `FollowCamera.snap()` on load, landing, resuming landed and rescue. The menu flow test checks the camera is on the port after Continue.
-- **Design change, agreed (defaults, option a), being built on this branch:** governments choose whether to finish off disabled enemies, records escalate to killing, and the disable band narrows to 15% (see decisions, 3 Nov).
+- **Design change, agreed (defaults, option a) and built (A13, C7):**
+  - **Policy:** a government's `on_disabled` is `kill` or `leave`, plus `kill_record` for the player. Pirates kill. The Local Authority leaves disabled ships (capturable wrecks) but kills a player at −300 or below. Traders leave.
+  - **AI against AI:** the same rules.
+  - **After a kill:** the ship carries on.
+  - **Disable band:** narrowed to 15% (`game.json` `combat.disable_armor_pct`; ships may override).
+  - **Tests:** the rule is `Behaviour.finishes_off` (unit test). The scenario checks that a pirate destroys a disabled trader, that the Authority leaves a disabled pirate, and the decisions against a disabled player.
+  - **Now testable:** death, the escape pod and the ironman memorial, by letting pirates catch you.
 
 ## Phase 2 Milestone 3: Persistence foundation (31 Oct – 2 Nov 2026, merged 2 Nov)
 

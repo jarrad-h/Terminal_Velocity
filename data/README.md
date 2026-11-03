@@ -47,6 +47,7 @@ Fields marked **required** have no default.
 | `boarding.time` | C9: seconds the boarding progress bar runs (more than 0) | `2` |
 | `boarding.assist_armor_pct` | C9 Assist: patched-up ships get back to this % of max armour, up to 100 (keep it above ships' `disable_armor_pct`) | `50` |
 | `combat.disabled_drag` | C7: a disabled ship (any ship, the player's too) loses this much speed per second until it stops, px/s²; 0 = drifts forever | `30` |
+| `combat.disable_armor_pct` | C7: default % of max armour at or below which a ship is disabled (ships may set their own `disable_armor_pct`); narrow, so taking a ship intact takes skill | `15` |
 | `combat.friendly_fire_pct` | % damage AI shots do to their own and allied governments' ships (C11); 0 = off. Player shots always do full damage | `100` |
 | `lighting.enabled` | V7: live lighting on (star, ambient, lit sprites); off draws everything flat | `true` |
 | `lighting.ambient` | V7: colour the unlit side of lit things is darkened to (a `CanvasModulate`); things without light maps, the backdrop and the HUD aren't darkened. A system's `lighting.ambient` overrides it | `"#4b5161"` |
@@ -124,7 +125,7 @@ Fields marked **required** have no default.
 | `shield`, `shield_regen` | Shield points and recharge per second (no recharge while disabled) | `0`, `0` |
 | `shield_recharge_delay` | Seconds without taking damage before shields start recharging; any hit resets it (C6) | `3` |
 | `armor` | Armour points | `100` |
-| `disable_armor_pct` | Disabled (drifts, can't fire) at or below this % of max armour; destroyed at 0 | `33` |
+| `disable_armor_pct` | Disabled (drifts, can't fire) at or below this % of max armour; destroyed at 0 (absent = `game.json` `combat.disable_armor_pct`) | game.json |
 | `strength` | Combat strength for AI odds | `1` |
 | `crew` | Crew count | `1` |
 | `hit_size` | V2: capsule hitbox `[width, length]` in art px, running along the hull (width ≤ length; equal values make a circle). Cover the hull body, not ornaments. Also sizes the placeholder arrow | `[32, 32]` |
@@ -176,6 +177,8 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `friendly_record` | G5: record at or above which its ships show as friendly (radar, target panel); must be above `crime_threshold` | `25` |
 | `penalties` | `{"shoot", "disable", "board", "kill"}`: record lost per act | all `0` |
 | `max_odds` | Engages only if enemy strength ÷ own strength ≤ this | `1` |
+| `on_disabled` | A13: what its ships do to an enemy they've disabled: `"kill"` (keep firing until destroyed) or `"leave"` (move on) | `"leave"` |
+| `kill_record` | A13: a player whose record with this government is at or below this is killed even when `on_disabled` is `"leave"` (absent = never) | none |
 | `flee_shield_pct` | Retreats below this shield % | `25` |
 | `tolerance_pct` | A8: how much of a ship's total shield + armour the player can damage before that ship turns hostile (grievance) | `10` |
 | `forgiveness_pct_per_s` | A8: how fast grievance drains, % per second | `0.5` |

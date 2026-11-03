@@ -143,7 +143,7 @@ func _materialise(s: EntityState, def: PersistentEntityDef, arriving: bool) -> v
 func _apply_summary(ship: Ship, summary: Dictionary) -> void:
 	ship.health.shield = ship.health.max_shield * clampf(float(summary.get("shield", 1.0)), 0.0, 1.0)
 	var hull: float = clampf(float(summary.get("hull", 1.0)), 0.0, 1.0)
-	if hull <= ship.def.disable_armor_pct / 100.0:
+	if hull <= ship.disable_fraction():
 		ship.health.force_disable()
 	ship.health.armor = ship.health.max_armor * hull
 

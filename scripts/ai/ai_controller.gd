@@ -162,7 +162,7 @@ func _think(elapsed: float) -> void:
 		if _timer <= 0.0:
 			_take_off()
 		return
-	if state == State.ATTACK and (not _valid_target(target) or not ship.is_hostile_to(target)):
+	if state == State.ATTACK and (not _attack_target_ok(target) or not ship.is_hostile_to(target)):
 		_end_attack()
 	if state == State.ATTACK and ship.global_position.distance_to(target.global_position) > pool.sensor_range * _ai("disengage_factor") \
 			and not (hunt_player and target.is_player()):
@@ -647,7 +647,7 @@ func _deadband(stats: FlightStats) -> float:
 
 
 func _steer_attack(s: FlightState, stats: FlightStats, delta: float) -> void:
-	if not _valid_target(target):
+	if not _attack_target_ok(target):
 		_input = FlightInput.new()
 		return
 	var to_target: Vector2 = target.global_position - s.position
@@ -667,6 +667,21 @@ func _steer_attack(s: FlightState, stats: FlightStats, delta: float) -> void:
 # --- Queries -------------------------------------------------------------------
 
 ## Untyped on purpose: `other` may be a freed ship.
+## A13: still worth shooting: a valid target, or a disabled one this ship's
+## government finishes off.
+func _attack_target_ok(other: Variant) -> bool:
+	if _valid_target(other):
+		return true
+	if not is_instance_valid(other) or not other is Ship or not (other as Ship).is_active() or (other as Ship).health.is_destroyed:
+		return false
+	var gov: GovernmentDef = ship.gov_def()
+	if gov == null:
+		return false
+	var target_ship: Ship = other
+	var record: float = GameState.get_record(gov.id) if target_ship.is_player() else 0.0
+	return Behaviour.finishes_off(gov.on_disabled, target_ship.is_player(), record, gov.has_kill_record, gov.kill_record)
+
+
 func _valid_target(other: Variant) -> bool:
 	return is_instance_valid(other) and other is Ship and other.is_active() and not other.health.is_disabled
 

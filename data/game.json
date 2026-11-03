@@ -43,7 +43,7 @@
     "time": 2,
     "assist_armor_pct": 50
   },
-  "combat": {"friendly_fire_pct": 100, "disabled_drag": 30},
+  "combat": {"friendly_fire_pct": 100, "disabled_drag": 30, "disable_armor_pct": 15},
   "camera": {"zoom": 0.75, "smoothing_speed": 0},
   "lighting": {
     "enabled": true,

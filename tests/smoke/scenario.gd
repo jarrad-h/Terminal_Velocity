@@ -583,6 +583,8 @@ func _run() -> void:
 	await _frames(2)
 	await _save_checks(player)
 	await _frames(2)
+	await _kill_checks(player, scene_root)
+	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
 
@@ -833,6 +835,46 @@ func _save_checks(player: Ship) -> void:
 	Pilots.root = root_before
 	Pilots.pilot = pilot_before
 	Pilots.pilot_id = id_before
+
+
+## A13: pirates finish off what they disable; the authority leaves it (but
+## not a wanted player); C7: the narrow default disable band.
+func _kill_checks(player: Ship, scene_root: Node) -> void:
+	var traffic: TrafficSpawner = scene_root.traffic
+	var far := Vector2(-6000.0, -6000.0)
+	_check(is_equal_approx(player.disable_fraction(), float(DataRegistry.settings["combat"]["disable_armor_pct"]) / 100.0), "C7: ships use game.json's disable band by default")
+	var pirate: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), far, "", "steady")
+	var victim: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("trader_traffic"), far + Vector2(300.0, 0.0), "", "steady")
+	victim.health.force_disable()
+	(pirate.controller as AIController).join_attack(victim)
+	for i: int in 900:
+		await get_tree().physics_frame
+		if not is_instance_valid(victim) or victim.health.is_destroyed:
+			break
+	_check(not is_instance_valid(victim) or victim.health.is_destroyed, "A13: a pirate finishes off the trader it disabled")
+	var law: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("authority_patrol"), far + Vector2(0.0, 600.0), "", "steady")
+	var law_ai: AIController = law.controller
+	pirate.health.force_disable()
+	law_ai.join_attack(pirate)
+	await _frames(40)
+	_check(law_ai.state != AIController.State.ATTACK and is_instance_valid(pirate) and not pirate.health.is_destroyed, "A13: the authority leaves a disabled pirate for capture: %s" % law.get_state_label())
+	# Against the player: the authority kills only a wanted one.
+	var record: float = GameState.get_record("local_authority")
+	player.health.force_disable()
+	_check(not law_ai._attack_target_ok(player), "A13: the authority leaves a disabled player in good standing")
+	GameState.set_record("local_authority", float(DataRegistry.get_government("local_authority").kill_record))
+	_check(law_ai._attack_target_ok(player), "A13: ...but kills one at its kill record")
+	var raider: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), far, "", "steady")
+	_check((raider.controller as AIController)._attack_target_ok(player), "A13: pirates kill a disabled player")
+	GameState.set_record("local_authority", record)
+	player.health.repair_full()
+	for ship: Variant in [pirate, law, raider]:
+		if is_instance_valid(ship):
+			(ship as Ship).remove_from_group(&"ships")
+			(ship as Ship).queue_free()
+	for shot: Node in scene_root.get_node("World/Shots").get_children():
+		shot.queue_free()
+	await _frames(2)
 
 
 func _entity_ships(id: String) -> Array[Ship]:
