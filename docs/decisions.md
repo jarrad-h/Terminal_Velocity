@@ -316,3 +316,9 @@ Rejected or later:
 Why: Jarrad's milestone 4 playtest, 3 Nov 2026. Dying in a pirate system woke him on the pirate planet without landing rights, "saved by a passing pirate", which is an exploit.
 Rejected: the old fallback to any landable port.
 
+## 2026-11-03 — Rescue reveals the hidden path; secret systems excluded (C10)
+- **Revealing:** hidden systems a rescuer carries the player through are revealed, so the player can route back. A hyperlane with `rescue_reveals: false` keeps its far end hidden.
+- **Excluding:** a galaxy system with a closed `rescue_if` condition is never a rescue destination or stopover. The condition uses the gate grammar, so a mission flag can unlock it later.
+Why: Jarrad, 3 Nov 2026 (option b for revealing; per-lane flag and condition field as recommended).
+Rejected: a per-system reveal flag; a plain true/false instead of a condition.
+

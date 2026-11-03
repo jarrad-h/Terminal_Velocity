@@ -77,7 +77,10 @@ See the checklist in the handover message. The main menu and dialogs haven't bee
   - **Nowhere at all:** the start system's first port, with a warning.
   - **Tests:** `PortRules.nearest_haven` has a unit test. The scenario dies in Redhaven and checks a non-pirate rescuer carries the player out to a port that takes them.
   - **Review fixes:** the rescue checks records through `GameState.get_record`, so start records count (G3); the route is replotted after the new hull is fitted.
-  - **Open question:** a player carried through a hidden lane can't plot a route back past it. Should hidden systems on the rescue path be revealed?
+  - **Answered (option b and the recommendations):**
+    - hidden systems on the rescue path are revealed, unless their lane sets `rescue_reveals: false`;
+    - a galaxy system's `rescue_if` condition (gate grammar) keeps secret or locked systems out of rescues as destinations or stopovers.
+    - Unit and loader tests cover both.
 
 ## Phase 2 Milestone 3: Persistence foundation (31 Oct – 2 Nov 2026, merged 2 Nov)
 

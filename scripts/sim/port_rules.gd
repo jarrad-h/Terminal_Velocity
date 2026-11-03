@@ -70,16 +70,18 @@ static func rescue_port(objects: Array[SystemObjectDef], from: Vector2, records:
 
 ## C10: the nearest system by travel days (then jumps, then id) among
 ## `havens` (system id -> true: it has a port that accepts the player),
-## along any lane, hidden ones too. {"system": "" if none reachable, "days"}.
-static func nearest_haven(galaxy: GalaxyDef, start: String, havens: Dictionary, jump_speed: float) -> Dictionary:
-	if havens.has(start):
-		return {"system": start, "days": 0}
-	var best: Dictionary = {"system": "", "days": 0}
+## along any lane, hidden ones too, never into or through a `closed` system
+## (id -> true: its rescue_if is closed).
+## {"system": "" if none reachable, "days", "route": [systems after start]}.
+static func nearest_haven(galaxy: GalaxyDef, start: String, havens: Dictionary, jump_speed: float, closed: Dictionary = {}) -> Dictionary:
+	if havens.has(start) and not closed.has(start):
+		return {"system": start, "days": 0, "route": []}
+	var best: Dictionary = {"system": "", "days": 0, "route": []}
 	var best_cost := Vector2i(-1, -1)
 	var ids: Array = havens.keys()
 	ids.sort()
 	for id: String in ids:
-		var route: Array[String] = Hyperlanes.plot_route(galaxy, start, id, jump_speed)
+		var route: Array[String] = Hyperlanes.plot_route(galaxy, start, id, jump_speed, closed)
 		if route.is_empty():
 			continue
 		var days: int = 0
@@ -90,7 +92,7 @@ static func nearest_haven(galaxy: GalaxyDef, start: String, havens: Dictionary, 
 		var cost := Vector2i(days, route.size())
 		if best_cost.x < 0 or cost.x < best_cost.x or (cost.x == best_cost.x and cost.y < best_cost.y):
 			best_cost = cost
-			best = {"system": id, "days": days}
+			best = {"system": id, "days": days, "route": route}
 	return best
 
 

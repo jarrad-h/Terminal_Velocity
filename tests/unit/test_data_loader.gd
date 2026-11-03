@@ -228,6 +228,7 @@ func test_travel_errors_name_file_and_field() -> void:
 	_expect_error(set, ["lost.json", "systems[0].map_state", "lost"])
 	_expect_error(set, ["lost.json", "systems[1].system", "listed twice"])
 	_expect_error(set, ["stray.json", "start_system", "not in this galaxy"])
+	_expect_error(set, ["lost.json", "systems[0].rescue_if", "flag_name"])
 	_expect_error(set, ["no_drive.json", "jump_speed", "more than 0"])
 	_expect_error(set, ["no_drive.json", "fuel", "at least 0"])
 	_expect_error(set, ["tiny.json", "jump_radius", "at least 100"])

@@ -326,14 +326,25 @@ func _rescue(pod: EscapePod) -> void:
 	if index < 0:
 		var galaxy: GalaxyDef = DataRegistry.galaxy()
 		var havens: Dictionary = {}
+		var closed: Dictionary = {}  # secret and locked systems: never a destination or stopover
 		for system_id: String in DataRegistry.ids("systems"):
 			var other: SystemDef = DataRegistry.get_system(system_id)
-			if galaxy.has_system(system_id) and PortRules.rescue_port(other.objects, Vector2.ZERO, records, default_record) >= 0:
+			if not galaxy.has_system(system_id):
+				continue
+			if not GateRules.is_open(galaxy.rescue_if.get(system_id, ""), GameState.flags):
+				closed[system_id] = true
+			elif PortRules.rescue_port(other.objects, Vector2.ZERO, records, default_record) >= 0:
 				havens[system_id] = true
-		var haven: Dictionary = PortRules.nearest_haven(galaxy, here, havens, player.def.jump_speed)
+		var haven: Dictionary = PortRules.nearest_haven(galaxy, here, havens, player.def.jump_speed, closed)
 		if haven["system"] != "":
 			target = DataRegistry.get_system(haven["system"])
 			trip_days = int(haven["days"])
+			# Hidden systems on the way are revealed, unless their lane says not to.
+			var at: String = here
+			for hop: String in haven["route"]:
+				if galaxy.lane_reveals(at, hop):
+					GameState.travel.reveal(galaxy, hop)
+				at = hop
 			index = PortRules.rescue_port(target.objects, Vector2.ZERO, records, default_record)
 		else:
 			stranded = true  # nowhere takes them: the start system's first port
