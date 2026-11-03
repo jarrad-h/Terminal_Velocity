@@ -84,6 +84,8 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
   - **Guided missiles:** fire when in range.
   - **Target:** the ship that last hit it if it's still in range and hostile, else the nearest ship in weapon range that it is hostile to.
 
+- A13: Finishing off disabled ships (milestone 4 playtest, 3 Nov 2026). Each government says what its ships do to an enemy they've disabled: `kill` (keep firing until it's destroyed) or `leave` (move on), and may set a `kill_record`: a player whose record with it is at or below that is killed even by a `leave` government. In the test cluster pirates kill, the Local Authority leaves disabled ships but kills a player at −300 or below, and Independent Traders leave. The same rule applies AI against AI, so a disabled ship to board is a lucky find or the player's own careful work. After a kill the ship carries on with what it was doing. Personality doesn't change it yet.
+
 **Saves (SV)**
 
 - SV1: A pilot file holds everything persistent: player ship and outfits, cargo, credits, records, ratings, flags, missions, the date, the galaxy simulation state and system memory. The current system is saved as its persistent parts only. Every ship, the player's included, is saved as a design reference plus instance state (name, damage, fitted items, cargo); premade ships are designs too, so player-made designs can be saved later without a format change. Persistent entities' ships use the same shape. The escape pod and insurance are pilot properties in the save, starting from the `game.json` values. Saves are readable JSON under the user data folder. A save naming a ship design that no longer exists loads with the uninsured hull in its place and a warning; a missing current system refuses with a message.
@@ -279,7 +281,8 @@ An art phase follows Phase 2 to build an expanded asset library, so Phase 3 cont
 
 - Dynamic supply and demand, replacing or layering on fixed tiers.
 - Fauna, including leviathans, when fauna is introduced.
-- Contraband scanning, escorts, hailing and bribes, AI finishing off disabled ships, point defence (C13).
+- Contraband scanning, escorts, hailing and bribes, point defence (C13). (AI finishing off disabled ships became A13.)
+- After a kill: pirates leaving the system (raid done), or lingering to loot the wreck once cargo and AI boarding exist (A13 follow-ups).
 - HUD restyle to Amber Glass (dark scene, translucent panels, amber accents); until then new screens use the shared `Theme` (H5).
 - Light maps for the pirate raider (its painter bakes light per plate; needs plate facings as normals and its hot parts as glow).
 - Cast shadows (ships and stations blocking starlight onto each other, Godot light occluders) as a visual uplift, if the performance cost is small.

@@ -291,3 +291,19 @@ Rejected:
 - **Later:** a dead pilot's memorial lists lifetime achievements (kills, trade profit, planets landed on, highest faction standing). The save reserves an empty `stats` block now; the counters come with progression in milestone 8.
 Why: Jarrad's answers to the milestone 4 plan, 2 Nov 2026 ("don't want to encourage over saving").
 
+## 2026-11-03 — Who finishes off disabled ships; a narrower disable band (A13, C7)
+- **Policy:** governments choose `kill` or `leave` for enemies they've disabled, plus a `kill_record` threshold for the player. In the test cluster:
+  - pirates kill;
+  - the Local Authority leaves disabled ships but kills a player at a record of −300 or below;
+  - traders leave.
+- **Same rules for AI against AI.** After a kill, the ship carries on (option a).
+- **Disable band:** narrowed from 33% to 15% armour (`combat.disable_armor_pct`; ships may override).
+- **Personality** stays out for now.
+
+Why: Jarrad's milestone 4 playtest, 3 Nov 2026. AI never killed anything, so the player was only ever disabled and death, the escape pod and ironman memorials couldn't be tested. A capturable disabled ship should be a lucky break or earned with skill.
+
+Rejected or later:
+- **b:** a pirate leaves the system after a kill; a per-government option if pirates feel too sticky.
+- **c:** a pirate loots the wreck first; needs cargo and AI boarding.
+- **Personality-driven killing.**
+
