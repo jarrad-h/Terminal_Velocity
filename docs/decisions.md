@@ -307,3 +307,12 @@ Rejected or later:
 - **c:** a pirate loots the wreck first; needs cargo and AI boarding.
 - **Personality-driven killing.**
 
+## 2026-11-03 — Rescue only by a friendly or neutral party; carried out of hostile systems (C10)
+- **Where you wake:** at the nearest port that accepts you. If none in the system does, the rescuer takes you to the nearest system (by travel days, hidden lanes included) that has one, adding that trip's days.
+- **Who rescues you:** the receiving port's government, else "a passing freighter".
+- **Last resort:** the start system's first landable port, with a warning.
+- **Unchanged:** the rescue fee.
+
+Why: Jarrad's milestone 4 playtest, 3 Nov 2026. Dying in a pirate system woke him on the pirate planet without landing rights, "saved by a passing pirate", which is an exploit.
+Rejected: the old fallback to any landable port.
+
