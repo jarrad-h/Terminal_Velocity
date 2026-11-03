@@ -4,7 +4,18 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
-## Phase 2 Milestone 4: Pilot and saves (in playtest, from 2 Nov 2026)
+## Phase 2 Milestone 4: Pilot and saves (2–3 Nov 2026, merged 3 Nov)
+
+### Stopped at / Next step
+
+Stopped at: P2M4 merged to `main` (3 Nov 2026), check GREEN.
+
+Next step: plan Phase 2 milestone 5 (economy, EC1–EC4) on `p2m5-<slug>`. Cargo goes into the existing `ShipRecord.cargo` and save slots without a format change.
+
+Open questions carried forward:
+- Rescue in place in a closed system; the fallback's `rescue_if`.
+- Whether Authority ships arriving late finish off a wanted, disabled player (A13).
+- Why Mara's courier once lost hostility.
 
 Branch `p2m4-saves`, cloud session. The plan and answers are in `docs/decisions.md` (2 Nov).
 
