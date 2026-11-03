@@ -315,7 +315,9 @@ func _rescue(pod: EscapePod) -> void:
 	# C10: only a port that accepts the player takes them in; if none here,
 	# the rescuer carries them to the nearest system that has one.
 	var here: String = scene.system.id
-	var records: Dictionary = GameState.records()
+	var records: Dictionary = {}
+	for gov_id: String in DataRegistry.ids("governments"):
+		records[gov_id] = GameState.get_record(gov_id)  # G3: start records count, as when landing
 	var default_record: float = float(settings["record"])
 	var index: int = PortRules.rescue_port(scene.system.objects, from, records, default_record)
 	var target: SystemDef = scene.system
@@ -350,14 +352,15 @@ func _rescue(pod: EscapePod) -> void:
 		GameState.travel.current_system = target.id
 		GameState.travel.mark_explored(target.id)
 		scene.enter_system_at(target.id, port.position if port != null else Vector2.ZERO)
-		var goal: String = GameState.travel.route[-1] if not GameState.travel.route.is_empty() else ""
-		GameState.travel.route.clear()
-		if goal != "" and goal != target.id:
-			scene.hyperspace.plot_to(goal)
+	var goal: String = GameState.travel.route[-1] if target.id != here and not GameState.travel.route.is_empty() else ""
 	# Insured: like for like. Uninsured: a basic hull.
 	var insured: bool = bool(Pilots.pilot.get("insured", settings["insured"]))  # SV1: the pilot's insurance
 	var hull: ShipDef = player.def if insured else DataRegistry.get_ship(settings["uninsured_ship"])
 	player.setup(hull)
+	if target.id != here:
+		GameState.travel.route.clear()
+		if goal != "" and goal != target.id:
+			scene.hyperspace.plot_to(goal)  # with the new hull's jump speed
 	player.place(port.position if port != null else Vector2.ZERO, 0.0)
 	scene.camera.target = player
 	scene.camera.snap()
