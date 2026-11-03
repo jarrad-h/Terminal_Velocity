@@ -524,6 +524,24 @@ func _run() -> void:
 	actions.dialog.choose("take_off")
 	await _frames(2)
 	_check(not get_tree().paused, "take off after rescue")
+	# C10: dying where no port takes the player in: carried out by a non-hostile rescuer.
+	var home: String = GameState.travel.current_system
+	_check(_debug.switch_system("redhaven"), "to the pirate system")
+	await _frames(2)
+	player.health.force_destroy()
+	await _frames(roundi(float(DataRegistry.settings["player"]["pod_time"]) * 60.0) + 10)
+	var report: String = actions.dialog._body.text if actions.dialog != null else ""
+	_check(GameState.travel.current_system != "redhaven", "C10: carried out of the pirate system (now in %s)" % GameState.travel.current_system)
+	_check(report.contains("took you out of") and not report.contains("Pirate"), "C10: a non-hostile rescuer says where it took you: %s" % report.left(160))
+	if actions.dialog != null:
+		actions.dialog.choose("continue")
+		await _frames(3)
+		_check(actions.dialog != null and Pilots.landed_at != "", "C10: ...and you wake landed where you're accepted")
+		if actions.dialog != null:
+			actions.dialog.choose("take_off")
+	await _frames(2)
+	_check(_debug.switch_system(home), "back home")
+	await _frames(2)
 	# No escape pod: lost with all hands.
 	Pilots.pilot["escape_pod"] = false  # SV1: the pod is the pilot's
 	player.health.force_destroy()

@@ -70,6 +70,12 @@ See the checklist in the handover message. The main menu and dialogs haven't bee
   - one shared default;
   - `tools/balance.py` reads the band from `game.json`.
 - **Open question:** Authority ships arriving after a wanted player is already disabled don't start on them; only ships already fighting finish the job. This matches "an enemy they've disabled" in A13.
+- **Process:** "I'll go ahead unless you say otherwise" isn't confirmation. Every open option now waits for Jarrad's explicit answer (start, playtest, design and milestone skills).
+- **Exploit fixed by a design change, agreed (defaults) and built (C10): rescued by pirates onto a pirate planet.**
+  - **Who rescues you:** only a port that accepts the player takes them in, and its government is the rescuer.
+  - **No port here:** the rescuer carries them to the nearest system by travel days with an accepting port (hidden lanes too), adding the trip's days and replotting the route.
+  - **Nowhere at all:** the start system's first port, with a warning.
+  - **Tests:** `PortRules.nearest_haven` has a unit test. The scenario dies in Redhaven and checks a non-pirate rescuer carries the player out to a port that takes them.
 
 ## Phase 2 Milestone 3: Persistence foundation (31 Oct – 2 Nov 2026, merged 2 Nov)
 

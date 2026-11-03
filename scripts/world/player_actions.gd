@@ -312,14 +312,48 @@ func _rescue(pod: EscapePod) -> void:
 	GameState.add_credits(-fee)
 	var days: Array = settings["rescue_days"]
 	var days_passed: int = _rng.randi_range(roundi(days[0]), roundi(days[1]))
+	# C10: only a port that accepts the player takes them in; if none here,
+	# the rescuer carries them to the nearest system that has one.
+	var here: String = scene.system.id
+	var records: Dictionary = GameState.records()
+	var default_record: float = float(settings["record"])
+	var index: int = PortRules.rescue_port(scene.system.objects, from, records, default_record)
+	var target: SystemDef = scene.system
+	var trip_days: int = 0
+	var stranded: bool = false
+	if index < 0:
+		var galaxy: GalaxyDef = DataRegistry.galaxy()
+		var havens: Dictionary = {}
+		for system_id: String in DataRegistry.ids("systems"):
+			var other: SystemDef = DataRegistry.get_system(system_id)
+			if galaxy.has_system(system_id) and PortRules.rescue_port(other.objects, Vector2.ZERO, records, default_record) >= 0:
+				havens[system_id] = true
+		var haven: Dictionary = PortRules.nearest_haven(galaxy, here, havens, player.def.jump_speed)
+		if haven["system"] != "":
+			target = DataRegistry.get_system(haven["system"])
+			trip_days = int(haven["days"])
+			index = PortRules.rescue_port(target.objects, Vector2.ZERO, records, default_record)
+		else:
+			stranded = true  # nowhere takes them: the start system's first port
+			target = DataRegistry.get_system(galaxy.start_system)
+			index = target.objects.find_custom(func(o: SystemObjectDef) -> bool: return o.landable and o.type != "gate")
+	var port: SystemObjectDef = target.objects[index] if index >= 0 else null
 	scene.leave_system()  # PS4, PS6: wrecks age and entities move while the pod drifts
-	GameState.advance_days(days_passed)  # TM2: the days adrift pass on the calendar
-	var objects: Array[SystemObjectDef] = scene.system.objects
-	var index: int = PortRules.rescue_port(objects, from, GameState.records(), float(settings["record"]))
-	var port: SystemObjectDef = objects[index] if index >= 0 else null
-	# Days pass: like leaving and coming back. Every other ship goes, destroyed
-	# scenery returns and traffic refills; remembered wrecks still in date stay (PS6).
-	scene.reset_visit()
+	GameState.player_heading = target.id
+	GameState.advance_days(days_passed + trip_days)  # TM2: the days adrift (and the trip) pass
+	GameState.player_heading = ""
+	if target.id == here:
+		# Days pass: like leaving and coming back. Every other ship goes, destroyed
+		# scenery returns and traffic refills; remembered wrecks still in date stay (PS6).
+		scene.reset_visit()
+	else:
+		GameState.travel.current_system = target.id
+		GameState.travel.mark_explored(target.id)
+		scene.enter_system_at(target.id, port.position if port != null else Vector2.ZERO)
+		var goal: String = GameState.travel.route[-1] if not GameState.travel.route.is_empty() else ""
+		GameState.travel.route.clear()
+		if goal != "" and goal != target.id:
+			scene.hyperspace.plot_to(goal)
 	# Insured: like for like. Uninsured: a basic hull.
 	var insured: bool = bool(Pilots.pilot.get("insured", settings["insured"]))  # SV1: the pilot's insurance
 	var hull: ShipDef = player.def if insured else DataRegistry.get_ship(settings["uninsured_ship"])
@@ -330,7 +364,14 @@ func _rescue(pod: EscapePod) -> void:
 	var gov: GovernmentDef = DataRegistry.get_government(port.government) if port != null and port.government != "" else null
 	var rescuer: String = "a %s ship" % gov.name if gov != null else "a passing freighter"
 	var where: String = port.name if port != null else "the middle of the system"
-	var text: String = "Your ship was destroyed. Your escape pod drifted for %d days before you were picked up by %s and brought to %s.\n\nRescue fee: %d credits." % [days_passed, rescuer, where, fee]
+	var text: String
+	if stranded:
+		text = "Your ship was destroyed. Your escape pod drifted for %d days. Nobody would take you in; %s carried you to %s in %s and left you there." % [days_passed + trip_days, rescuer, where, target.name]
+	elif target.id != here:
+		text = "Your ship was destroyed. Your escape pod drifted for %d days before you were picked up by %s, who took you out of %s and set you down at %s in %s." % [days_passed + trip_days, rescuer, Hyperspace.system_name(here), where, target.name]
+	else:
+		text = "Your ship was destroyed. Your escape pod drifted for %d days before you were picked up by %s and brought to %s." % [days_passed, rescuer, where]
+	text += "\n\nRescue fee: %d credits." % fee
 	text += "\n\nYour insurer has replaced your %s." % hull.name if insured else "\n\nYou weren't insured. All you could get was a %s." % hull.name
 	dialog = Dialog.open(scene, "Rescued", text)
 	dialog.add_choice("continue", "Continue", func() -> void:

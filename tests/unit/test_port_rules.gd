@@ -58,7 +58,7 @@ func test_rescue_port_prefers_accepting_nearest() -> void:
 	records["law"] = 10.0
 	assert_true(PortRules.rescue_port(objects, Vector2.ZERO, records, 0.0) == 0, "nearest when it accepts")
 	var nobody: Array[SystemObjectDef] = [_obj("a", Vector2(10, 0), true, "law", 100.0)]
-	assert_true(PortRules.rescue_port(nobody, Vector2.ZERO, {}, 0.0) == 0, "falls back to any landable port")
+	assert_true(PortRules.rescue_port(nobody, Vector2.ZERO, {}, 0.0) == -1, "C10: a port that refuses never takes the player in")
 	var none: Array[SystemObjectDef] = [_obj("rock", Vector2(10, 0), false)]
 	assert_true(PortRules.rescue_port(none, Vector2.ZERO, {}, 0.0) == -1, "no ports at all")
 
@@ -79,3 +79,20 @@ func test_refuel_buys_what_you_can_afford() -> void:
 	assert_near(PortRules.refuel(300.0, 300.0, 2.0, 1000)["units"], 0.0, "already full")
 	assert_true(PortRules.refuel(0.0, 300.0, 0.0, 0)["cost"] == 0, "free fuel")
 	assert_near(PortRules.refuel(0.0, 300.0, 2.0, 0)["units"], 0.0, "no credits, no fuel")
+
+
+func test_nearest_haven_by_travel_days() -> void:
+	# C10: a — b — c in a line 100 apart, d off b at 250 (slow), h hidden off a.
+	var raw: Dictionary = {"name": "G", "start_system": "a", "systems": [
+		{"system": "a", "position": [0, 0]}, {"system": "b", "position": [100, 0]},
+		{"system": "c", "position": [200, 0]}, {"system": "d", "position": [100, 250]},
+		{"system": "h", "position": [0, -100], "map_state": "hidden"}],
+		"hyperlanes": [{"from": "a", "to": "b"}, {"from": "b", "to": "c"}, {"from": "b", "to": "d"}, {"from": "h", "to": "a"}]}
+	var errors: Array[String] = []
+	var g: GalaxyDef = GalaxyDef.parse(DefReader.new(raw, "g.json", errors))
+	assert_true(errors.is_empty(), "galaxy parses")
+	assert_eq(PortRules.nearest_haven(g, "a", {"a": true, "c": true}, 100.0)["system"], "a", "here when here accepts")
+	var far: Dictionary = PortRules.nearest_haven(g, "a", {"c": true, "d": true}, 100.0)
+	assert_true(far["system"] == "c" and int(far["days"]) == 2, "the nearest by days (c: 2 days; d: 4)")
+	assert_eq(PortRules.nearest_haven(g, "b", {"h": true}, 100.0)["system"], "h", "rescuers use hidden lanes too")
+	assert_eq(PortRules.nearest_haven(g, "a", {}, 100.0)["system"], "", "nowhere accepts")
