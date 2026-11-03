@@ -67,9 +67,6 @@ func _ready() -> void:
 	health.damaged.connect(_on_damaged)
 
 
-## Applies a ship definition. Call after adding to the tree. Calling it again
-## keeps position, velocity and heading. A ship swap (D2) restores full shield
-## and armour; a data reload (D8, `keep_health`) keeps current damage and the
 ## C7: armour fraction at or below which this ship is disabled: its own
 ## disable_armor_pct, or game.json combat.disable_armor_pct.
 func disable_fraction() -> float:
@@ -77,6 +74,9 @@ func disable_fraction() -> float:
 	return pct / 100.0
 
 
+## Applies a ship definition. Call after adding to the tree. Calling it again
+## keeps position, velocity and heading. A ship swap (D2) restores full shield
+## and armour; a data reload (D8, `keep_health`) keeps current damage and the
 ## disabled state, so reloading never heals or revives anything.
 func setup(ship_def: ShipDef, keep_health: bool = false) -> void:
 	def = ship_def

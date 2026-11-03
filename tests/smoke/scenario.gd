@@ -868,6 +868,7 @@ func _kill_checks(player: Ship, scene_root: Node) -> void:
 	_check((raider.controller as AIController)._attack_target_ok(player), "A13: pirates kill a disabled player")
 	GameState.set_record("local_authority", record)
 	player.health.repair_full()
+	player.set_tint(Color.WHITE)
 	for ship: Variant in [pirate, law, raider]:
 		if is_instance_valid(ship):
 			(ship as Ship).remove_from_group(&"ships")

@@ -294,7 +294,7 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	var combat: DefReader = reader.object("combat")
 	combat.number("friendly_fire_pct", 100.0, false, 0.0)
 	combat.number("disabled_drag", 0.0, false, 0.0)
-	if combat.number("disable_armor_pct", 15.0, false, 0.0) >= 100.0:
+	if combat.number("disable_armor_pct", SETTINGS_DEFAULTS["combat"]["disable_armor_pct"], false, 0.0) >= 100.0:
 		combat.error("disable_armor_pct", "must be below 100")
 	var ai: DefReader = reader.object("ai")
 	for key: String in SETTINGS_DEFAULTS["ai"]:

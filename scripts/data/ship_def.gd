@@ -53,7 +53,13 @@ static func parse(r: DefReader) -> ShipDef:
 	d.shield_regen = r.number("shield_regen", 0.0, false, 0.0)
 	d.shield_recharge_delay = r.number("shield_recharge_delay", 3.0, false, 0.0)
 	d.armor = r.number("armor", 100.0, false, 0.0)
-	d.disable_armor_pct = r.number("disable_armor_pct", -1.0, false, -1.0)  # -1: game.json combat.disable_armor_pct
+	d.disable_armor_pct = -1.0  # absent: game.json combat.disable_armor_pct (C7)
+	if r.has("disable_armor_pct"):
+		d.disable_armor_pct = r.number("disable_armor_pct", 0.0)
+		if d.disable_armor_pct < 0.0:
+			r.error("disable_armor_pct", "must be 0–99 (or left out to use game.json combat.disable_armor_pct)")
+		elif d.disable_armor_pct >= 100.0:
+			r.error("disable_armor_pct", "must be below 100")
 	d.strength = r.number("strength", 1.0, false, 0.0)
 	d.crew = r.integer("crew", 1, false, 0)
 	d.hit_size = r.vec2("hit_size", Vector2(32.0, 32.0))

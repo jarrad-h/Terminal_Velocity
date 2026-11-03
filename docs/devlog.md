@@ -64,6 +64,12 @@ See the checklist in the handover message. The main menu and dialogs haven't bee
   - **Disable band:** narrowed to 15% (`game.json` `combat.disable_armor_pct`; ships may override).
   - **Tests:** the rule is `Behaviour.finishes_off` (unit test). The scenario checks that a pirate destroys a disabled trader, that the Authority leaves a disabled pirate, and the decisions against a disabled player.
   - **Now testable:** death, the escape pod and the ironman memorial, by letting pirates catch you.
+- **Review (godot-reviewer):** ready for playtest. Follow-ups made:
+  - the camera snap also resets physics interpolation;
+  - loader tests for `on_disabled`, `kill_record` and the disable band (game.json below 100, ships 0–99 or left out);
+  - one shared default;
+  - `tools/balance.py` reads the band from `game.json`.
+- **Open question:** Authority ships arriving after a wanted player is already disabled don't start on them; only ships already fighting finish the job. This matches "an enemy they've disabled" in A13.
 
 ## Phase 2 Milestone 3: Persistence foundation (31 Oct – 2 Nov 2026, merged 2 Nov)
 

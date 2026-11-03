@@ -168,6 +168,12 @@ func test_field_errors_name_file_and_field() -> void:
 	_expect_error(set, ["bad_falloff.json", "falloff_start_pct", "at most 100"])
 	_expect_error(set, ["bad_falloff.json", "falloff_min_pct", "at most 100"])
 	_expect_error(set, ["bad_recharge.json", "shield_recharge_delay", "at least 0"])
+	# A13, C7: kill policy and the disable band.
+	_expect_error(set, ["merciless.json", "on_disabled", "eat"])
+	_expect_error(set, ["merciless.json", "kill_record", "expected a number"])
+	_expect_error(set, ["game.json", "combat.disable_armor_pct", "below 100"])
+	_expect_error(set, ["bad_recharge.json", "disable_armor_pct", "below 100"])
+	_expect_error(set, ["half_disabled.json", "disable_armor_pct", "0–99"])
 	_expect_error(set, ["grumpy.json", "tolerance_pct", "at least 0"])
 	_expect_error(set, ["grumpy.json", "forgiveness_pct_per_s", "expected a number"])
 	_expect_error(set, ["hothead.json", "tolerance_factor", "at least 0"])

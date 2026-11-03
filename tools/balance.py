@@ -21,6 +21,12 @@ import json
 import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def disable_default():
+    """C7: game.json combat.disable_armor_pct (ships may set their own)."""
+    with open(os.path.join(ROOT, "data", "game.json"), encoding="utf-8") as f:
+        return json.load(f).get("combat", {}).get("disable_armor_pct", 15)
 STEP = 0.01  # seconds per simulation step
 LIMIT = 600.0  # give up after this many seconds
 
@@ -94,7 +100,7 @@ def fight(attacker, defender, weapons, distance, accuracy):
     shield = float(defender.get("shield", 0))
     max_armor = float(defender.get("armor", 100))
     armor = max_armor
-    disable_at = max_armor * defender.get("disable_armor_pct", 33) / 100
+    disable_at = max_armor * defender.get("disable_armor_pct", disable_default()) / 100
     cooldowns = [0.0] * len(loadout)
     t = 0.0
     disabled = None

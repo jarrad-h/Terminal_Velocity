@@ -25,5 +25,6 @@ func snap() -> void:
 		return
 	global_position = target.global_position
 	reset_smoothing()
+	reset_physics_interpolation()  # don't blend from the old spot
 	force_update_scroll()
 
