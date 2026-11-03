@@ -81,6 +81,10 @@ See the checklist in the handover message. The main menu and dialogs haven't bee
     - hidden systems on the rescue path are revealed, unless their lane sets `rescue_reveals: false`;
     - a galaxy system's `rescue_if` condition (gate grammar) keeps secret or locked systems out of rescues as destinations or stopovers.
     - Unit and loader tests cover both.
+  - **Review fix:** dying inside a closed system no longer strands the player at the start system; the rescuer sets off from it.
+  - **Open questions (current behaviour kept for now):**
+    - Dying in a closed system that has a port accepting the player: they're rescued in place.
+    - The last-resort fallback goes to the start system even if its `rescue_if` is closed.
 
 ## Phase 2 Milestone 3: Persistence foundation (31 Oct – 2 Nov 2026, merged 2 Nov)
 

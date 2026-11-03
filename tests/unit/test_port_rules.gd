@@ -99,6 +99,7 @@ func test_nearest_haven_by_travel_days() -> void:
 	# Secret or locked systems are never a destination or stopover.
 	assert_eq(PortRules.nearest_haven(g, "a", {"c": true, "d": true}, 100.0, {"c": true})["system"], "d", "a closed system isn't a destination")
 	assert_eq(PortRules.nearest_haven(g, "a", {"c": true}, 100.0, {"b": true})["system"], "", "...nor a stopover")
+	assert_eq(PortRules.nearest_haven(g, "b", {"c": true}, 100.0, {"b": true})["system"], "c", "dying in a closed system, the rescuer still sets off from it")
 	assert_true(PortRules.nearest_haven(g, "b", {"h": true}, 100.0)["route"] == ["a", "h"], "the route comes back for revealing")
 	raw["hyperlanes"][3]["rescue_reveals"] = false
 	var g2: GalaxyDef = GalaxyDef.parse(DefReader.new(raw, "g.json", errors))

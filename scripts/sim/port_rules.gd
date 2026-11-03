@@ -77,11 +77,13 @@ static func nearest_haven(galaxy: GalaxyDef, start: String, havens: Dictionary, 
 	if havens.has(start) and not closed.has(start):
 		return {"system": start, "days": 0, "route": []}
 	var best: Dictionary = {"system": "", "days": 0, "route": []}
+	var blocked: Dictionary = closed.duplicate()
+	blocked.erase(start)  # dying in a closed system: the rescuer still sets off from it
 	var best_cost := Vector2i(-1, -1)
 	var ids: Array = havens.keys()
 	ids.sort()
 	for id: String in ids:
-		var route: Array[String] = Hyperlanes.plot_route(galaxy, start, id, jump_speed, closed)
+		var route: Array[String] = Hyperlanes.plot_route(galaxy, start, id, jump_speed, blocked)
 		if route.is_empty():
 			continue
 		var days: int = 0
