@@ -322,3 +322,17 @@ Rejected: the old fallback to any landable port.
 Why: Jarrad, 3 Nov 2026 (option b for revealing; per-lane flag and condition field as recommended).
 Rejected: a per-system reveal flag; a plain true/false instead of a condition.
 
+## 2026-11-04 — Milestone 5 plan: the economy (EC1–EC8, D16)
+- **Commodities:** 8 (food, water, medical supplies, industrial goods, electronics, luxury goods, weapons, narcotics).
+- **Prices:** tiers ×0.7, ×1.0 and ×1.3, and a 5% sell spread. Test-cluster markets are drafted by port character; the cluster is disposable, so the specifics don't matter.
+- **Cargo:** capacities in tons (shuttle 10, courier 15, corvette 10, raider 10, freighter 120). Cargo pods are outfits (milestone 6).
+- **Price events:** 3 events; stacked events multiply.
+- **Jettison (B):** one canister; anyone scoops it; pirates are drawn to valuable ones.
+- **Illegal goods:** buyable and flagged, with no penalty yet.
+- **Saturation (A1):** markets remember trade per port and recover daily; this replaces "dynamic supply and demand" on the review list.
+- **AI cargo and entity trading (B1, B2):** AI traders carry cargo; named traders trade along their routes and move prices; ambient traffic doesn't.
+- **Background trade flow (B4):** the model is to be confirmed before it's built.
+- **Debug:** D16.
+Why: Jarrad's answers, 4 Nov 2026 ("events, shortages, large trade influx affect pricing"; "I don't see a reason why AI trading can't be implemented").
+Rejected: events-only pricing (farmable); saturation that resets each visit (the reset exploit); every ambient trader moving prices (noisy, drowns the player out).
+

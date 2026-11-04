@@ -95,10 +95,14 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
 
 **Economy (EC)**
 
-- EC1: Commodities are data definitions with a base price and a mass per unit. Each stellar with a market sets a price tier per commodity: none, low, medium or high.
+- EC1: Commodities are data definitions with a base price and a mass per unit. Each stellar with a market sets a price tier per commodity: none, low, medium or high (multipliers in `game.json`: low ×0.7, medium ×1.0, high ×1.3). The player sells for a small spread below the buy price (`game.json`, 5%).
 - EC2: Price events are data: a commodity, where it applies (stellars, systems or governments), a price change, a duration in days and a chance per day, optionally gated by flags. Active events show in the trade screen and the news.
 - EC3: Ships have a cargo capacity; cargo pods add to it. The trade screen buys and sells by unit with live totals and remaining space.
-- EC4: Commodities can be illegal to a government; scanning for contraband is Phase 3, but the legality field exists now.
+- EC4: Commodities can be illegal to a government; scanning for contraband is Phase 3, but the legality field exists now. Illegal goods can still be bought where a market lists them and are flagged in the trade screen; there is no penalty yet.
+- EC5: Markets react to trade (milestone 5 plan, 4 Nov 2026). Each port and commodity has a saturation, kept in system memory and saved: buying pushes the price up, selling pushes it down (2% per 10 units, capped at ±30%), recovering about 20% of the offset per day (all in `game.json`). Price events (EC2) multiply on top, and stacked events multiply.
+- EC6: AI cargo and trading. AI traders carry cargo fitting their pool and wealth; a destroyed trader spills canisters anyone can scoop, and a fleeing trader can jettison as a decoy. Persistent trader entities buy at each stop and sell at the next along their orders, on screen and off, and their trades feed saturation (EC5). Ambient traffic doesn't move prices. Plundering cargo by boarding stays in Phase 3.
+- EC7: Background trade flow: markets drift each day by the trade that isn't simulated ship by ship, so busy lanes narrow price gaps over days. (Model to be confirmed with Jarrad before it's built.)
+- EC8: Cargo jettison (B): all cargo goes out as one canister that drifts and expires after a set time; any ship flying over it slowly scoops what fits. Pirates within sensor range break off to collect a canister worth more than a data threshold (the OF6 decoy).
 
 **Shipyard and outfitter (OF)**
 
@@ -143,6 +147,7 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
 - D13: Inspect the persistent-entity registry and system memory; spawn or move a persistent entity.
 - D14: Lighting on and off, and live control of the star's direction and height.
 - D15: Save and load from the console (`save [slot]`, `load <slot>`, `pilots`, `savepath`).
+- D16: Economy from the console: `market` (prices here with tiers and events), `cargo <commodity> <n>`, `event <id> [here]`, `events`.
 
 ## Persistence model
 
@@ -217,7 +222,7 @@ Eight milestones, each ending in a playtest; persistence comes before saves so t
 2. ✅ (merged 2026-10-30) **Gates and lighting:** gate stellars, destination list, fee and record check, closable by flag, gate links on the map; lit ships (V6), star and ambient light from system data (V7), weapon and engine lights (V8), lit stellars on placeholders until the art lands (V9), the shared UI theme for the gate list (H5) and the lighting debug controls (D14). Done when TR5–TR6 work, the map shows gate links, ships light correctly at every heading, shots light nearby hulls, performance is unchanged and the check is GREEN. Gate, station and planet art comes from Jarrad's parallel `art/*` session and merges when its branch passes the check (see "Art requests for milestone 2").
 3. ✅ (merged 2026-11-02) **Persistence foundation:** entity registry, travel by the player's rules, materialise and write-back, off-screen encounters, system memory with recovery, news. AI traffic flies the hyperspace sequence (A9) and hub systems get gate traffic (A10), both from the milestone 2 playtest. Mid-milestone check-in after A9, A10 and system memory (PS6). Done when PS1–PS7, A9 and A10 work with the test cluster's three persistent entities. Playtests added fleets (PS4), landing and sheltering (A11) and covering fire (A12).
 4. ✅ (merged 2026-11-03) **Pilot and saves:** pilot creation (name, ironman), save/load, autosave, versioned format. Done when SV1–SV4 work and a save made mid-route restores entities in transit. Playtests added D15, finishing off disabled ships (A13), the 15% disable band (C7) and safe rescues (C10).
-5. **Economy:** commodities, market tiers, price events, cargo hold, trade screen, cargo jettison. Done when EC1–EC4 work and a pure trading run across four systems turns a profit.
+5. **Economy:** commodities, market tiers, price events, cargo hold, trade screen, cargo jettison, market saturation, AI cargo and entity trading, background trade flow. Done when EC1–EC8 work and a pure trading run across four systems turns a profit.
 6. **Shipyard and outfitter:** buying hulls with trade-in, fitting by hardpoint, free mass, the modifier system and the trader escape kit. Moves hull geometry into manifests first (OF7). Done when OF1–OF9 work and the shuttle has a visible upgrade path.
 7. **Mission engine:** flags, the condition grammar, declarative missions, script hooks, templates, mission log, persistent mission targets and escorts. Done when MS1–MS6 work with the four templates.
 8. **Progression and the first arc:** ratings, ranks, achievements, the pilot screen, and a 5–8 mission arc. Done when PR1–PR4 work and the success criteria at the top are met in an hour-long playtest.
@@ -279,7 +284,6 @@ An art phase follows Phase 2 to build an expanded asset library, so Phase 3 cont
 
 **To review later**
 
-- Dynamic supply and demand, replacing or layering on fixed tiers.
 - Fauna, including leviathans, when fauna is introduced.
 - Contraband scanning, escorts, hailing and bribes, point defence (C13). (AI finishing off disabled ships became A13.)
 - After a kill: pirates leaving the system (raid done), or lingering to loot the wreck once cargo and AI boarding exist (A13 follow-ups).
