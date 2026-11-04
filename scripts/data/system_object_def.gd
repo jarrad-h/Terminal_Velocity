@@ -19,6 +19,8 @@ var government: String
 var min_record: float
 ## TR8: landed ships can buy fuel here, at this many credits per unit.
 var sells_fuel: bool
+## EC1: commodity id -> "low", "medium" or "high" (absent = not traded here).
+var market: Dictionary[String, String] = {}
 var refuel_price: float
 ## TM2: days that pass on landing and on taking off.
 var landing_days: int
@@ -51,6 +53,9 @@ static func parse(r: DefReader) -> SystemObjectDef:
 	o.min_record = r.number("min_record", -1000.0)
 	o.sells_fuel = r.boolean("sells_fuel", true)
 	o.refuel_price = r.number("refuel_price", 2.0, false, 0.0)
+	var market: DefReader = r.object("market")
+	for commodity: String in market.data:
+		o.market[commodity] = market.choice(commodity, Market.TIERS, "medium", true)
 	o.landing_days = r.integer("landing_days", 1, false, 0)
 	o.takeoff_days = r.integer("takeoff_days", 0, false, 0)
 	o.fee = r.integer("fee", 0, false, 0)

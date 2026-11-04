@@ -1,0 +1,2 @@
+{"name": "Haggle", "objects": [
+  {"id": "stall", "type": "planet", "name": "Stall", "position": [0, 0], "radius": 100, "landable": true, "market": {"food": "cheap"}}]}

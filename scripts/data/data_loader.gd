@@ -6,7 +6,7 @@ extends RefCounted
 ## collected as errors naming the file and field, never thrown.
 
 ## Definition type folders, in load order.
-const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery", "personalities", "galaxy", "entities"]
+const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery", "personalities", "galaxy", "entities", "commodities"]
 
 const SETTINGS_FILE: String = "game.json"
 
@@ -31,6 +31,8 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"player": {"credits": 0, "record": 0.0, "escape_pod": true, "insured": true, "uninsured_ship": "shuttle",
 		"rescue_fee_pct": 10.0, "rescue_days": [2.0, 5.0], "pod_speed": 600.0, "pod_time": 3.0},
 	"saves": {"root": "user://pilots", "max_pilots": 5, "max_slots": 10},
+	"economy": {"tiers": {"low": 0.7, "medium": 1.0, "high": 1.3}, "sell_spread_pct": 5.0,
+		"saturation": {"pct_per_10_units": 2.0, "cap_pct": 30.0, "recovery_per_day": 0.2}},
 	"landing": {"max_speed": 60.0, "radius_fraction": 0.6, "repair_cost_per_point": 0.0},
 	"boarding": {"range": 60.0, "max_speed": 40.0, "time": 2.0, "assist_armor_pct": 50.0},
 	"combat": {"friendly_fire_pct": 100.0, "disabled_drag": 30.0, "disable_armor_pct": 15.0},
@@ -168,6 +170,8 @@ static func _parse(type: String, reader: DefReader) -> Def:
 			return GalaxyDef.parse(reader)
 		"entities":
 			return PersistentEntityDef.parse(reader)
+		"commodities":
+			return CommodityDef.parse(reader)
 	assert(false, "unknown definition type " + type)
 	return null
 
@@ -282,6 +286,17 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		var sub: DefReader = reader.object(section)
 		for key: String in SETTINGS_DEFAULTS[section]:
 			sub.number(key, 0.0, false, 0.0)
+	var economy: DefReader = reader.object("economy")
+	var tiers: DefReader = economy.object("tiers")
+	for tier: String in Market.TIERS:
+		tiers.number(tier, 1.0, false, 0.01)
+	if economy.number("sell_spread_pct", 5.0, false, 0.0) >= 100.0:
+		economy.error("sell_spread_pct", "must be below 100")
+	var saturation: DefReader = economy.object("saturation")
+	saturation.number("pct_per_10_units", 2.0, false, 0.0)
+	saturation.number("cap_pct", 30.0, false, 0.0)
+	if saturation.number("recovery_per_day", 0.2, false, 0.0) > 1.0:
+		saturation.error("recovery_per_day", "must be at most 1")
 	var saves: DefReader = reader.object("saves")
 	saves.integer("max_pilots", 5, false, 1)
 	saves.integer("max_slots", 10, false, 1)
@@ -370,4 +385,4 @@ static func _merged(base: Dictionary, over: Dictionary) -> Dictionary:
 static func _singular(type: String) -> String:
 	return {"ships": "ship", "weapons": "weapon", "governments": "government",
 		"ai_pools": "AI pool", "systems": "system", "scenery": "scenery",
-		"personalities": "personality", "galaxy": "galaxy", "entities": "persistent entity"}[type]
+		"personalities": "personality", "galaxy": "galaxy", "entities": "persistent entity", "commodities": "commodity"}[type]

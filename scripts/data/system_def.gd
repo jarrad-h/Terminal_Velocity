@@ -108,12 +108,18 @@ func government() -> String:
 	return ""
 
 
-func validate(_defs: Dictionary, errors: Array[String]) -> void:
+func validate(defs: Dictionary, errors: Array[String]) -> void:
 	var seen: Dictionary = {}
 	for o: SystemObjectDef in objects:
 		if seen.has(o.id):
 			errors.append("%s: field 'objects': object id '%s' is used twice" % [file, o.id])
 		seen[o.id] = true
+	for o: SystemObjectDef in objects:
+		for commodity: String in o.market:
+			if not defs.get("commodities", {}).has(commodity):
+				errors.append("%s: field 'objects[%s].market': no commodity '%s'" % [file, o.id, commodity])
+		if not o.market.is_empty() and not o.landable:
+			errors.append("%s: field 'objects[%s].market': only a landable object can have a market" % [file, o.id])
 	if objects.filter(func(o: SystemObjectDef) -> bool: return o.type == "gate").size() > 1:
 		errors.append("%s: field 'objects': a system has at most one gate" % file)
 	var pools: Dictionary = {}

@@ -31,7 +31,15 @@
       "landable": true,
       "government": "independent_traders",
       "min_record": -60,
-      "art": "planet_desert"
+      "art": "planet_desert",
+      "market": {
+        "food": "high",
+        "water": "high",
+        "medical_supplies": "high",
+        "industrial_goods": "high",
+        "electronics": "high",
+        "weapons": "medium"
+      }
     },
     {
       "id": "brink_watch",
@@ -47,7 +55,11 @@
       "landable": true,
       "government": "local_authority",
       "min_record": -10,
-      "art": "station_authority_ring"
+      "art": "station_authority_ring",
+      "market": {
+        "water": "medium",
+        "medical_supplies": "medium"
+      }
     }
   ],
   "traffic": [

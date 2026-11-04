@@ -26,6 +26,7 @@
     [2.8, 85.2]
   ],
   "fuel": 500,
+  "cargo": 120,
   "jump_fuel": 100,
   "jump_countdown": 5,
   "jump_speed": 100

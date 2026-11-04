@@ -1,0 +1,3 @@
+{"name": "Bazaar", "objects": [
+  {"id": "stall", "type": "planet", "name": "Stall", "position": [0, 0], "radius": 100, "landable": true, "market": {"spice": "medium"}},
+  {"id": "rock", "type": "planet", "name": "Rock", "position": [500, 0], "radius": 100, "market": {"spice": "low"}}]}

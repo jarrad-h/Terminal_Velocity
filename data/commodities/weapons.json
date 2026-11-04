@@ -1,0 +1,8 @@
+{
+  "name": "Weapons",
+  "base_price": 480,
+  "mass": 1,
+  "illegal_to": [
+    "local_authority"
+  ]
+}

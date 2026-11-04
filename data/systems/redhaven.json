@@ -32,7 +32,14 @@
       "government": "pirates",
       "min_record": 10,
       "refuel_price": 4,
-      "art": "planet_rust"
+      "art": "planet_rust",
+      "market": {
+        "weapons": "low",
+        "narcotics": "low",
+        "luxury_goods": "high",
+        "food": "high",
+        "medical_supplies": "high"
+      }
     },
     {
       "id": "the_rock",
@@ -49,7 +56,12 @@
       "government": "pirates",
       "min_record": 10,
       "refuel_price": 4,
-      "art": "station_pirate_rock"
+      "art": "station_pirate_rock",
+      "market": {
+        "narcotics": "medium",
+        "weapons": "medium",
+        "electronics": "high"
+      }
     }
   ],
   "traffic": [

@@ -35,6 +35,11 @@
     "pod_speed": 600,
     "pod_time": 3
   },
+  "economy": {
+    "tiers": {"low": 0.7, "medium": 1.0, "high": 1.3},
+    "sell_spread_pct": 5,
+    "saturation": {"pct_per_10_units": 2, "cap_pct": 30, "recovery_per_day": 0.2}
+  },
   "saves": {"root": "user://pilots", "max_pilots": 5, "max_slots": 10},
   "landing": {"max_speed": 60, "radius_fraction": 0.6, "repair_cost_per_point": 0},
   "boarding": {

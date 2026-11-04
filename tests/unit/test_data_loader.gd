@@ -161,6 +161,13 @@ func test_field_errors_name_file_and_field() -> void:
 	_expect_error(set, ["zero_weight.json", "fire_angle", "expected a number"])
 	_expect_error(set, ["tiny.json", "edge_radius", "at least 100"])
 	_expect_error(set, ["tiny.json", "respawn_delay", "greater than max"])
+	# EC1, EC4: commodities and markets.
+	_expect_error(set, ["priceless.json", "base_price", "is required"])
+	_expect_error(set, ["priceless.json", "mass", "at least 0.01"])
+	_expect_error(set, ["priceless.json", "illegal_to", "no_such_gov"])
+	_expect_error(set, ["haggle.json", "market", "cheap"])
+	_expect_error(set, ["bazaar.json", "no commodity 'spice'"])
+	_expect_error(set, ["bazaar.json", "only a landable object can have a market"])
 	_expect_error(set, ["game.json", "ai.thrust_angle", "expected a number"])
 	_expect_error(set, ["game.json", "ai.roam_band", "greater than max"])
 	_expect_error(set, ["game.json", "combat.friendly_fire_pct", "at least 0"])

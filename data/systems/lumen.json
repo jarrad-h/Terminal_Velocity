@@ -47,7 +47,13 @@
       "landable": true,
       "government": "local_authority",
       "min_record": -20,
-      "art": "planet_ice"
+      "art": "planet_ice",
+      "market": {
+        "luxury_goods": "low",
+        "electronics": "medium",
+        "food": "medium",
+        "medical_supplies": "low"
+      }
     },
     {
       "id": "lantern",
@@ -63,11 +69,20 @@
       "landable": true,
       "government": "independent_traders",
       "min_record": -60,
-      "art": "planet_desert"
+      "art": "planet_desert",
+      "market": {
+        "luxury_goods": "low",
+        "water": "medium",
+        "industrial_goods": "high"
+      }
     }
   ],
   "traffic": [
-    {"pool": "gate_haulers", "count": 2, "via": "gate"},
+    {
+      "pool": "gate_haulers",
+      "count": 2,
+      "via": "gate"
+    },
     {
       "pool": "trader_traffic",
       "count": 3

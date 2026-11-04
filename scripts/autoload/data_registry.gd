@@ -64,6 +64,10 @@ func get_personality(id: String) -> PersonalityDef:
 	return _set.get_def("personalities", id)
 
 
+func get_commodity(id: String) -> CommodityDef:
+	return _set.get_def("commodities", id)
+
+
 func get_entity(id: String) -> PersistentEntityDef:
 	return _set.get_def("entities", id)
 

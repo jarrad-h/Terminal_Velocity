@@ -31,7 +31,14 @@
       "landable": true,
       "government": "independent_traders",
       "min_record": -80,
-      "art": "planet_volcanic"
+      "art": "planet_volcanic",
+      "market": {
+        "industrial_goods": "low",
+        "food": "high",
+        "water": "high",
+        "electronics": "medium",
+        "medical_supplies": "high"
+      }
     }
   ],
   "traffic": [

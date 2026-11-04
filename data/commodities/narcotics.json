@@ -1,0 +1,9 @@
+{
+  "name": "Narcotics",
+  "base_price": 700,
+  "mass": 1,
+  "illegal_to": [
+    "local_authority",
+    "independent_traders"
+  ]
+}

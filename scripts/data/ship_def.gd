@@ -34,6 +34,8 @@ var engine_size: float
 ## TR8: fuel capacity, and the fuel one hyperlane jump costs (flat for now;
 ## Hyperlanes.jump_fuel is the one place the rule lives).
 var fuel: float
+## EC3: cargo hold in tons (cargo pods add to it, milestone 6).
+var cargo: float
 var jump_fuel: float
 ## TR2: hyperspace countdown, seconds (outfits will shorten it, OF3).
 var jump_countdown: float
@@ -90,6 +92,7 @@ static func parse(r: DefReader) -> ShipDef:
 	d.engine_colour = glow.colour("colour", Color.html("#a8d8ff"))
 	d.engine_size = glow.number("size", 6.0, false, 0.0)
 	d.fuel = r.number("fuel", 300.0, false, 0.0)
+	d.cargo = r.number("cargo", 0.0, false, 0.0)
 	d.jump_fuel = r.number("jump_fuel", 100.0, false, 0.0)
 	d.jump_countdown = r.number("jump_countdown", 3.0, false, 0.0)
 	d.jump_speed = r.number("jump_speed", 150.0, false, 0.0)

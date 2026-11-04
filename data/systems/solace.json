@@ -31,7 +31,14 @@
       "landable": true,
       "government": "independent_traders",
       "min_record": -80,
-      "art": "planet_terran"
+      "art": "planet_terran",
+      "market": {
+        "food": "low",
+        "water": "low",
+        "medical_supplies": "high",
+        "electronics": "high",
+        "luxury_goods": "medium"
+      }
     },
     {
       "id": "verge",
@@ -63,7 +70,12 @@
       "landable": true,
       "government": "independent_traders",
       "min_record": -80,
-      "art": "station_trader_yard"
+      "art": "station_trader_yard",
+      "market": {
+        "food": "low",
+        "industrial_goods": "high",
+        "electronics": "medium"
+      }
     }
   ],
   "traffic": [

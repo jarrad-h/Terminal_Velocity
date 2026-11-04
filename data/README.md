@@ -38,6 +38,9 @@ Fields marked **required** have no default.
 | `player.rescue_fee_pct` | C10: share of credits charged by the rescuer, 0–100 | `10` |
 | `player.rescue_days` | C10: days that pass before rescue `[min, max]` (shown in the report) | `[2, 5]` |
 | `player.pod_speed`, `player.pod_time` | C10: escape pod speed (px/s, added to the ship's) and flight time (s) | `600`, `3` |
+| `economy.tiers.low`, `.medium`, `.high` | EC1: price multipliers for a port's tier of a commodity | `0.7`, `1.0`, `1.3` |
+| `economy.sell_spread_pct` | EC1: the player sells for this % less than the port's buy price | `5` |
+| `economy.saturation.pct_per_10_units`, `.cap_pct`, `.recovery_per_day` | EC5: each 10 units bought (sold) at a port raise (lower) its price this %; capped at ± `cap_pct`; each day this fraction of the offset recovers | `2`, `30`, `0.2` |
 | `saves.root`, `saves.max_pilots`, `saves.max_slots` | SV1–SV2: where pilot folders live (`user://` is Godot's user data folder; on Windows `%APPDATA%\Godot\app_userdata\Terminal Velocity`); how many pilots may exist at once; manual save slots per normal pilot (plus one autosave) | `"user://pilots"`, `5`, `10` |
 | `landing.max_speed` | S2: land only below this speed (player and AI), px/s | `60` |
 | `landing.radius_fraction` | S2: …and within this fraction of the planet's radius of its centre | `0.6` |
@@ -136,6 +139,7 @@ Fields marked **required** have no default.
 | `engines` | V5: engine exits `[[x, y], …]` in art px (from `hardpoints.json`), where the glow is drawn | `[]` |
 | `engine_glow` | V5: `{"colour": "#rrggbb", "size": px}`; brightens with thrust | `{"colour": "#a8d8ff", "size": 6}` |
 | `fuel` | TR8: fuel capacity, units | `300` |
+| `cargo` | EC3: cargo hold in tons | `0` |
 | `jump_fuel` | TR8: fuel one hyperlane jump costs (flat per jump for now; the rule lives in `Hyperlanes.jump_fuel`) | `100` |
 | `jump_countdown` | TR2: seconds of hyperspace countdown once stopped and facing the destination | `3` |
 | `jump_speed` | TM2: galaxy-map units travelled per day; a jump takes lane length ÷ this days, rounded up, at least 1 (more than 0) | `150` |
@@ -311,3 +315,13 @@ Tracked across the galaxy at all times: a summary (location or transit, ships' s
 | `noise.octaves` | Detail layers | `5` |
 | `noise.texture_size` | Noise texture size in px (it tiles) | `1024` |
 | `noise.scale` | Screen px per noise pixel | `2` |
+
+
+## Commodities (`data/commodities/<id>.json`) — EC1, EC4
+
+| Field | Meaning | Default |
+|---|---|---|
+| `name` | Display name | **required** |
+| `base_price` | Credits per unit at a medium-tier port, before saturation (EC5) and events (EC2); at least 1 | **required** |
+| `mass` | Tons per unit (cargo space) | `1` |
+| `illegal_to` | Government IDs that outlaw it (flagged in trade; scanning is Phase 3) | `[]` |
