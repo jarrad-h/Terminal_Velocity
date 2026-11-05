@@ -21,6 +21,24 @@ static func sell_price(buy: int, economy: Dictionary) -> int:
 	return maxi(1, floori(buy * (1.0 - float(economy["sell_spread_pct"]) / 100.0)))
 
 
+## EC5: what buying `units` costs in all: each unit priced at the saturation
+## midway through the trade, so a big buy pays for the price it pushes up
+## (and buying then selling back always loses the spread).
+static func buy_total(base: float, tier: String, saturation: float, event_factor: float, units: int, economy: Dictionary) -> int:
+	if units <= 0:
+		return 0
+	var mid: float = (saturation + after_trade(saturation, units, economy)) / 2.0
+	return buy_price(base, tier, mid, event_factor, economy) * units
+
+
+## EC5: what selling `units` earns in all (midway saturation, as above).
+static func sell_total(base: float, tier: String, saturation: float, event_factor: float, units: int, economy: Dictionary) -> int:
+	if units <= 0:
+		return 0
+	var mid: float = (saturation + after_trade(saturation, -units, economy)) / 2.0
+	return sell_price(buy_price(base, tier, mid, event_factor, economy), economy) * units
+
+
 ## EC5: saturation after `units` change hands at a port (+ bought from the
 ## port, − sold to it).
 static func after_trade(saturation: float, units: int, economy: Dictionary) -> float:

@@ -222,6 +222,13 @@ func _on_ship_gone(id: String, ship: Ship) -> void:
 		_present.erase(id)
 
 
+## SV1: write every present entity's ships to the registry without removing
+## them (saving mid-visit); leaving writes back again.
+func snapshot() -> void:
+	for id: String in _present:
+		_write_back(id)
+
+
 func _write_back(id: String) -> void:
 	var entry: Dictionary = _present[id]
 	if entry["arrive_in"] > 0.0:

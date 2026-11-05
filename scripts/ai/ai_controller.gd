@@ -96,7 +96,8 @@ func _ready() -> void:
 	if ship.cargo.is_empty() and not persistent and pool.cargo_fill.y > 0.0:
 		# EC6: ambient traffic starts with a hold (entities get theirs from their summary).
 		ship.cargo = Market.random_load(_rng, ship.def.cargo, _rng.randf_range(pool.cargo_fill.x, pool.cargo_fill.y),
-			DataRegistry.ids("commodities"), Trading.masses())
+			DataRegistry.ids("commodities").filter(func(id: String) -> bool: return not DataRegistry.get_commodity(id).illegal_to.has(ship.government)),
+			Trading.masses())
 	_timer = _rng.randf_range(pool.stay_time.x, pool.stay_time.y)
 	_think_left = _rng.randf() * _ai("think_interval")
 	if pool.behaviour == "trader":
@@ -236,13 +237,14 @@ func _on_attacked(attacker: Ship) -> void:
 ## sensor range; once it's scooped or gone they go back to roaming.
 func _think_collect() -> bool:
 	if state == State.COLLECT:
-		if not hunt_player and is_instance_valid(_canister) and not _canister.is_queued_for_deletion() and Trading.free_tons(ship) > 0.0:
+		if not hunt_player and not _is_follower() and is_instance_valid(_canister) and not _canister.is_queued_for_deletion() \
+				and not (Market.take_what_fits(_canister.cargo, Trading.free_tons(ship), Trading.masses())["taken"] as Array).is_empty():
 			return true
 		_canister = null
 		_new_waypoint()
 		state = State.PATROL
 		return false
-	if pool.behaviour != "pirate" or hunt_player or state not in [State.PATROL, State.ATTACK] or Trading.free_tons(ship) <= 0.0:  # a grudge beats loot
+	if pool.behaviour != "pirate" or hunt_player or _is_follower() or state not in [State.PATROL, State.ATTACK] or Trading.free_tons(ship) <= 0.0:  # a grudge beats loot; wingmen keep formation
 		return false
 	var best: CargoCanister = null
 	var min_value: float = float(DataRegistry.settings["cargo"]["pirate_min_value"])
@@ -396,7 +398,7 @@ func _start_flee() -> void:
 	ship.set_target(null)
 	if not ship.cargo.is_empty() and _rng.randf() < pool.jettison_chance:
 		# EC6, OF6: dump the hold as a decoy for whoever's chasing.
-		CargoCanister.spawn(ship.get_parent(), ship.global_position - FlightModel.heading(ship.global_rotation) * ship.hit_radius * 1.5,
+		CargoCanister.spawn(ship.get_parent(), ship.global_position - FlightModel.heading(ship.global_rotation) * ship.hit_radius * float(DataRegistry.settings["cargo"]["drop_offset"]),
 			ship.get_velocity(), ship.cargo, ship)
 		ship.cargo = []
 	state = State.FLEE

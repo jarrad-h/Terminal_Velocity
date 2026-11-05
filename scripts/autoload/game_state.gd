@@ -245,7 +245,8 @@ func _trade_flow() -> void:
 			continue
 		var traffic: float = maxf(float(galaxy.trade_traffic.get(a.id, 1.0)), float(galaxy.trade_traffic.get(b.id, 1.0)))
 		var danger: float = (memory_value(a.id, "danger") + memory_value(b.id, "danger")) / 2.0
-		var scale: float = traffic * (1.0 - minf(danger / 100.0, float(danger_cfg["flow_cut_max"])))
+		var danger_max: float = maxf(float(DataRegistry.settings["memory"]["values"]["danger"]["max"]), 1.0)
+		var scale: float = traffic * (1.0 - minf(danger / danger_max, float(danger_cfg["flow_cut_max"])))
 		var units: int = roundi(float(flow["units_per_lane_per_day"]) * scale)
 		if units <= 0:
 			continue

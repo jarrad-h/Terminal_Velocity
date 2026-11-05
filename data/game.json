@@ -47,7 +47,7 @@
     "trader_cut_per_point": 0.005, "trader_cut_max": 0.5, "patrol_per_point": 0.03, "patrol_max_extra": 2,
     "flow_cut_max": 0.8, "levels": [20, 45, 70]
   },
-  "cargo": {"canister_life": 90, "scoop_radius": 40, "scoop_speed": 80, "drift_speed": 20, "pirate_min_value": 500, "dropper_grace": 5},
+  "cargo": {"canister_life": 90, "scoop_radius": 40, "scoop_speed": 80, "drift_speed": 20, "pirate_min_value": 500, "dropper_grace": 5, "drop_offset": 1.5},
   "saves": {"root": "user://pilots", "max_pilots": 5, "max_slots": 10},
   "landing": {"max_speed": 60, "radius_fraction": 0.6, "repair_cost_per_point": 0},
   "boarding": {

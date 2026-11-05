@@ -33,10 +33,15 @@ static func buy(system_id: String, port: SystemObjectDef, ship: Ship, commodity:
 	var q: Dictionary = quote(system_id, port, commodity)
 	if q.is_empty() or units <= 0:
 		return 0
-	var n: int = mini(units, Market.max_buy(GameState.credits, q["buy"], free_tons(ship), DataRegistry.get_commodity(commodity).mass))
+	var def: CommodityDef = DataRegistry.get_commodity(commodity)
+	var n: int = mini(units, Market.max_buy(GameState.credits, q["buy"], free_tons(ship), def.mass))
+	var economy: Dictionary = DataRegistry.settings["economy"]
+	var saturation: float = GameState.memory.saturation(system_id, port.id, commodity)
+	while n > 0 and Market.buy_total(def.base_price, q["tier"], saturation, q["event"], n, economy) > GameState.credits:
+		n -= 1  # the price climbs as you buy: afford fewer
 	if n <= 0:
 		return 0
-	GameState.add_credits(-q["buy"] * n)
+	GameState.add_credits(-Market.buy_total(def.base_price, q["tier"], saturation, q["event"], n, economy))
 	ship.cargo = Market.with_units(ship.cargo, commodity, n)
 	_saturate(system_id, port, commodity, n)
 	return n
@@ -48,7 +53,8 @@ static func sell(system_id: String, port: SystemObjectDef, ship: Ship, commodity
 	var n: int = mini(units, Market.held(ship.cargo, commodity))
 	if q.is_empty() or n <= 0:
 		return 0
-	GameState.add_credits(q["sell"] * n)
+	GameState.add_credits(Market.sell_total(DataRegistry.get_commodity(commodity).base_price, q["tier"],
+		GameState.memory.saturation(system_id, port.id, commodity), q["event"], n, DataRegistry.settings["economy"]))
 	ship.cargo = Market.with_units(ship.cargo, commodity, -n)
 	_saturate(system_id, port, commodity, -n)
 	return n
@@ -66,7 +72,4 @@ static func _saturate(system_id: String, port: SystemObjectDef, commodity: Strin
 
 ## Commodity id -> tons per unit.
 static func masses() -> Dictionary:
-	var out: Dictionary = {}
-	for id: String in DataRegistry.ids("commodities"):
-		out[id] = DataRegistry.get_commodity(id).mass
-	return out
+	return DataRegistry.commodity_masses()

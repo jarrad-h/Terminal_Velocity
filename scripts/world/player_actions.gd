@@ -46,7 +46,7 @@ func jettison() -> CargoCanister:
 		GameState.post_message("Nothing to jettison")
 		return null
 	var behind: Vector2 = -FlightModel.heading(player.global_rotation)
-	var can: CargoCanister = CargoCanister.spawn(scene.world, player.global_position + behind * player.hit_radius * 1.5, player.get_velocity(), player.cargo, player)
+	var can: CargoCanister = CargoCanister.spawn(scene.world, player.global_position + behind * player.hit_radius * float(DataRegistry.settings["cargo"]["drop_offset"]), player.get_velocity(), player.cargo, player)
 	player.cargo = []
 	GameState.post_message("Cargo jettisoned")
 	return can

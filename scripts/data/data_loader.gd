@@ -34,7 +34,7 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"danger": {"kill": 5.0, "trader_kill": 8.0, "disable": 3.0, "patrol_factor": 0.5, "fight": 10.0,
 		"pirate_entity_per_day": 2.0, "drift": 3.0, "trader_cut_per_point": 0.005, "trader_cut_max": 0.5,
 		"patrol_per_point": 0.03, "patrol_max_extra": 2, "flow_cut_max": 0.8, "levels": [20.0, 45.0, 70.0]},
-	"cargo": {"canister_life": 90.0, "scoop_radius": 40.0, "scoop_speed": 80.0, "drift_speed": 20.0, "pirate_min_value": 500.0, "dropper_grace": 5.0},
+	"cargo": {"canister_life": 90.0, "scoop_radius": 40.0, "scoop_speed": 80.0, "drift_speed": 20.0, "pirate_min_value": 500.0, "dropper_grace": 5.0, "drop_offset": 1.5},
 	"economy": {"tiers": {"low": 0.7, "medium": 1.0, "high": 1.3}, "sell_spread_pct": 5.0,
 		"saturation": {"pct_per_10_units": 2.0, "cap_pct": 30.0, "recovery_per_day": 0.2},
 		"flow": {"units_per_lane_per_day": 10.0, "min_margin_pct": 15.0}},

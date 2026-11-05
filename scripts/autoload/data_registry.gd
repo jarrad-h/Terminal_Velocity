@@ -72,9 +72,19 @@ func get_price_event(id: String) -> PriceEventDef:
 	return _set.get_def("price_events", id)
 
 
-## EC2: every price event definition.
+## EC2: every price event definition (cached per data load).
 func price_events() -> Array:
-	return ids("price_events").map(func(id: String) -> PriceEventDef: return get_price_event(id))
+	if _price_events.is_empty() and not ids("price_events").is_empty():
+		_price_events = ids("price_events").map(func(id: String) -> PriceEventDef: return get_price_event(id))
+	return _price_events
+
+
+## EC3: commodity id -> tons per unit (cached per data load).
+func commodity_masses() -> Dictionary:
+	if _masses.is_empty():
+		for id: String in ids("commodities"):
+			_masses[id] = get_commodity(id).mass
+	return _masses
 
 
 func get_entity(id: String) -> PersistentEntityDef:
@@ -95,8 +105,14 @@ func ids(type: String) -> Array[String]:
 	return _set.ids(type)
 
 
+var _price_events: Array = []
+var _masses: Dictionary = {}
+
+
 func _apply(loaded: DataSet) -> void:
 	_set = loaded
+	_price_events = []
+	_masses = {}
 	settings = loaded.settings
 	for line: String in loaded.overrides:
 		print("Mod override: ", line)

@@ -4,6 +4,62 @@ One entry per milestone: what was built (by requirement ID), deviations from the
 
 ---
 
+## Phase 2 Milestone 5: Economy (in playtest, from 4 Nov 2026)
+
+Branch `p2m5-economy`, cloud session. The plan and answers are in `docs/decisions.md` (4–5 Nov): saturation (A1), AI cargo and named-trader trading (B1, B2), background trade flow (B4), and danger with cascade safeguards.
+
+### Built
+
+- **EC1 (commodities and markets):**
+  - 8 commodities (`data/commodities`); weapons and narcotics are illegal to some governments.
+  - Every port has a `market` of tiers: low ×0.7, medium ×1.0, high ×1.3, with a 5% sell spread.
+- **EC2 (price events):** `data/price_events` (4). They start and end on the day clock with news, apply by port, system or government, multiply when stacked, can be gated by a flag and are saved. The trade screen marks shortages and gluts and lists events at that port.
+- **EC3 (cargo and trading):**
+  - Ship `cargo` capacity: shuttle 10, courier 15, corvette 10, raider 10, freighter 120.
+  - Trade screen from the landed screen: buy 1/10/max, sell 1/10/all, live credits and hold. The landed screen shows the hold.
+  - Cargo is saved with the ship and lost with it.
+- **EC4 (illegal goods):** flagged "(illegal)" in the trade screen; no penalty yet.
+- **EC5 (saturation):**
+  - Per-port saturation in system memory: 2% per 10 units, capped at ±30%, recovering 20% a day, saved.
+  - Each trade is priced at the saturation midway through it, so a buy-and-sell-back always loses the spread.
+- **EC6 (AI cargo and named traders):**
+  - AI traders start with a hold (pool `cargo_fill`; no goods illegal to them). Fleeing ones may dump it as a decoy (`jettison_chance`), and any destroyed ship spills its hold.
+  - Named traders (Mara Vell) sell and buy at each stop where they stay, on screen or off, moving markets. Their cargo lives in their ships' records.
+- **EC7 (trade flow):** daily along every lane, cheap side to dear side when the margin is at least 15%. Size is 10 units × `trade_traffic` (Drift and Hollow 0.5, Redhaven 0.2), cut by danger.
+- **EC8 (jettison):** **X** dumps the hold as one drifting canister (B is Board).
+  - The canister expires after 90 s, and any ship passing slowly scoops what fits; you can't re-scoop your own for 5 s.
+  - Pirates in sensor range break off to collect canisters worth 500 or more. Fleet wingmen keep formation, and grudge-holders ignore loot.
+- **EC9 (danger):**
+  - Memory value 0–100 (normal 5; Redhaven 40) recovering 15% of the gap a day.
+  - **Raised by:** losses here (+5, trader +8, disable +3; patrol kills half), off-screen entity fights (+10), pirate entities (+2/day), events (`danger`, e.g. Brink raids +8/day), and a ±3 daily drift.
+  - **Effects:** traders cut (at most −50%), patrols added (at most +2), lane flow cut (at most −80%).
+  - **Galaxy map:** shows low, medium, high or extreme: live where you are, as last seen elsewhere (saved).
+- **D16:** `market`, `cargo <id> <n>`, `event <id> [here]`, `events`; `memory` shows danger.
+- **Tests:**
+  - Unit: `test_market.gd` (prices, saturation, hold, scooping, AI loads, round trips never profit), `test_price_events.gd`, danger counts, levels and recovery, and the entity trade hook.
+  - Loader fixtures for the new fields.
+  - Scenario checks: trading, jettison and pirates, entity trading, danger and flow.
+  - The **done condition:** a freighter trading Aster → Test Nebula → Test Graveyard → Lumen → Aster turns a profit (20,000 → about 55,600 before the review's pricing fix; still clearly positive after it).
+
+### Review (godot-reviewer) fixes
+
+- **Money exploit:** with a big hold, buying then selling back at one port made money, because saturation moved after pricing. Each trade is now priced at its midway saturation, with a unit test.
+- **Cargo duplication through saving in space:** saving now snapshots the present entities (cargo included).
+- **Pirate wingmen:** they got stuck "collecting" in formation and dropped out of fights. Wingmen now keep formation, and a ship gives up a canister nothing of which fits.
+- **Smaller fixes:** the danger cap is read from data; the drop offset is in data (`cargo.drop_offset`); price events and masses are cached; the Sell 10 button is added; AI holds exclude goods illegal to them.
+
+### What to look at (playtest)
+
+See the checklist in the handover message.
+
+### Known gaps and questions
+
+- **Jettison key:** B (agreed) is already Board, so jettison is on X provisionally. Jarrad to confirm.
+- **Danger during a visit:** it only recovers when a day passes. In a system where patrols and pirates keep respawning and fighting, it can sit near extreme for a long stay (the caps hold). Watch in playtest; options include recovery per real minute in-system.
+- **Profit margins:** the test loop is generous (about +178% on one loop in a freighter). Margins are tuning (tiers, spread, saturation), in data.
+- **Entity trading code:** EC6 entity trading and EC7 flow live in `GameState` without unit tests (scenario-tested); they could move into `scripts/sim/` later.
+- **Rare formation-check flake:** about 1 in 6 runs, from milestone 3's fleet check.
+
 ## Phase 2 Milestone 4: Pilot and saves (2–3 Nov 2026, merged 3 Nov)
 
 ### Stopped at / Next step

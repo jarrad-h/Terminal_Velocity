@@ -22,9 +22,9 @@ static func refresh(dialog: Dialog, system_id: String, port: SystemObjectDef, pl
 	dialog.set_body(body)
 	dialog.clear_extras()
 	var grid := GridContainer.new()
-	grid.columns = 9
+	grid.columns = 10
 	grid.add_theme_constant_override("h_separation", 10)
-	for title: String in ["Commodity", "Buy", "Sell", "Held", "", "", "", "", ""]:
+	for title: String in ["Commodity", "Buy", "Sell", "Held", "", "", "", "", "", ""]:
 		var label := Label.new()
 		label.text = title
 		grid.add_child(label)
@@ -45,7 +45,7 @@ static func refresh(dialog: Dialog, system_id: String, port: SystemObjectDef, pl
 			cell.text = text
 			grid.add_child(cell)
 		for spec: Array in [["Buy 1", 1, true], ["Buy 10", 10, true], ["Buy max", 1000000, true],
-				["Sell 1", 1, false], ["Sell all", 1000000, false]]:
+				["Sell 1", 1, false], ["Sell 10", 10, false], ["Sell all", 1000000, false]]:
 			var button := Button.new()
 			button.text = spec[0]
 			button.focus_mode = Control.FOCUS_NONE

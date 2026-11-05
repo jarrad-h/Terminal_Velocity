@@ -54,3 +54,14 @@ func test_random_ai_load() -> void:
 		assert_true(Market.used_tons(cargo, {"food": 1.0, "ore": 2.0}) <= 96.0 + 0.001, "within capacity × fill")
 		assert_true(cargo.all(func(c: Dictionary) -> bool: return c["commodity"] in ["food", "ore"] and int(c["units"]) > 0), "known goods, no empty entries")
 	assert_eq(Market.random_load(rng, 0.0, 1.0, ["food"], {}), [], "no hold, no cargo")
+
+
+func test_a_round_trip_never_makes_money() -> void:
+	# EC5: buying then selling back at one port always loses at least the spread, however big.
+	for units: int in [1, 10, 27, 60, 120, 400]:
+		for start: float in [-0.3, -0.1, 0.0, 0.2, 0.3]:
+			var paid: int = Market.buy_total(420.0, "medium", start, 1.0, units, ECONOMY)
+			var after: float = Market.after_trade(start, units, ECONOMY)
+			var got: int = Market.sell_total(420.0, "medium", after, 1.0, units, ECONOMY)
+			assert_true(got < paid, "%d units from %+.0f%%: paid %d, got back %d" % [units, start * 100.0, paid, got])
+	assert_true(Market.buy_total(420.0, "medium", 0.0, 1.0, 100, ECONOMY) > 100 * Market.buy_price(420.0, "medium", 0.0, 1.0, ECONOMY), "a big buy pays for the price it pushes up")

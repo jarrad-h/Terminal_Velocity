@@ -194,6 +194,7 @@ func capture(label: String) -> Dictionary:
 	var scene: Node = get_tree().get_first_node_in_group(&"system_scene")
 	if scene != null:
 		scene.remember_wrecks()  # PS6: this system's wrecks live as ships until written down
+		scene.entity_presence.snapshot()  # PS4, EC6: entities here as they are now (cargo included)
 	var record: Dictionary = ShipRecord.make(player.def.id, player.health.armor / maxf(player.health.max_armor, 0.001),
 		player.health.shield / maxf(player.health.max_shield, 0.001))
 	record["cargo"] = player.cargo.duplicate(true)  # EC3
