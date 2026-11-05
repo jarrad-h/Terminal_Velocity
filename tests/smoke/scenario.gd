@@ -611,6 +611,8 @@ func _run() -> void:
 	await _frames(2)
 	await _danger_checks(player, scene_root)
 	await _frames(2)
+	await _profit_run(player)
+	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
 
@@ -1038,6 +1040,59 @@ func _danger_checks(player: Ship, scene_root: Node) -> void:
 	GameState.memory.markets.clear()
 	GameState.memory.values.erase("test_nebula")
 	GameState.memory.values.erase(other)
+
+
+## Milestone 5 "done": a pure trading run across four systems turns a profit.
+## A freighter sells everything at each stop, then buys the good that the next
+## stop pays most for relative to its price here. D16 checks ride along.
+func _profit_run(player: Ship) -> void:
+	_check(_debug.run_command("market").contains("buy"), "D16: market lists prices")
+	_check(_debug.run_command("events").begins_with("Active"), "D16: events lists running events")
+	_check(_debug.run_command("event solace_luxury_glut here").begins_with("Started"), "D16: event starts a price event")
+	GameState.events.active.clear()
+	_check(_debug.swap_player_ship("freighter"), "a freighter for the run")
+	await _frames(2)
+	_check(_debug.run_command("cargo food 3").contains("food"), "D16: cargo adds goods")
+	player.cargo = []
+	GameState.memory.markets.clear()
+	GameState.set_credits(20000)
+	var start: int = GameState.credits
+	var route: Array[String] = ["aster", "test_nebula", "test_graveyard", "lumen", "aster"]
+	for i: int in route.size():
+		_check(_debug.switch_system(route[i]), "run: to %s" % route[i])
+		await _frames(2)
+		var here: SystemDef = DataRegistry.get_system(route[i])
+		for item: Dictionary in player.cargo.duplicate():
+			var best: SystemObjectDef = null
+			var best_price: int = 0
+			for port: SystemObjectDef in here.objects:
+				var q: Dictionary = Trading.quote(here.id, port, item["commodity"])
+				if not q.is_empty() and q["sell"] > best_price:
+					best = port
+					best_price = q["sell"]
+			if best != null:
+				Trading.sell(here.id, best, player, item["commodity"], int(item["units"]))
+		if i == route.size() - 1:
+			break
+		var next: SystemDef = DataRegistry.get_system(route[i + 1])
+		var pick: Dictionary = {}
+		var best_ratio: float = 1.05
+		for port: SystemObjectDef in here.objects:
+			for commodity: String in port.market:
+				var q: Dictionary = Trading.quote(here.id, port, commodity)
+				for there: SystemObjectDef in next.objects:
+					var sell: Dictionary = Trading.quote(next.id, there, commodity)
+					if not sell.is_empty() and float(sell["sell"]) / q["buy"] > best_ratio:
+						best_ratio = float(sell["sell"]) / q["buy"]
+						pick = {"port": port, "commodity": commodity}
+		if not pick.is_empty():
+			Trading.buy(here.id, pick["port"], player, pick["commodity"], 1000000)
+		GameState.advance_days(1)
+	_check(GameState.credits > start, "EC1–EC5: a four-system trading run turns a profit (%d -> %d)" % [start, GameState.credits])
+	player.cargo = []
+	_check(_debug.switch_system("test_nebula"), "back to the start")
+	_debug.swap_player_ship(DataRegistry.settings["player_ship"])
+	await _frames(2)
 
 
 func _entity_ships(id: String) -> Array[Ship]:

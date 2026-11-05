@@ -454,7 +454,7 @@ func run_command(line: String) -> String:
 	var gov_arg: Callable = func(index: int) -> String: return w[index] if w.size() > index else ""
 	match w[0]:
 		"help":
-			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | flag <name> [n] | entities | entity <id> [move <system>|grudge] | memory [<value> <n>] | light on|off | star angle <deg>|auto | star height <0-1> | save [name] | load <slot> | pilots | savepath | reload | " \
+			return "Commands: spawn <ship> [n] [gov] | pool <pool> [n] [gov] | swap <ship> | goto <system> | days <n> | route <system> | reveal <system> | fuel | flag <name> [n] | entities | entity <id> [move <system>|grudge] | memory [<value> <n>] | light on|off | star angle <deg>|auto | star height <0-1> | save [name] | load <slot> | pilots | savepath | market | cargo <commodity> <n> | event <id> [here] | events | reload | " \
 				+ "time <scale> | pause | resume | step | invuln on|off | ai on|off | traffic on|off | radar all|range | " \
 				+ "kill | disable | clear | credits <n> | record <gov> <n> | overlay <name> on|off | ids <type> | pos"
 		"spawn", "pool":
@@ -524,11 +524,45 @@ func run_command(line: String) -> String:
 			if w.size() == 3 and w[1] in SystemDef.MEMORY_VALUES and ConsoleParser.is_number(w[2]):
 				set_memory(w[1], w[2].to_float())
 			elif w.size() != 1:
-				return "Usage: memory [alert|pirate_presence <value>]"
+				return "Usage: memory [alert|pirate_presence|danger <value>]"
 			var parts: Array[String] = []
 			for name: String in SystemDef.MEMORY_VALUES:
 				parts.append("%s %.0f (base %.0f)" % [name, GameState.memory_value(here, name), float(GameState.memory_rule(here, name)["baseline"])])
 			return "%s: %s; wrecks remembered elsewhere: %d" % [here, ", ".join(parts), GameState.memory.wrecks.values().reduce(func(n: int, l: Array) -> int: return n + l.size(), 0)]
+		"market":
+			# D16: prices at every market in this system.
+			var here_id: String = GameState.travel.current_system
+			var rows: Array[String] = ["%s danger %s (%.0f)" % [here_id, GameState.danger_level(here_id), GameState.memory_value(here_id, "danger")]]
+			for port: SystemObjectDef in DataRegistry.get_system(here_id).objects:
+				for commodity: String in port.market:
+					var q: Dictionary = Trading.quote(here_id, port, commodity)
+					rows.append("%s %s: buy %d sell %d (%s, sat %+.0f%%, event x%.2f%s)" % [port.id, commodity, q["buy"], q["sell"], q["tier"],
+						GameState.memory.saturation(here_id, port.id, commodity) * 100.0, q["event"], ", illegal" if q["illegal"] else ""])
+			return "\n".join(rows)
+		"cargo":
+			# D16: add (or with a negative n, remove) cargo, ignoring space.
+			var holder: Ship = _player()
+			if w.size() < 3 or DataRegistry.get_commodity(w[1]) == null or not ConsoleParser.is_int(w[2]) or holder == null:
+				return "Usage: cargo <commodity id> <n> (see ids commodities)"
+			holder.cargo = Market.with_units(holder.cargo, w[1], w[2].to_int())
+			return "Hold: %s (%.0f / %.0f t)" % [holder.cargo, Trading.used_tons(holder), holder.def.cargo]
+		"event":
+			# D16: start a price event now (`here`: report whether it touches this system).
+			var event: PriceEventDef = DataRegistry.get_price_event(w[1]) if w.size() > 1 else null
+			if event == null:
+				return "Usage: event <price event id> [here] (see ids price_events)"
+			GameState.events.start(event, GameState.clock.day, RandomNumberGenerator.new())
+			if event.news_start != "":
+				GameState.news.add(GameState.clock.day, event.news_start)
+			var note: String = ""
+			if w.size() > 2 and w[2] == "here":
+				note = " (applies here)" if GameState._event_systems(event).has(GameState.travel.current_system) else " (not here)"
+			return "Started %s until day %d%s" % [event.name, GameState.events.active[event.id], note]
+		"events":
+			var running: Array[String] = []
+			for id: String in GameState.events.active:
+				running.append("%s (until day %d)" % [id, GameState.events.active[id]])
+			return "Active: %s" % (", ".join(running) if not running.is_empty() else "none")
 		"light":
 			var on: int = ConsoleParser.parse_switch(w[1]) if w.size() > 1 else -1
 			if on == -1:

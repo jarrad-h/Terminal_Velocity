@@ -222,9 +222,10 @@ func _daily_danger() -> void:
 ## with a port of its governments).
 func _event_systems(event: PriceEventDef) -> Array[String]:
 	var out: Array[String] = []
+	var everywhere: bool = event.ports.is_empty() and event.systems.is_empty() and event.governments.is_empty()
 	for system_id: String in DataRegistry.ids("systems"):
 		var system: SystemDef = DataRegistry.get_system(system_id)
-		if event.systems.has(system_id) or system.objects.any(func(o: SystemObjectDef) -> bool:
+		if everywhere or event.systems.has(system_id) or system.objects.any(func(o: SystemObjectDef) -> bool:
 				return event.ports.has(o.id) or (o.government != "" and event.governments.has(o.government))):
 			out.append(system_id)
 	return out
