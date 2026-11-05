@@ -26,6 +26,8 @@ var _input: FlightInput = FlightInput.new()
 var _input_frame: int = -1
 ## PS4: a persistent entity's name shown instead of the hull class ("" = none).
 var callsign: String = ""
+## EC3: cargo held [{"commodity", "units"}] (the player's is saved, SV1).
+var cargo: Array = []
 ## Government ID ("" = none). Set at spawn.
 var government: String = ""
 ## AI role from its pool ("trader", "warship", "pirate"); "" for the player and idle ships.

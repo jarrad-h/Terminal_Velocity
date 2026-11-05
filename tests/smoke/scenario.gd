@@ -603,6 +603,8 @@ func _run() -> void:
 	await _frames(2)
 	await _kill_checks(player, scene_root)
 	await _frames(2)
+	await _trade_checks(player, scene_root)
+	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
 
@@ -893,6 +895,50 @@ func _kill_checks(player: Ship, scene_root: Node) -> void:
 			(ship as Ship).queue_free()
 	for shot: Node in scene_root.get_node("World/Shots").get_children():
 		shot.queue_free()
+	await _frames(2)
+
+
+## EC1, EC3, EC5: buying and selling at a port through the trade screen.
+func _trade_checks(player: Ship, scene_root: Node) -> void:
+	var system: SystemDef = scene_root.system
+	var port: SystemObjectDef = null
+	for obj: SystemObjectDef in system.objects:
+		if not obj.market.is_empty():
+			port = obj
+			break
+	_check(port != null, "EC1: %s has a market" % system.id)
+	if port == null:
+		return
+	var commodity: String = port.market.keys()[0]
+	player.cargo = []
+	GameState.set_credits(100000)
+	var before: Dictionary = Trading.quote(system.id, port, commodity)
+	_check(before["sell"] < before["buy"], "EC1: the port pays less than it charges (%d < %d)" % [before["sell"], before["buy"]])
+	var actions: PlayerActions = scene_root.actions
+	actions.land_at(port)
+	await _frames(2)
+	_check(actions.dialog != null and actions.dialog.has_choice("trade"), "EC3: Trade on the landed screen")
+	actions.dialog.choose("trade")
+	await _frames(2)
+	var trade: Dialog = null
+	for child: Node in scene_root.get_children():
+		if child is Dialog and child != actions.dialog:
+			trade = child
+	_check(trade != null, "EC3: the trade screen opens")
+	var cap: float = player.def.cargo
+	var bought: int = Trading.buy(system.id, port, player, commodity, 1000000)
+	var mass: float = DataRegistry.get_commodity(commodity).mass
+	_check(bought == floori(cap / mass) and Trading.free_tons(player) < mass, "EC3: buying max fills the hold (%d)" % bought)
+	_check(GameState.credits == 100000 - before["buy"] * bought or bought > 10, "EC3: credits charged")
+	var after: Dictionary = Trading.quote(system.id, port, commodity)
+	_check(after["buy"] >= before["buy"] and GameState.memory.saturation(system.id, port.id, commodity) > 0.0, "EC5: buying raises the price (%d -> %d)" % [before["buy"], after["buy"]])
+	_check(Trading.sell(system.id, port, player, commodity, 1000000) == bought and player.cargo.is_empty(), "EC3: selling all empties the hold")
+	_check(GameState.credits < 100000, "EC1: a round trip at one port loses money")
+	GameState.advance_days(30)
+	_check(is_zero_approx(GameState.memory.saturation(system.id, port.id, commodity)), "EC5: the market recovers over days")
+	if trade != null:
+		trade.close()
+	actions.dialog.choose("take_off")
 	await _frames(2)
 
 

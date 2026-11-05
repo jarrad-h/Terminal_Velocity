@@ -368,6 +368,7 @@ func _rescue(pod: EscapePod) -> void:
 	var insured: bool = bool(Pilots.pilot.get("insured", settings["insured"]))  # SV1: the pilot's insurance
 	var hull: ShipDef = player.def if insured else DataRegistry.get_ship(settings["uninsured_ship"])
 	player.setup(hull)
+	player.cargo = []  # EC3: the hold went down with the ship
 	if target.id != here:
 		GameState.travel.route.clear()
 		if goal != "" and goal != target.id:

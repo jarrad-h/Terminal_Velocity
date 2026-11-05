@@ -9,6 +9,39 @@ var values: Dictionary = {}
 ## system id -> [{"ship", "government", "position": [x, y], "rotation",
 ##   "credits", "looted", "acts": [String], "days_left"}]
 var wrecks: Dictionary = {}
+## EC5: system id -> {port id -> {commodity id -> saturation fraction}};
+## absent = 0 (at its tier price).
+var markets: Dictionary = {}
+
+
+## EC5: a port's saturation for a commodity.
+func saturation(system_id: String, port_id: String, commodity: String) -> float:
+	return float(markets.get(system_id, {}).get(port_id, {}).get(commodity, 0.0))
+
+
+func set_saturation(system_id: String, port_id: String, commodity: String, amount: float) -> void:
+	var ports: Dictionary = markets.get(system_id, {})
+	var goods: Dictionary = ports.get(port_id, {})
+	if is_zero_approx(amount):
+		goods.erase(commodity)
+	else:
+		goods[commodity] = amount
+	if goods.is_empty():
+		ports.erase(port_id)
+	else:
+		ports[port_id] = goods
+	if ports.is_empty():
+		markets.erase(system_id)
+	else:
+		markets[system_id] = ports
+
+
+## EC5: a day of recovery for every market (`economy`: game.json economy).
+func recover_markets(economy: Dictionary) -> void:
+	for system_id: String in markets.keys():
+		for port_id: String in (markets[system_id] as Dictionary).keys():
+			for commodity: String in (markets[system_id][port_id] as Dictionary).keys():
+				set_saturation(system_id, port_id, commodity, Market.recovered(saturation(system_id, port_id, commodity), 1, economy))
 
 
 func value(system_id: String, name: String, baseline: float) -> float:
@@ -65,13 +98,14 @@ func wrecks_in(system_id: String) -> Array:
 
 
 func to_dict() -> Dictionary:
-	return {"values": values.duplicate(true), "wrecks": wrecks.duplicate(true)}
+	return {"values": values.duplicate(true), "wrecks": wrecks.duplicate(true), "markets": markets.duplicate(true)}
 
 
 static func from_dict(data: Dictionary) -> SystemMemory:
 	var memory := SystemMemory.new()
 	memory.values = (data.get("values", {}) as Dictionary).duplicate(true)
 	memory.wrecks = (data.get("wrecks", {}) as Dictionary).duplicate(true)
+	memory.markets = (data.get("markets", {}) as Dictionary).duplicate(true)
 	return memory
 
 

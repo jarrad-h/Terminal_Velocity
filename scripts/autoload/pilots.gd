@@ -196,6 +196,7 @@ func capture(label: String) -> Dictionary:
 		scene.remember_wrecks()  # PS6: this system's wrecks live as ships until written down
 	var record: Dictionary = ShipRecord.make(player.def.id, player.health.armor / maxf(player.health.max_armor, 0.001),
 		player.health.shield / maxf(player.health.max_shield, 0.001))
+	record["cargo"] = player.cargo.duplicate(true)  # EC3
 	var where: Dictionary = PilotSave.location(GameState.travel.current_system, landed_at,
 		player.global_position, player.get_velocity(), player.global_rotation)
 	return PilotSave.build(label, Time.get_datetime_string_from_system(false, true), pilot, GameState.to_dict(), record, where)

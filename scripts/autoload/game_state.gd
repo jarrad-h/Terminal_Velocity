@@ -35,6 +35,7 @@ var travel := TravelState.new()
 func _ready() -> void:
 	clock.day_passed.connect(func(day: int) -> void:
 		memory.step_day(_memory_rules())  # TM3: systems recover a day at a time
+		memory.recover_markets(DataRegistry.settings["economy"])  # EC5
 		for line: String in entities.step_day(day, entity_context()):  # PS2–PS5
 			news.add(day, line)
 		news.prune(day, int(DataRegistry.settings["entities"]["news"]["keep_days"]))
@@ -79,6 +80,12 @@ func set_flag(name: String, value: int) -> void:
 ## TM2: actions advance the date; each day steps the galaxy in order (TM3).
 func advance_days(days: int) -> void:
 	clock.advance(days)
+
+
+## EC2: the combined price-event multiplier for `commodity` at `port`
+## (1.0 = no event; price events arrive in their own slice).
+func price_factor(_system_id: String, _port: SystemObjectDef, _commodity: String) -> float:
+	return 1.0
 
 
 ## TM1: "14 Mar 3200".

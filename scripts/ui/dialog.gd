@@ -104,6 +104,17 @@ func add_field(placeholder: String, text: String = "") -> LineEdit:
 	return field
 
 
+## Any control above the choices (EC3: the trade table).
+func add_control(control: Control) -> Control:
+	_extras.add_child(control)
+	return control
+
+
+func clear_extras() -> void:
+	for child: Node in _extras.get_children():
+		child.queue_free()
+
+
 ## A tick box above the choices (SV3: ironman).
 func add_check(text: String) -> CheckBox:
 	var check := CheckBox.new()

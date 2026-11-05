@@ -31,7 +31,7 @@ static func _refresh(dialog: Dialog, port: SystemObjectDef, player: Ship, on_tak
 		text += "\n\nGovernment: %s" % gov.name
 	text += "\n\nShield %.0f / %.0f   Armour %.0f / %.0f   Credits %d" % [
 		player.health.shield, player.health.max_shield, player.health.armor, player.health.max_armor, GameState.credits]
-	text += "\n%s   Fuel %.0f / %.0f" % [GameState.date_text(), GameState.travel.fuel, player.def.fuel]
+	text += "\n%s   Fuel %.0f / %.0f   Cargo %.0f / %.0f tons" % [GameState.date_text(), GameState.travel.fuel, player.def.fuel, Trading.used_tons(player), player.def.cargo]
 	text += news_text()
 	dialog.set_body(text)
 	dialog.clear_choices()
@@ -49,6 +49,14 @@ static func _refresh(dialog: Dialog, port: SystemObjectDef, player: Ship, on_tak
 			GameState.add_credits(-fill["cost"])
 			GameState.set_fuel(GameState.travel.fuel + fill["units"], player.def.fuel)
 			_refresh(dialog, port, player, on_take_off, "Refuelled."), fill["units"] > 0.0)
+	if not port.market.is_empty():
+		# EC3: the trade screen; the landed text refreshes when it closes.
+		dialog.add_choice("trade", "Trade", func() -> void:
+			var trade: Dialog = TradeScreen.open(dialog.get_parent(), GameState.travel.current_system, port, player)
+			dialog.visible = false  # one panel at a time
+			trade.closed.connect(func() -> void:
+				dialog.visible = true
+				_refresh(dialog, port, player, on_take_off, intro)))
 	if Pilots.has_pilot():
 		# SV2, SV3: save and load while landed (not ironman), or leave for the menu.
 		if not bool(Pilots.pilot.get("ironman", false)):

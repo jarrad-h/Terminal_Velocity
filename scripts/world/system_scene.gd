@@ -113,6 +113,10 @@ func _unhandled_input(event: InputEvent) -> void:
 ## SV1: puts the player's ship as it was saved (damage, place, heading).
 func _restore_player(player: Ship, restore: Dictionary) -> void:
 	var record: Dictionary = restore["ship"]
+	player.cargo = []
+	for item: Variant in record.get("cargo", []):  # EC3; JSON numbers come back as floats
+		if item is Dictionary and DataRegistry.get_commodity(str(item.get("commodity", ""))) != null:
+			player.cargo = Market.with_units(player.cargo, str(item["commodity"]), int(item.get("units", 0)))
 	player.health.shield = player.health.max_shield * clampf(float(record.get("shield", 1.0)), 0.0, 1.0)
 	player.health.armor = player.health.max_armor * clampf(float(record.get("hull", 1.0)), 0.0, 1.0)
 	var where: Dictionary = restore["location"]
