@@ -101,7 +101,13 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
 - EC4: Commodities can be illegal to a government; scanning for contraband is Phase 3, but the legality field exists now. Illegal goods can still be bought where a market lists them and are flagged in the trade screen; there is no penalty yet.
 - EC5: Markets react to trade (milestone 5 plan, 4 Nov 2026). Each port and commodity has a saturation, kept in system memory and saved: buying pushes the price up, selling pushes it down (2% per 10 units, capped at ±30%), recovering about 20% of the offset per day (all in `game.json`). Price events (EC2) multiply on top, and stacked events multiply.
 - EC6: AI cargo and trading. AI traders carry cargo fitting their pool and wealth; a destroyed trader spills canisters anyone can scoop, and a fleeing trader can jettison as a decoy. Persistent trader entities buy at each stop and sell at the next along their orders, on screen and off, and their trades feed saturation (EC5). Ambient traffic doesn't move prices. Plundering cargo by boarding stays in Phase 3.
-- EC7: Background trade flow: markets drift each day by the trade that isn't simulated ship by ship, so busy lanes narrow price gaps over days. (Model to be confirmed with Jarrad before it's built.)
+- EC7: Background trade flow (confirmed 5 Nov 2026).
+  - **Daily flow:** once a day, along every hyperlane, each commodity both ends trade flows from the cheaper side to the dearer one when the dearer side sells it for at least `economy.flow.min_margin_pct` (15%) more. The flow buys at the cheapest port on one side (raising its saturation) and sells at the dearest port on the other (lowering it).
+  - **How much:** `economy.flow.units_per_lane_per_day` (10) × the busier end's `trade_traffic` (galaxy data per system; default 1, pirate systems 0.2, empty systems 0.5).
+  - **Scope:** illegal goods only flow into systems whose ports don't outlaw them. Hidden and closed systems take part.
+  - **Visibility:** no news; prices drift.
+  - **Balance:** EC5 recovery pulls prices back towards their tiers, so a margin remains.
+  - **Danger:** combat lowering trade flow is being designed (see the milestone 5 notes).
 - EC8: Cargo jettison (B): all cargo goes out as one canister that drifts and expires after a set time; any ship flying over it slowly scoops what fits. Pirates within sensor range break off to collect a canister worth more than a data threshold (the OF6 decoy).
 
 **Shipyard and outfitter (OF)**

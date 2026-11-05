@@ -336,3 +336,10 @@ Rejected: a per-system reveal flag; a plain true/false instead of a condition.
 Why: Jarrad's answers, 4 Nov 2026 ("events, shortages, large trade influx affect pricing"; "I don't see a reason why AI trading can't be implemented").
 Rejected: events-only pricing (farmable); saturation that resets each visit (the reset exploit); every ambient trader moving prices (noisy, drowns the player out).
 
+## 2026-11-05 — Background trade flow model (EC7)
+- **Flow:** daily along lanes, cheap side to dear side, when the margin is at least 15%.
+- **Size:** 10 units × `trade_traffic`; all tunable.
+- **Visibility:** no news.
+- **Danger:** Jarrad also wants combat and danger (in system, and abstracted off-screen, driven by events and entities) to lower trade flow; the model is proposed separately before it's built.
+Why: Jarrad confirmed the proposal, 5 Nov 2026.
+
