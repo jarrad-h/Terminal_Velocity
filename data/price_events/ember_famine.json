@@ -1,0 +1,15 @@
+{
+  "name": "Famine on Forge",
+  "commodity": "food",
+  "factor": 1.6,
+  "days": [
+    6,
+    10
+  ],
+  "chance_per_day": 0.04,
+  "ports": [
+    "forge"
+  ],
+  "news_start": "Crop failures on Forge: food fetches high prices in Ember",
+  "news_end": "Forge's harvest recovers; food prices ease in Ember"
+}

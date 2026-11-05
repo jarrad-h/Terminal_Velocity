@@ -6,7 +6,7 @@ extends RefCounted
 ## collected as errors naming the file and field, never thrown.
 
 ## Definition type folders, in load order.
-const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery", "personalities", "galaxy", "entities", "commodities"]
+const TYPES: Array[String] = ["ships", "weapons", "governments", "ai_pools", "systems", "scenery", "personalities", "galaxy", "entities", "commodities", "price_events"]
 
 const SETTINGS_FILE: String = "game.json"
 
@@ -172,6 +172,8 @@ static func _parse(type: String, reader: DefReader) -> Def:
 			return PersistentEntityDef.parse(reader)
 		"commodities":
 			return CommodityDef.parse(reader)
+		"price_events":
+			return PriceEventDef.parse(reader)
 	assert(false, "unknown definition type " + type)
 	return null
 
@@ -385,4 +387,4 @@ static func _merged(base: Dictionary, over: Dictionary) -> Dictionary:
 static func _singular(type: String) -> String:
 	return {"ships": "ship", "weapons": "weapon", "governments": "government",
 		"ai_pools": "AI pool", "systems": "system", "scenery": "scenery",
-		"personalities": "personality", "galaxy": "galaxy", "entities": "persistent entity", "commodities": "commodity"}[type]
+		"personalities": "personality", "galaxy": "galaxy", "entities": "persistent entity", "commodities": "commodity", "price_events": "price event"}[type]

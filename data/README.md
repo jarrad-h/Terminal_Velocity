@@ -325,3 +325,17 @@ Tracked across the galaxy at all times: a summary (location or transit, ships' s
 | `base_price` | Credits per unit at a medium-tier port, before saturation (EC5) and events (EC2); at least 1 | **required** |
 | `mass` | Tons per unit (cargo space) | `1` |
 | `illegal_to` | Government IDs that outlaw it (flagged in trade; scanning is Phase 3) | `[]` |
+
+## Price events (`data/price_events/<id>.json`) — EC2
+
+| Field | Meaning | Default |
+|---|---|---|
+| `name` | Shown in the trade screen | **required** |
+| `commodity` | Commodity ID it affects | **required** |
+| `factor` | Price multiplier while it runs (1.6 = +60%, 0.6 = −40%); events on the same goods multiply | **required** |
+| `days` | How long it runs, `[min, max]` days | `[5, 10]` |
+| `chance_per_day` | Chance it starts on any day it isn't running (0–1) | `0.05` |
+| `ports`, `systems`, `governments` | Where it applies: ports by ID, whole systems, or every port of a government (any match; all empty = everywhere) | `[]` |
+| `condition` | Only starts while this holds (`""`, `"flag"`, `"!flag"`) | `""` |
+| `news_start`, `news_end` | News lines when it starts and ends (PS7) | `""` |
+

@@ -1,0 +1,15 @@
+{
+  "name": "Luxury glut at Solace",
+  "commodity": "luxury_goods",
+  "factor": 0.6,
+  "days": [
+    5,
+    8
+  ],
+  "chance_per_day": 0.04,
+  "systems": [
+    "solace"
+  ],
+  "news_start": "A luxury convoy floods Solace: luxury goods sell cheap there",
+  "news_end": "Solace's luxury glut is over"
+}

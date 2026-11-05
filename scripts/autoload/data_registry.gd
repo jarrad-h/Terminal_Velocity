@@ -68,6 +68,15 @@ func get_commodity(id: String) -> CommodityDef:
 	return _set.get_def("commodities", id)
 
 
+func get_price_event(id: String) -> PriceEventDef:
+	return _set.get_def("price_events", id)
+
+
+## EC2: every price event definition.
+func price_events() -> Array:
+	return ids("price_events").map(func(id: String) -> PriceEventDef: return get_price_event(id))
+
+
 func get_entity(id: String) -> PersistentEntityDef:
 	return _set.get_def("entities", id)
 

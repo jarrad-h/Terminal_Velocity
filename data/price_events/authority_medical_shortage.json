@@ -1,0 +1,15 @@
+{
+  "name": "Medical shortage",
+  "commodity": "medical_supplies",
+  "factor": 1.4,
+  "days": [
+    5,
+    9
+  ],
+  "chance_per_day": 0.03,
+  "governments": [
+    "local_authority"
+  ],
+  "news_start": "Epidemic in Authority space: medical supplies in short supply",
+  "news_end": "The Authority epidemic is contained; medical prices settle"
+}

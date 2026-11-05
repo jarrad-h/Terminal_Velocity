@@ -168,6 +168,10 @@ func test_field_errors_name_file_and_field() -> void:
 	_expect_error(set, ["haggle.json", "market", "cheap"])
 	_expect_error(set, ["bazaar.json", "no commodity 'spice'"])
 	_expect_error(set, ["bazaar.json", "only a landable object can have a market"])
+	# EC2: price events.
+	_expect_error(set, ["bad_event.json", "commodity", "unobtainium"])
+	_expect_error(set, ["bad_event.json", "chance_per_day", "at most 1"])
+	_expect_error(set, ["nowhere.json", "no port 'atlantis'"])
 	_expect_error(set, ["game.json", "ai.thrust_angle", "expected a number"])
 	_expect_error(set, ["game.json", "ai.roam_band", "greater than max"])
 	_expect_error(set, ["game.json", "combat.friendly_fire_pct", "at least 0"])

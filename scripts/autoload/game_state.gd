@@ -25,6 +25,8 @@ var memory := SystemMemory.new()
 ## PS2: every persistent entity's summary; PS7: the news.
 var entities := EntityRegistry.new()
 var news := NewsLog.new()
+## EC2: running price events.
+var events := PriceEvents.new()
 ## PS2: during a trip (jump or gate), where the player is going: grudges and
 ## followers chase it and off-screen fights don't happen there. "" otherwise.
 var player_heading: String = ""
@@ -36,6 +38,8 @@ func _ready() -> void:
 	clock.day_passed.connect(func(day: int) -> void:
 		memory.step_day(_memory_rules())  # TM3: systems recover a day at a time
 		memory.recover_markets(DataRegistry.settings["economy"])  # EC5
+		for line: String in events.step_day(DataRegistry.price_events(), day, flags, _rng):  # EC2
+			news.add(day, line)
 		for line: String in entities.step_day(day, entity_context()):  # PS2–PS5
 			news.add(day, line)
 		news.prune(day, int(DataRegistry.settings["entities"]["news"]["keep_days"]))
@@ -50,6 +54,7 @@ func _start_new() -> void:
 	flags_changed.emit()
 	memory = SystemMemory.new()
 	news = NewsLog.new()
+	events = PriceEvents.new()
 	var defs: Array = []
 	for id: String in DataRegistry.ids("entities"):
 		defs.append(DataRegistry.get_entity(id))
@@ -82,10 +87,9 @@ func advance_days(days: int) -> void:
 	clock.advance(days)
 
 
-## EC2: the combined price-event multiplier for `commodity` at `port`
-## (1.0 = no event; price events arrive in their own slice).
-func price_factor(_system_id: String, _port: SystemObjectDef, _commodity: String) -> float:
-	return 1.0
+## EC2: the combined price-event multiplier for `commodity` at `port` (1.0 = none).
+func price_factor(system_id: String, port: SystemObjectDef, commodity: String) -> float:
+	return events.factor(DataRegistry.price_events(), system_id, port.id, port.government, commodity)
 
 
 ## TM1: "14 Mar 3200".
@@ -227,7 +231,7 @@ func reset() -> void:
 ## SV1: everything above as plain values (the saves milestone stores this).
 func to_dict() -> Dictionary:
 	return {"credits": credits, "records": _records.duplicate(), "day": clock.day, "travel": travel.to_dict(), "flags": flags.duplicate(),
-		"memory": memory.to_dict(), "entities": entities.to_dict(), "news": news.to_dict()}
+		"memory": memory.to_dict(), "entities": entities.to_dict(), "news": news.to_dict(), "events": events.to_dict()}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -242,6 +246,7 @@ func from_dict(data: Dictionary) -> void:
 		if not entities.states.has(id):  # added to the data since the save
 			entities.states[id] = EntityRegistry.new_state(DataRegistry.get_entity(id), clock.day, _rng)
 	news = NewsLog.from_dict(data.get("news", {}))
+	events = PriceEvents.from_dict(data.get("events", {}))
 	flags_changed.emit()
 	credits_changed.emit(credits)
 

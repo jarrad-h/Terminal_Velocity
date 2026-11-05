@@ -15,7 +15,11 @@ static func open(parent: Node, system_id: String, port: SystemObjectDef, player:
 
 
 static func refresh(dialog: Dialog, system_id: String, port: SystemObjectDef, player: Ship) -> void:
-	dialog.set_body("Credits %d     Hold %.0f / %.0f tons" % [GameState.credits, Trading.used_tons(player), player.def.cargo])
+	var body: String = "Credits %d     Hold %.0f / %.0f tons" % [GameState.credits, Trading.used_tons(player), player.def.cargo]
+	for event: PriceEventDef in GameState.events.at_port(DataRegistry.price_events(), system_id, port.id, port.government):
+		if port.market.has(event.commodity):
+			body += "\n%s: %s %+d%%" % [event.name, DataRegistry.get_commodity(event.commodity).name, roundi((event.factor - 1.0) * 100.0)]
+	dialog.set_body(body)
 	dialog.clear_extras()
 	var grid := GridContainer.new()
 	grid.columns = 9
