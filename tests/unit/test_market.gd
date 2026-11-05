@@ -35,3 +35,11 @@ func test_cargo_hold() -> void:
 	cargo = Market.with_units(cargo, "food", -5)
 	assert_eq(cargo.size(), 1, "selling everything removes the entry")
 	assert_eq(Market.held(cargo, "food"), 0)
+
+
+func test_scooping_takes_what_fits() -> void:
+	# EC8: a canister of 5 food (1 t) and 4 ore (2 t) into a 9-ton hold.
+	var result: Dictionary = Market.take_what_fits([{"commodity": "food", "units": 5}, {"commodity": "ore", "units": 4}], 9.0, {"food": 1.0, "ore": 2.0})
+	assert_eq(result["taken"], [{"commodity": "food", "units": 5}, {"commodity": "ore", "units": 2}], "fills the hold in order")
+	assert_eq(result["left"], [{"commodity": "ore", "units": 2}], "the rest stays in the canister")
+	assert_eq(Market.take_what_fits([{"commodity": "food", "units": 3}], 0.0, {"food": 1.0})["taken"], [], "a full hold takes nothing")

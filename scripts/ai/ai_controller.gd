@@ -11,11 +11,11 @@ extends Node
 ## gone, or it's running the blockade); a persistent entity departs early.
 signal shelter_ended
 
-enum State { TRAVEL, DOCKED, PATROL, ATTACK, FLEE, LEAVE, JUMPING, ORBIT }
+enum State { TRAVEL, DOCKED, PATROL, ATTACK, FLEE, LEAVE, JUMPING, ORBIT, COLLECT }
 const STATE_NAMES: Dictionary = {
 	State.TRAVEL: "travelling", State.DOCKED: "docked", State.PATROL: "patrolling",
 	State.ATTACK: "attacking", State.FLEE: "fleeing", State.LEAVE: "leaving",
-	State.JUMPING: "jumping", State.ORBIT: "in orbit",
+	State.JUMPING: "jumping", State.ORBIT: "in orbit", State.COLLECT: "collecting cargo",
 }
 
 var pool: AiPoolDef
@@ -60,6 +60,8 @@ var _landing_with_leader: bool = false
 ## each hit from a ship it's hostile to; ai.cover_memory).
 var _under_fire: float = 0.0
 var _cover_target: Ship = null
+## EC8: the canister a pirate is going after.
+var _canister: CargoCanister = null
 
 var _stops_left: int = 0
 var _timer: float = 0.0
@@ -169,6 +171,8 @@ func _think(elapsed: float) -> void:
 		_end_attack()
 	if _is_follower() and state != State.ATTACK:
 		return  # formation (or landing with the leader): the leader decides (fights and flights come via the fleet)
+	if _think_collect():
+		return
 	if hunt_player and state in [State.PATROL, State.TRAVEL]:
 		var player: Ship = get_tree().get_first_node_in_group(&"player")
 		if _valid_target(player) and _armed():
@@ -222,6 +226,37 @@ func _on_attacked(attacker: Ship) -> void:
 		fleet.flee(attacker)
 	else:
 		_start_flee()
+
+
+## EC8, OF6: pirates break off (even a fight) for a valuable canister in
+## sensor range; once it's scooped or gone they go back to roaming.
+func _think_collect() -> bool:
+	if state == State.COLLECT:
+		if is_instance_valid(_canister) and not _canister.is_queued_for_deletion() and Trading.free_tons(ship) > 0.0:
+			return true
+		_canister = null
+		_new_waypoint()
+		state = State.PATROL
+		return false
+	if pool.behaviour != "pirate" or state not in [State.PATROL, State.ATTACK] or Trading.free_tons(ship) <= 0.0:
+		return false
+	var best: CargoCanister = null
+	var min_value: float = float(DataRegistry.settings["cargo"]["pirate_min_value"])
+	for node: Node in get_tree().get_nodes_in_group(CargoCanister.GROUP):
+		var can: CargoCanister = node as CargoCanister
+		if can == null or can.is_queued_for_deletion() or can.value() < min_value:
+			continue
+		if ship.global_position.distance_to(can.global_position) > pool.sensor_range:
+			continue
+		if best == null or ship.global_position.distance_squared_to(can.global_position) < ship.global_position.distance_squared_to(best.global_position):
+			best = can
+	if best == null:
+		return false
+	_canister = best
+	target = null
+	ship.set_target(null)
+	state = State.COLLECT
+	return true
 
 
 ## A12: who to return fire at while not attacking: the last ship to hit it
@@ -589,6 +624,12 @@ func _steer(delta: float) -> void:
 	match state:
 		State.DOCKED:
 			_input = FlightInput.new()
+		State.COLLECT:
+			# EC8: match the canister's drift right on top of it (scooping needs a slow pass).
+			if is_instance_valid(_canister):
+				_input = Steering.toward_velocity(s, stats, Steering.arrive_velocity(s, stats, _canister.global_position, _canister.velocity), thrust_angle, delta)
+			else:
+				_input = FlightInput.new()
 		State.ORBIT:
 			# A11: hold over the planet.
 			_input = Steering.toward_velocity(s, stats, Steering.arrive_velocity(s, stats, planet.position), thrust_angle, delta, _deadband(stats))

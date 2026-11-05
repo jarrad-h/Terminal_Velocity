@@ -605,6 +605,8 @@ func _run() -> void:
 	await _frames(2)
 	await _trade_checks(player, scene_root)
 	await _frames(2)
+	await _jettison_checks(player, scene_root)
+	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
 
@@ -939,6 +941,37 @@ func _trade_checks(player: Ship, scene_root: Node) -> void:
 	if trade != null:
 		trade.close()
 	actions.dialog.choose("take_off")
+	await _frames(2)
+
+
+## EC8: jettisoning cargo, scooping it back, and pirates going for it.
+func _jettison_checks(player: Ship, scene_root: Node) -> void:
+	var actions: PlayerActions = scene_root.actions
+	var far := Vector2(7000.0, -7000.0)
+	await _teleport(player, far)
+	player.cargo = [{"commodity": "luxury_goods", "units": 5}]
+	var can: CargoCanister = actions.jettison()
+	_check(can != null and player.cargo.is_empty() and can.cargo.size() == 1, "EC8: jettison dumps the hold as a canister")
+	await _frames(10)
+	_check(is_instance_valid(can) and player.cargo.is_empty(), "EC8: the dropper doesn't scoop it straight back")
+	# A pirate within sensor range breaks off to collect it.
+	var pirate: Ship = scene_root.traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), can.global_position + Vector2(900.0, 0.0), "", "steady")
+	var pirate_ai: AIController = pirate.controller
+	await _teleport(player, far + Vector2(-4000.0, 4000.0))
+	var collected: bool = false
+	for i: int in 1200:
+		await get_tree().physics_frame
+		if not is_instance_valid(can) or can.is_queued_for_deletion():
+			collected = true
+			break
+	_check(collected and Market.held(pirate.cargo, "luxury_goods") > 0, "EC8: a pirate collects a valuable canister (%s)" % pirate.get_state_label())
+	# The player scoops one by flying over it slowly.
+	var mine: CargoCanister = CargoCanister.spawn(scene_root.world, player.global_position + Vector2(0.0, -10.0), player.get_velocity(), [{"commodity": "food", "units": 3}])
+	await _frames(10)
+	_check(Market.held(player.cargo, "food") == 3 and not is_instance_valid(mine) or (is_instance_valid(mine) and mine.is_queued_for_deletion()), "EC8: flying over a canister scoops it")
+	player.cargo = []
+	pirate.remove_from_group(&"ships")
+	pirate.queue_free()
 	await _frames(2)
 
 

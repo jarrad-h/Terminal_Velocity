@@ -41,6 +41,7 @@ Fields marked **required** have no default.
 | `economy.tiers.low`, `.medium`, `.high` | EC1: price multipliers for a port's tier of a commodity | `0.7`, `1.0`, `1.3` |
 | `economy.sell_spread_pct` | EC1: the player sells for this % less than the port's buy price | `5` |
 | `economy.saturation.pct_per_10_units`, `.cap_pct`, `.recovery_per_day` | EC5: each 10 units bought (sold) at a port raise (lower) its price this %; capped at ± `cap_pct`; each day this fraction of the offset recovers | `2`, `30`, `0.2` |
+| `cargo.canister_life`, `.scoop_radius`, `.scoop_speed`, `.drift_speed`, `.dropper_grace`, `.pirate_min_value` | EC8: a jettisoned or spilled canister lasts this many s; a ship within this many px (plus its size) moving slower than this relative to it scoops what fits; canisters drift off at this speed; whoever dropped it can't scoop it for this many s; pirates in sensor range break off to collect canisters worth at least this (base prices) | `90`, `40`, `80`, `20`, `5`, `500` |
 | `saves.root`, `saves.max_pilots`, `saves.max_slots` | SV1–SV2: where pilot folders live (`user://` is Godot's user data folder; on Windows `%APPDATA%\Godot\app_userdata\Terminal Velocity`); how many pilots may exist at once; manual save slots per normal pilot (plus one autosave) | `"user://pilots"`, `5`, `10` |
 | `landing.max_speed` | S2: land only below this speed (player and AI), px/s | `60` |
 | `landing.radius_fraction` | S2: …and within this fraction of the planet's radius of its centre | `0.6` |

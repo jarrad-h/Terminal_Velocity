@@ -30,9 +30,26 @@ func _unhandled_input(event: InputEvent) -> void:
 		try_land()
 	elif event.is_action_pressed(&"board", false, true):
 		try_board()
+	elif event.is_action_pressed(&"jettison", false, true):
+		jettison()
 	else:
 		return
 	get_viewport().set_input_as_handled()
+
+
+## EC8: dumps the whole hold as one canister behind the ship.
+func jettison() -> CargoCanister:
+	var player: Ship = _player()
+	if player == null or not player.can_act() or player.docked or dialog != null:
+		return null
+	if player.cargo.is_empty():
+		GameState.post_message("Nothing to jettison")
+		return null
+	var behind: Vector2 = -FlightModel.heading(player.global_rotation)
+	var can: CargoCanister = CargoCanister.spawn(scene.world, player.global_position + behind * player.hit_radius * 1.5, player.get_velocity(), player.cargo, player)
+	player.cargo = []
+	GameState.post_message("Cargo jettisoned")
+	return can
 
 
 ## S2 + G4: lands on the nearest landable object if close and slow enough and

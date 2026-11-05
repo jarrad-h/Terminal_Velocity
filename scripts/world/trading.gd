@@ -21,7 +21,7 @@ static func quote(system_id: String, port: SystemObjectDef, commodity: String) -
 
 ## EC3: tons the ship's cargo takes up.
 static func used_tons(ship: Ship) -> float:
-	return Market.used_tons(ship.cargo, _masses())
+	return Market.used_tons(ship.cargo, masses())
 
 
 static func free_tons(ship: Ship) -> float:
@@ -60,7 +60,8 @@ static func _saturate(system_id: String, port: SystemObjectDef, commodity: Strin
 	GameState.memory.set_saturation(system_id, port.id, commodity, Market.after_trade(now, units, DataRegistry.settings["economy"]))
 
 
-static func _masses() -> Dictionary:
+## Commodity id -> tons per unit.
+static func masses() -> Dictionary:
 	var out: Dictionary = {}
 	for id: String in DataRegistry.ids("commodities"):
 		out[id] = DataRegistry.get_commodity(id).mass

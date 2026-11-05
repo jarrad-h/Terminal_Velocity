@@ -75,3 +75,21 @@ static func with_units(cargo: Array, commodity: String, units: int) -> Array:
 	if not found and units > 0:
 		out.append({"commodity": commodity, "units": units})
 	return out
+
+
+## EC8: scooping a canister: as much as fits in `free_tons`, cheapest
+## commodities first left behind (taken in list order). {"taken", "left"}.
+static func take_what_fits(cargo: Array, free_tons: float, masses: Dictionary) -> Dictionary:
+	var taken: Array = []
+	var left: Array = []
+	var room: float = free_tons
+	for item: Dictionary in cargo:
+		var mass: float = float(masses.get(item["commodity"], 1.0))
+		var fit: int = mini(int(item["units"]), floori(room / mass + 0.000001)) if mass > 0.0 else int(item["units"])
+		if fit > 0:
+			taken.append({"commodity": item["commodity"], "units": fit})
+			room -= fit * mass
+		if int(item["units"]) - fit > 0:
+			left.append({"commodity": item["commodity"], "units": int(item["units"]) - fit})
+	return {"taken": taken, "left": left}
+
