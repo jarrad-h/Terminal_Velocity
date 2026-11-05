@@ -338,6 +338,9 @@ func _on_destroyed() -> void:
 		if not _scuttled:
 			GameState.post_message("%s destroyed" % def.name, "combat")  # H4
 	Flash.spawn(get_parent(), global_position, hit_radius * 2.5, Color(1.0, 0.7, 0.3), 0.8)
+	if not cargo.is_empty():
+		CargoCanister.spawn.call_deferred(get_parent(), global_position, get_velocity(), cargo)  # EC6: the hold spills
+		cargo = []
 	ship_destroyed.emit(self)
 	hitbox_shape.set_deferred(&"disabled", true)
 	if is_player():

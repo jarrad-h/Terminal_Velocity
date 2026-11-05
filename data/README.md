@@ -200,6 +200,8 @@ Hostility (G1, G3, A8): two governments are hostile if either lists the other in
 | `sensor_range` | How far its ships notice others, px | `1500` |
 | `stay_time` | Warships and pirates leave after this many seconds with nothing to fight `[min, max]` | `[60, 120]` |
 | `dwell_time` | Traders stay docked this long at each planet, s | `[6, 12]` |
+| `cargo_fill` | EC6: fraction of the hold its ships start with, `[min, max]` (named traders fill to `max` when buying) | traders `[0.3, 1]`, others `[0, 0]` |
+| `jettison_chance` | EC6: chance a fleeing ship dumps its hold as a decoy (0–1) | traders `0.5`, others `0` |
 | `shelter_time` | A11: a ship that fled to a planet shelters docked at most this long while a hostile ship stays near, then runs the blockade (leaves the system flat out); a persistent entity departs early along its orders | `[20, 60]` |
 | `stops` | Traders visit this many planets before leaving `[min, max]` | `[1, 3]` |
 | `spawn_from_planets` | New ships may take off from landable planets (chance `ai.planet_spawn_chance`) instead of arriving at the edge | `true` for traders |

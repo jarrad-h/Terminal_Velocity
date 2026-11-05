@@ -93,3 +93,23 @@ static func take_what_fits(cargo: Array, free_tons: float, masses: Dictionary) -
 			left.append({"commodity": item["commodity"], "units": int(item["units"]) - fit})
 	return {"taken": taken, "left": left}
 
+
+## EC6: a random hold for an AI ship: 1–3 commodities from `ids` filling
+## `fill` (0–1) of `capacity` tons. `masses`: id -> tons per unit.
+static func random_load(rng: RandomNumberGenerator, capacity: float, fill: float, ids: Array, masses: Dictionary) -> Array:
+	var cargo: Array = []
+	if ids.is_empty() or capacity <= 0.0 or fill <= 0.0:
+		return cargo
+	var room: float = capacity * clampf(fill, 0.0, 1.0)
+	var kinds: int = mini(rng.randi_range(1, 3), ids.size())
+	var pool: Array = ids.duplicate()
+	for k: int in kinds:
+		var id: String = pool.pop_at(rng.randi() % pool.size())
+		var mass: float = float(masses.get(id, 1.0))
+		var share: float = room / float(kinds - k)
+		var units: int = floori(share / mass + 0.000001)
+		if units > 0:
+			cargo = with_units(cargo, id, units)
+			room -= units * mass
+	return cargo
+

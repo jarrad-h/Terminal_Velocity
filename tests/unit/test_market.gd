@@ -43,3 +43,14 @@ func test_scooping_takes_what_fits() -> void:
 	assert_eq(result["taken"], [{"commodity": "food", "units": 5}, {"commodity": "ore", "units": 2}], "fills the hold in order")
 	assert_eq(result["left"], [{"commodity": "ore", "units": 2}], "the rest stays in the canister")
 	assert_eq(Market.take_what_fits([{"commodity": "food", "units": 3}], 0.0, {"food": 1.0})["taken"], [], "a full hold takes nothing")
+
+
+func test_random_ai_load() -> void:
+	# EC6: AI holds stay within capacity × fill and use known goods.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	for i: int in 20:
+		var cargo: Array = Market.random_load(rng, 120.0, 0.8, ["food", "ore"], {"food": 1.0, "ore": 2.0})
+		assert_true(Market.used_tons(cargo, {"food": 1.0, "ore": 2.0}) <= 96.0 + 0.001, "within capacity × fill")
+		assert_true(cargo.all(func(c: Dictionary) -> bool: return c["commodity"] in ["food", "ore"] and int(c["units"]) > 0), "known goods, no empty entries")
+	assert_eq(Market.random_load(rng, 0.0, 1.0, ["food"], {}), [], "no hold, no cargo")

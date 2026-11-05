@@ -175,3 +175,16 @@ func test_registry_and_news_round_trip() -> void:
 	assert_true(log.recent(14, 3, 8).size() == 3, "only the last N days")
 	log.prune(14, 5)
 	assert_true(log.items.size() == 5, "old news is dropped")
+
+
+func test_traders_trade_where_they_stop() -> void:
+	# EC6: the trade hook runs when an entity arrives somewhere to stay, not when passing through.
+	var def: PersistentEntityDef = _def("convoy", {"ships": [{"ship": "cutter"}], "orders": {"type": "travel", "destination": "b"}})
+	var ctx: Dictionary = _ctx([def])
+	var stops: Array[String] = []
+	ctx["trade"] = func(_s: EntityState, _d: PersistentEntityDef, system_id: String) -> void: stops.append(system_id)
+	var reg := EntityRegistry.new()
+	reg.start([def], 0, ctx["rng"])
+	for day: int in range(1, 12):
+		reg.step_day(day, ctx)
+	assert_eq(stops, ["b"] as Array[String], "EC6: it traded once, at its destination")

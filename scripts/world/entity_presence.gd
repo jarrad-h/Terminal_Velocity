@@ -141,6 +141,10 @@ func _materialise(s: EntityState, def: PersistentEntityDef, arriving: bool) -> v
 
 
 func _apply_summary(ship: Ship, summary: Dictionary) -> void:
+	ship.cargo = []
+	for item: Variant in summary.get("cargo", []):  # EC6: its share of the entity's trade goods
+		if item is Dictionary and DataRegistry.get_commodity(str(item.get("commodity", ""))) != null:
+			ship.cargo = Market.with_units(ship.cargo, str(item["commodity"]), int(item.get("units", 0)))
 	ship.health.shield = ship.health.max_shield * clampf(float(summary.get("shield", 1.0)), 0.0, 1.0)
 	var hull: float = clampf(float(summary.get("hull", 1.0)), 0.0, 1.0)
 	if hull <= ship.disable_fraction():
@@ -234,8 +238,10 @@ func _write_back(id: String) -> void:
 
 
 static func _summary(ship: Ship) -> Dictionary:
-	return ShipRecord.make(ship.def.id, ship.health.armor / maxf(ship.health.max_armor, 0.001),
+	var record: Dictionary = ShipRecord.make(ship.def.id, ship.health.armor / maxf(ship.health.max_armor, 0.001),
 		ship.health.shield / maxf(ship.health.max_shield, 0.001))
+	record["cargo"] = ship.cargo.duplicate(true)  # EC6
+	return record
 
 
 func _speed(s: EntityState) -> float:

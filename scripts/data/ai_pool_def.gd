@@ -22,6 +22,10 @@ var shelter_time: Vector2
 var stops: Vector2i
 ## A6: new ships may take off from landable planets instead of arriving at the edge.
 var spawn_from_planets: bool
+## EC6: fraction of the hold its ships start with [min, max]; chance a fleeing
+## ship jettisons it as a decoy.
+var cargo_fill: Vector2
+var jettison_chance: float
 ## Fire only when the aim is within this many degrees.
 var fire_angle: float
 ## C9: multiplies the hull's board_credits (traders rich, patrols poor).
@@ -50,6 +54,12 @@ static func parse(r: DefReader) -> AiPoolDef:
 	var stops: Vector2 = r.range2("stops", Vector2(1.0, 3.0), 0.0)
 	d.stops = Vector2i(roundi(stops.x), roundi(stops.y))
 	d.spawn_from_planets = r.boolean("spawn_from_planets", d.behaviour == "trader")
+	d.cargo_fill = r.range2("cargo_fill", Vector2(0.3, 1.0) if d.behaviour == "trader" else Vector2.ZERO, 0.0)
+	if d.cargo_fill.y > 1.0:
+		r.error("cargo_fill", "must be at most 1")
+	d.jettison_chance = r.number("jettison_chance", 0.5 if d.behaviour == "trader" else 0.0, false, 0.0)
+	if d.jettison_chance > 1.0:
+		r.error("jettison_chance", "must be at most 1")
 	d.fire_angle = r.number("fire_angle", 8.0, false, 0.0)
 	d.wealth_factor = r.number("wealth_factor", 1.0, false, 0.0)
 	return d

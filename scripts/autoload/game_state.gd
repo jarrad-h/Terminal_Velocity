@@ -172,7 +172,55 @@ func entity_context() -> Dictionary:
 			return Relations.governments_hostile(DataRegistry.get_government(a), DataRegistry.get_government(b)),
 		"exists": func(def: PersistentEntityDef) -> bool: return GateRules.is_open(def.exists_if, flags),
 		"name_of": Hyperspace.system_name, "player_system": player_heading if player_heading != "" else travel.current_system,
-		"rng": _rng, "settings": settings}
+		"rng": _rng, "settings": settings, "trade": _entity_trade}
+
+
+## EC6: a trader entity at a stop sells what it carries where it fetches the
+## most, then buys the cheapest good here (below base price) to fill its
+## holds; both move the markets (EC5).
+func _entity_trade(s: EntityState, def: PersistentEntityDef, system_id: String) -> void:
+	var pool: AiPoolDef = DataRegistry.get_ai_pool(def.pool)
+	var system: SystemDef = DataRegistry.get_system(system_id)
+	if pool == null or pool.behaviour != "trader" or system == null:
+		return
+	var masses: Dictionary = Trading.masses()
+	for record: Dictionary in s.ships:
+		var kept: Array = []
+		for item: Dictionary in record.get("cargo", []):
+			var best: SystemObjectDef = null
+			var best_price: int = 0
+			for port: SystemObjectDef in system.objects:
+				var q: Dictionary = Trading.quote(system_id, port, item["commodity"])
+				if not q.is_empty() and not q["illegal"] and q["sell"] > best_price:
+					best = port
+					best_price = q["sell"]
+			if best != null:
+				Trading.move_market(system_id, best, item["commodity"], -int(item["units"]))
+			else:
+				kept.append(item)
+		record["cargo"] = kept
+	var buy_port: SystemObjectDef = null
+	var buy_id: String = ""
+	var cheapest: float = 1.0
+	for port: SystemObjectDef in system.objects:
+		for commodity: String in port.market:
+			var q: Dictionary = Trading.quote(system_id, port, commodity)
+			var ratio: float = float(q["buy"]) / DataRegistry.get_commodity(commodity).base_price
+			if not q["illegal"] and ratio < cheapest:
+				cheapest = ratio
+				buy_port = port
+				buy_id = commodity
+	if buy_port == null:
+		return
+	for record: Dictionary in s.ships:
+		var hull: ShipDef = DataRegistry.get_ship(ShipRecord.design_of(record))
+		if hull == null:
+			continue
+		var room: float = hull.cargo * pool.cargo_fill.y - Market.used_tons(record.get("cargo", []), masses)
+		var units: int = floori(room / float(masses.get(buy_id, 1.0)) + 0.000001)
+		if units > 0:
+			record["cargo"] = Market.with_units(record.get("cargo", []), buy_id, units)
+			Trading.move_market(system_id, buy_port, buy_id, units)
 
 
 ## PS3: an entity may use a system's gate if it's open and its government

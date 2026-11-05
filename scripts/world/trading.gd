@@ -55,6 +55,10 @@ static func sell(system_id: String, port: SystemObjectDef, ship: Ship, commodity
 
 
 ## EC5: `units` changed hands at the port (+ bought from it, − sold to it).
+static func move_market(system_id: String, port: SystemObjectDef, commodity: String, units: int) -> void:
+	_saturate(system_id, port, commodity, units)
+
+
 static func _saturate(system_id: String, port: SystemObjectDef, commodity: String, units: int) -> void:
 	var now: float = GameState.memory.saturation(system_id, port.id, commodity)
 	GameState.memory.set_saturation(system_id, port.id, commodity, Market.after_trade(now, units, DataRegistry.settings["economy"]))

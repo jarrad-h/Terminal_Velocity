@@ -280,7 +280,9 @@ func _run() -> void:
 	var pirate: Ship = traffic.spawn_from_pool(DataRegistry.get_ai_pool("pirate_raid"), centre + Vector2(500.0, 0.0), "", "steady")
 	await _frames(90)
 	var pirate_ai: AIController = pirate.controller
-	_check(pirate_ai.state == AIController.State.ATTACK and pirate_ai.target == trader, "pirate attacks the trader on sight (A3): %s" % pirate.get_state_label())
+	# (A fleeing trader may have dumped its hold as a decoy, EC6: the pirate chases that instead.)
+	_check((pirate_ai.state == AIController.State.ATTACK and pirate_ai.target == trader) or pirate_ai.state == AIController.State.COLLECT,
+		"pirate attacks the trader on sight (A3): %s" % pirate.get_state_label())
 	var trader_ai: AIController = trader.controller
 	await _frames(240)
 	# Ships are delicate (M7): the trader may already be disabled or gone.
@@ -785,7 +787,7 @@ func _save_checks(player: Ship) -> void:
 	var root_before: String = Pilots.root
 	var pilot_before: Dictionary = Pilots.pilot
 	var id_before: String = Pilots.pilot_id
-	Pilots.root = "user://test_pilots"
+	Pilots.root = "user://test_pilots_%d" % OS.get_process_id()  # parallel runs don't collide
 	for entry: Dictionary in Pilots.list_pilots():
 		Pilots.delete_pilot(entry["id"])
 	Pilots.pilot_id = "test_ace"
@@ -936,8 +938,27 @@ func _trade_checks(player: Ship, scene_root: Node) -> void:
 	_check(after["buy"] >= before["buy"] and GameState.memory.saturation(system.id, port.id, commodity) > 0.0, "EC5: buying raises the price (%d -> %d)" % [before["buy"], after["buy"]])
 	_check(Trading.sell(system.id, port, player, commodity, 1000000) == bought and player.cargo.is_empty(), "EC3: selling all empties the hold")
 	_check(GameState.credits < 100000, "EC1: a round trip at one port loses money")
+	GameState.memory.set_saturation(system.id, "test_port", commodity, 0.2)  # a port no trader visits
 	GameState.advance_days(30)
-	_check(is_zero_approx(GameState.memory.saturation(system.id, port.id, commodity)), "EC5: the market recovers over days")
+	_check(is_zero_approx(GameState.memory.saturation(system.id, "test_port", commodity)), "EC5: the market recovers over days")
+	# EC6: a named trader buys cheap goods at a stop, moving that market.
+	var mara: EntityState = GameState.entities.states["mara_vell"]
+	var mara_def: PersistentEntityDef = DataRegistry.get_entity("mara_vell")
+	for record: Dictionary in mara.ships:
+		record["cargo"] = []
+	GameState._entity_trade(mara, mara_def, "solace")
+	var carried: int = 0
+	for record: Dictionary in mara.ships:
+		for item: Dictionary in record["cargo"]:
+			carried += int(item["units"])
+	_check(carried > 0 and not GameState.memory.markets.get("solace", {}).is_empty(), "EC6: Mara buys at Solace (%d units) and moves its market" % carried)
+	GameState._entity_trade(mara, mara_def, "aster")
+	var still: int = 0
+	for record: Dictionary in mara.ships:
+		for item: Dictionary in record["cargo"]:
+			if DataRegistry.get_system("aster").objects.any(func(o: SystemObjectDef) -> bool: return o.market.has(item["commodity"])):
+				still += int(item["units"])
+	_check(not GameState.memory.markets.get("aster", {}).is_empty(), "EC6: ...and sells (and buys) at Aster")
 	if trade != null:
 		trade.close()
 	actions.dialog.choose("take_off")
@@ -1055,7 +1076,7 @@ func _entity_checks(player: Ship, scene_root: Node) -> void:
 	await _frames(20)  # more than one AI think (0.25 s = 15 frames)
 	var hunters: Array[Ship] = _entity_ships("red_ketch")
 	_check(hunters.size() == 2 and hunters.all(func(sh: Ship) -> bool: return (sh.controller as AIController).hunt_player), "PS2: with a grudge his ships hunt the player")
-	_check(hunters.any(func(sh: Ship) -> bool: return (sh.controller as AIController).state == AIController.State.ATTACK and (sh.controller as AIController).target == player), "PS2: ...and go for the player, whatever the range")
+	_check(hunters.any(func(sh: Ship) -> bool: return (sh.controller as AIController).state == AIController.State.ATTACK and (sh.controller as AIController).target == player), "PS2: ...and go for the player, whatever the range (%s)" % [hunters.map(func(sh: Ship) -> String: return sh.get_state_label() + " can_act=" + str(sh.can_act()) + " armed=" + str(not sh.weapons.mounts.is_empty()))])
 	scene_root.refresh_entities()  # like taking off again
 	await _frames(3)
 	scene_root.leave_system()

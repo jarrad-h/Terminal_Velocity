@@ -93,6 +93,10 @@ func _ready() -> void:
 	ship.attacked.connect(_on_attacked)
 	DataRegistry.data_reloaded.connect(_on_data_reloaded)
 	_stops_left = _rng.randi_range(pool.stops.x, pool.stops.y)
+	if ship.cargo.is_empty() and not persistent and pool.cargo_fill.y > 0.0:
+		# EC6: ambient traffic starts with a hold (entities get theirs from their summary).
+		ship.cargo = Market.random_load(_rng, ship.def.cargo, _rng.randf_range(pool.cargo_fill.x, pool.cargo_fill.y),
+			DataRegistry.ids("commodities"), Trading.masses())
 	_timer = _rng.randf_range(pool.stay_time.x, pool.stay_time.y)
 	_think_left = _rng.randf() * _ai("think_interval")
 	if pool.behaviour == "trader":
@@ -232,13 +236,13 @@ func _on_attacked(attacker: Ship) -> void:
 ## sensor range; once it's scooped or gone they go back to roaming.
 func _think_collect() -> bool:
 	if state == State.COLLECT:
-		if is_instance_valid(_canister) and not _canister.is_queued_for_deletion() and Trading.free_tons(ship) > 0.0:
+		if not hunt_player and is_instance_valid(_canister) and not _canister.is_queued_for_deletion() and Trading.free_tons(ship) > 0.0:
 			return true
 		_canister = null
 		_new_waypoint()
 		state = State.PATROL
 		return false
-	if pool.behaviour != "pirate" or state not in [State.PATROL, State.ATTACK] or Trading.free_tons(ship) <= 0.0:
+	if pool.behaviour != "pirate" or hunt_player or state not in [State.PATROL, State.ATTACK] or Trading.free_tons(ship) <= 0.0:  # a grudge beats loot
 		return false
 	var best: CargoCanister = null
 	var min_value: float = float(DataRegistry.settings["cargo"]["pirate_min_value"])
@@ -390,6 +394,11 @@ func _end_attack() -> void:
 func _start_flee() -> void:
 	target = null
 	ship.set_target(null)
+	if not ship.cargo.is_empty() and _rng.randf() < pool.jettison_chance:
+		# EC6, OF6: dump the hold as a decoy for whoever's chasing.
+		CargoCanister.spawn(ship.get_parent(), ship.global_position - FlightModel.heading(ship.global_rotation) * ship.hit_radius * 1.5,
+			ship.get_velocity(), ship.cargo, ship)
+		ship.cargo = []
 	state = State.FLEE
 	planet = _nearest_landable() if pool.behaviour == "trader" else null
 	if planet == null:

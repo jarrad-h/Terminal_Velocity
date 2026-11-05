@@ -11,6 +11,7 @@ extends RefCounted
 ##   name_of: Callable(system_id) -> String
 ##   player_system: where the player is, or is heading during a trip
 ##   rng: RandomNumberGenerator   settings: game.json entities.encounter
+##   trade (optional): Callable(state, def, system_id), EC6 trading at a stop
 ## step_day and depart return news lines (PS7).
 
 ## id -> EntityState
@@ -156,6 +157,8 @@ func _arrive(s: EntityState, def: PersistentEntityDef, day: int, ctx: Dictionary
 			return news
 	s.transit_from = ""
 	s.leave_day = day + ctx["rng"].randi_range(def.stay_days.x, def.stay_days.y)
+	if ctx.has("trade"):
+		ctx["trade"].call(s, def, s.location)  # EC6: traders sell and buy at each stop
 	return []
 
 
