@@ -107,7 +107,17 @@ IDs continue the prototype's scheme with new prefixes, so commits, tests and the
   - **Scope:** illegal goods only flow into systems whose ports don't outlaw them. Hidden and closed systems take part.
   - **Visibility:** no news; prices drift.
   - **Balance:** EC5 recovery pulls prices back towards their tiers, so a margin remains.
-  - **Danger:** combat lowering trade flow is being designed (see the milestone 5 notes).
+  - **Danger:** a lane's flow is scaled down by the danger at its ends (EC9), by at most 80%.
+- EC9: Danger (confirmed 5 Nov 2026). Each system remembers a danger value, 0–100, in system memory (saved). It recovers towards a per-system normal level by 15% of the gap each day (normal: 40 in pirate systems, 5 elsewhere).
+  - **Raised in system:** a ship destroyed +5, a trader destroyed +8, a ship disabled +3. Kills by patrols count half: they make the system safer.
+  - **Raised off-screen:** +10 per off-screen entity fight (PS5), +2 per day per pirate entity present, and a random daily drift of ±3.
+  - **Raised by events:** price events can carry a danger effect while they run.
+  - **Effects:**
+    - lane trade flow scaled down (EC7), by at most 80%;
+    - fewer ambient traders (at most −50%);
+    - more patrols (at most +2).
+  - **Galaxy map:** systems the player has visited show the level last seen: low (under 20), medium (20–44), high (45–69), extreme (70+).
+  - **Tuning:** every number is in data.
 - EC8: Cargo jettison (B): all cargo goes out as one canister that drifts and expires after a set time; any ship flying over it slowly scoops what fits. Pirates within sensor range break off to collect a canister worth more than a data threshold (the OF6 decoy).
 
 **Shipyard and outfitter (OF)**
@@ -228,7 +238,7 @@ Eight milestones, each ending in a playtest; persistence comes before saves so t
 2. ✅ (merged 2026-10-30) **Gates and lighting:** gate stellars, destination list, fee and record check, closable by flag, gate links on the map; lit ships (V6), star and ambient light from system data (V7), weapon and engine lights (V8), lit stellars on placeholders until the art lands (V9), the shared UI theme for the gate list (H5) and the lighting debug controls (D14). Done when TR5–TR6 work, the map shows gate links, ships light correctly at every heading, shots light nearby hulls, performance is unchanged and the check is GREEN. Gate, station and planet art comes from Jarrad's parallel `art/*` session and merges when its branch passes the check (see "Art requests for milestone 2").
 3. ✅ (merged 2026-11-02) **Persistence foundation:** entity registry, travel by the player's rules, materialise and write-back, off-screen encounters, system memory with recovery, news. AI traffic flies the hyperspace sequence (A9) and hub systems get gate traffic (A10), both from the milestone 2 playtest. Mid-milestone check-in after A9, A10 and system memory (PS6). Done when PS1–PS7, A9 and A10 work with the test cluster's three persistent entities. Playtests added fleets (PS4), landing and sheltering (A11) and covering fire (A12).
 4. ✅ (merged 2026-11-03) **Pilot and saves:** pilot creation (name, ironman), save/load, autosave, versioned format. Done when SV1–SV4 work and a save made mid-route restores entities in transit. Playtests added D15, finishing off disabled ships (A13), the 15% disable band (C7) and safe rescues (C10).
-5. **Economy:** commodities, market tiers, price events, cargo hold, trade screen, cargo jettison, market saturation, AI cargo and entity trading, background trade flow. Done when EC1–EC8 work and a pure trading run across four systems turns a profit.
+5. **Economy:** commodities, market tiers, price events, cargo hold, trade screen, cargo jettison, market saturation, AI cargo and entity trading, background trade flow, danger. Done when EC1–EC9 work and a pure trading run across four systems turns a profit.
 6. **Shipyard and outfitter:** buying hulls with trade-in, fitting by hardpoint, free mass, the modifier system and the trader escape kit. Moves hull geometry into manifests first (OF7). Done when OF1–OF9 work and the shuttle has a visible upgrade path.
 7. **Mission engine:** flags, the condition grammar, declarative missions, script hooks, templates, mission log, persistent mission targets and escorts. Done when MS1–MS6 work with the four templates.
 8. **Progression and the first arc:** ratings, ranks, achievements, the pilot screen, and a 5–8 mission arc. Done when PR1–PR4 work and the success criteria at the top are met in an hour-long playtest.
@@ -299,7 +309,6 @@ An art phase follows Phase 2 to build an expanded asset library, so Phase 3 cont
 - A large turret sprite, and a pirate turret style.
 - Named entities that last: important characters need strong ships, ways to escape (retreating early, escape pods, jumping out under fire), or other tricks such as reinforcements, or they die too quickly to matter (milestone 3 playtest).
 - An in-system map: the radar expands into a full system map where the player can select points of interest (planets, stations, gates) directly (milestone 3 playtest).
-- **Danger as system memory** (Jarrad wants it, at the right time): a "danger" value raised by fighting in a system and recovering over days; traders and pirates avoid dangerous systems, patrols are drawn to them, so a system the player has shot up stays quieter for days.
 - **Orbital stations and planet defence (revisit A11 in a later milestone; Jarrad, 2 Nov 2026):**
   - Planets have an orbital station as the default landing entity.
   - Stations have berths for ships, with a small docking animation.

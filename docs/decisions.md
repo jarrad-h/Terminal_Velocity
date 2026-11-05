@@ -343,3 +343,10 @@ Rejected: events-only pricing (farmable); saturation that resets each visit (the
 - **Danger:** Jarrad also wants combat and danger (in system, and abstracted off-screen, driven by events and entities) to lower trade flow; the model is proposed separately before it's built.
 Why: Jarrad confirmed the proposal, 5 Nov 2026.
 
+## 2026-11-05 — Danger (EC9)
+- **Model:** a danger value per system in memory. Raised by combat losses in system, by off-screen fights, pirate entities and events, plus a small daily drift; it recovers 15% of the gap per day.
+- **Effects:** it cuts trade flow and trader numbers and draws in patrols.
+- **Map:** shown as low, medium, high or extreme.
+- **Cascade safeguards:** caps of +2 patrols, −50% traders and −80% flow at most; patrol kills count half. Recovery and pirate losses (PS6) bring a system back to normal.
+Why: Jarrad, 5 Nov 2026 (combat and trader deaths lower trade flow; off-screen it's abstracted and ebbs and flows; events and entities drive it). He asked how cascades settle; the safeguards answer that.
+
