@@ -12,6 +12,8 @@ var route: Array[String] = []
 ## TR7: system id -> map state ("explored", "unexplored", "hidden") where it
 ## differs from the galaxy's starting state.
 var map_changes: Dictionary = {}
+## EC9: the danger level (low…extreme) the player last saw in each system.
+var seen_danger: Dictionary = {}
 
 
 ## TR7: the system's current map state.
@@ -47,7 +49,8 @@ func destination() -> String:
 
 
 func to_dict() -> Dictionary:
-	return {"current_system": current_system, "fuel": fuel, "route": route.duplicate(), "map_changes": map_changes.duplicate()}
+	return {"current_system": current_system, "fuel": fuel, "route": route.duplicate(), "map_changes": map_changes.duplicate(),
+		"seen_danger": seen_danger.duplicate()}
 
 
 static func from_dict(data: Dictionary) -> TravelState:
@@ -59,4 +62,7 @@ static func from_dict(data: Dictionary) -> TravelState:
 	var changes: Variant = data.get("map_changes", {})
 	if changes is Dictionary:
 		state.map_changes = changes.duplicate()
+	var seen: Variant = data.get("seen_danger", {})
+	if seen is Dictionary:
+		state.seen_danger = seen.duplicate()
 	return state

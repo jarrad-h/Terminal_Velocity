@@ -10,9 +10,9 @@ var objects: Array[SystemObjectDef] = []
 var traffic: Array[Dictionary] = []
 const VIA: Array[String] = ["hyperspace", "gate"]
 ## PS6: the values every system remembers.
-const MEMORY_VALUES: Array[String] = ["alert", "pirate_presence"]
+const MEMORY_VALUES: Array[String] = ["alert", "pirate_presence", "danger"]
 ## A traffic entry's `memory`: none, or one of MEMORY_VALUES.
-const TRAFFIC_MEMORY: Array[String] = ["", "alert", "pirate_presence"]
+const TRAFFIC_MEMORY: Array[String] = ["", "alert", "pirate_presence", "danger"]
 ## PS6: overrides of game.json memory.values: name -> {"baseline", "recovery_per_day"}.
 var memory: Dictionary = {}
 var backdrop: BackdropDef

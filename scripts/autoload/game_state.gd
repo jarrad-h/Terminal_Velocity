@@ -40,6 +40,8 @@ func _ready() -> void:
 		memory.recover_markets(DataRegistry.settings["economy"])  # EC5
 		for line: String in events.step_day(DataRegistry.price_events(), day, flags, _rng):  # EC2
 			news.add(day, line)
+		_daily_danger()  # EC9
+		_trade_flow()  # EC7
 		for line: String in entities.step_day(day, entity_context()):  # PS2–PS5
 			news.add(day, line)
 		news.prune(day, int(DataRegistry.settings["entities"]["news"]["keep_days"]))
@@ -149,7 +151,17 @@ func report_player_act(target: Ship, act: String) -> void:
 ## restored doesn't count again (its later destruction does).
 func ship_lost(ship: Ship, act: String) -> void:
 	var settings: Dictionary = DataRegistry.settings["memory"]
-	if ship.is_player() or ship.has_meta("restoring") or not ship.government in settings["pirate_governments"]:
+	if ship.has_meta("restoring"):
+		return
+	# EC9: losses make the system more dangerous; patrols' kills count less
+	# (they make it safer).
+	var danger: Dictionary = DataRegistry.settings["danger"]
+	var amount: float = float(danger["disable"]) if act == "disable" else float(danger["trader_kill"] if ship.role == "trader" else danger["kill"])
+	var killer: Ship = ship.last_attacker()
+	if killer != null and killer.role == "warship":
+		amount *= float(danger["patrol_factor"])
+	memory_add(travel.current_system, "danger", amount)
+	if ship.is_player() or not ship.government in settings["pirate_governments"]:
 		return
 	memory_add(travel.current_system, "pirate_presence", -float(settings["pirate_loss"][act]))
 
@@ -172,7 +184,94 @@ func entity_context() -> Dictionary:
 			return Relations.governments_hostile(DataRegistry.get_government(a), DataRegistry.get_government(b)),
 		"exists": func(def: PersistentEntityDef) -> bool: return GateRules.is_open(def.exists_if, flags),
 		"name_of": Hyperspace.system_name, "player_system": player_heading if player_heading != "" else travel.current_system,
-		"rng": _rng, "settings": settings, "trade": _entity_trade}
+		"rng": _rng, "settings": settings, "trade": _entity_trade,
+		"danger": func(system_id: String) -> void: memory_add(system_id, "danger", float(DataRegistry.settings["danger"]["fight"]))}
+
+
+## EC9: the danger level here now ("low"…"extreme").
+func danger_level(system_id: String) -> String:
+	return SystemMemory.danger_level(memory_value(system_id, "danger"), DataRegistry.settings["danger"]["levels"])
+
+
+## EC9: remember what the player saw here (arriving, leaving, landing).
+func note_danger(system_id: String) -> void:
+	if system_id != "":
+		travel.seen_danger[system_id] = danger_level(system_id)
+
+
+## EC9: off-screen danger for a day: pirate entities present, price events
+## with a danger effect, and a small random drift everywhere.
+func _daily_danger() -> void:
+	var cfg: Dictionary = DataRegistry.settings["danger"]
+	var pirates: Array = DataRegistry.settings["memory"]["pirate_governments"]
+	for s: EntityState in entities.states.values():
+		var def: PersistentEntityDef = DataRegistry.get_entity(s.id)
+		if s.alive and s.location != "" and def != null and def.government in pirates:
+			memory_add(s.location, "danger", float(cfg["pirate_entity_per_day"]))
+	for event: PriceEventDef in DataRegistry.price_events():
+		if events.active.has(event.id) and event.danger > 0.0:
+			for system_id: String in _event_systems(event):
+				memory_add(system_id, "danger", event.danger)
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	var drift: float = float(cfg["drift"])
+	for system_id: String in galaxy.system_ids:
+		memory_add(system_id, "danger", _rng.randf_range(-drift, drift))
+
+
+## Systems a price event touches (its systems, its ports' systems, and systems
+## with a port of its governments).
+func _event_systems(event: PriceEventDef) -> Array[String]:
+	var out: Array[String] = []
+	for system_id: String in DataRegistry.ids("systems"):
+		var system: SystemDef = DataRegistry.get_system(system_id)
+		if event.systems.has(system_id) or system.objects.any(func(o: SystemObjectDef) -> bool:
+				return event.ports.has(o.id) or (o.government != "" and event.governments.has(o.government))):
+			out.append(system_id)
+	return out
+
+
+## EC7: a day of background trade along every hyperlane: for each good both
+## ends trade, a flow from the cheapest port on one side to the dearest on the
+## other when the margin is wide enough, scaled by traffic and cut by danger.
+func _trade_flow() -> void:
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	var flow: Dictionary = DataRegistry.settings["economy"]["flow"]
+	var danger_cfg: Dictionary = DataRegistry.settings["danger"]
+	for lane: Dictionary in galaxy.lanes:
+		var a: SystemDef = DataRegistry.get_system(lane["from"])
+		var b: SystemDef = DataRegistry.get_system(lane["to"])
+		if a == null or b == null:
+			continue
+		var traffic: float = maxf(float(galaxy.trade_traffic.get(a.id, 1.0)), float(galaxy.trade_traffic.get(b.id, 1.0)))
+		var danger: float = (memory_value(a.id, "danger") + memory_value(b.id, "danger")) / 2.0
+		var scale: float = traffic * (1.0 - minf(danger / 100.0, float(danger_cfg["flow_cut_max"])))
+		var units: int = roundi(float(flow["units_per_lane_per_day"]) * scale)
+		if units <= 0:
+			continue
+		for commodity: String in DataRegistry.ids("commodities"):
+			_flow_one(a, b, commodity, units, float(flow["min_margin_pct"]))
+			_flow_one(b, a, commodity, units, float(flow["min_margin_pct"]))
+
+
+func _flow_one(from: SystemDef, to: SystemDef, commodity: String, units: int, min_margin_pct: float) -> void:
+	var cheap: SystemObjectDef = null
+	var cheap_price: int = 0
+	for port: SystemObjectDef in from.objects:
+		var q: Dictionary = Trading.quote(from.id, port, commodity)
+		if not q.is_empty() and (cheap == null or q["buy"] < cheap_price):
+			cheap = port
+			cheap_price = q["buy"]
+	var dear: SystemObjectDef = null
+	var dear_price: int = 0
+	for port: SystemObjectDef in to.objects:
+		var q: Dictionary = Trading.quote(to.id, port, commodity)
+		if not q.is_empty() and not q["illegal"] and q["sell"] > dear_price:
+			dear = port
+			dear_price = q["sell"]
+	if cheap == null or dear == null or dear_price < cheap_price * (1.0 + min_margin_pct / 100.0):
+		return
+	Trading.move_market(from.id, cheap, commodity, units)
+	Trading.move_market(to.id, dear, commodity, -units)
 
 
 ## EC6: a trader entity at a stop sells what it carries where it fetches the

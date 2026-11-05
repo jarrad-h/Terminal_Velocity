@@ -16,6 +16,8 @@ var systems: Array[String] = []
 var governments: Array[String] = []
 ## "" always; "flag"; "!flag" (TR6 grammar).
 var condition: String
+## EC9: danger added each day it runs to the systems it touches (0 = none).
+var danger: float
 ## News when it starts and ends ("" = none).
 var news_start: String
 var news_end: String
@@ -37,6 +39,7 @@ static func parse(r: DefReader) -> PriceEventDef:
 	d.condition = r.string("condition")
 	if not GateRules.is_valid_condition(d.condition):
 		r.error("condition", "expected \"\", \"flag_name\" or \"!flag_name\" (lowercase snake_case)")
+	d.danger = r.number("danger", 0.0, false, 0.0)
 	d.news_start = r.string("news_start")
 	d.news_end = r.string("news_end")
 	return d

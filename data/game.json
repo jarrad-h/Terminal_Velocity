@@ -38,7 +38,14 @@
   "economy": {
     "tiers": {"low": 0.7, "medium": 1.0, "high": 1.3},
     "sell_spread_pct": 5,
-    "saturation": {"pct_per_10_units": 2, "cap_pct": 30, "recovery_per_day": 0.2}
+    "saturation": {"pct_per_10_units": 2, "cap_pct": 30, "recovery_per_day": 0.2},
+    "flow": {"units_per_lane_per_day": 10, "min_margin_pct": 15}
+  },
+  "danger": {
+    "kill": 5, "trader_kill": 8, "disable": 3, "patrol_factor": 0.5, "fight": 10,
+    "pirate_entity_per_day": 2, "drift": 3,
+    "trader_cut_per_point": 0.005, "trader_cut_max": 0.5, "patrol_per_point": 0.03, "patrol_max_extra": 2,
+    "flow_cut_max": 0.8, "levels": [20, 45, 70]
   },
   "cargo": {"canister_life": 90, "scoop_radius": 40, "scoop_speed": 80, "drift_speed": 20, "pirate_min_value": 500, "dropper_grace": 5},
   "saves": {"root": "user://pilots", "max_pilots": 5, "max_slots": 10},
@@ -105,7 +112,8 @@
   "memory": {
     "values": {
       "alert": {"baseline": 0, "recovery_per_day": 10, "max": 100},
-      "pirate_presence": {"baseline": 100, "recovery_per_day": 10, "max": 200}
+      "pirate_presence": {"baseline": 100, "recovery_per_day": 10, "max": 200},
+      "danger": {"baseline": 5, "recovery_per_day": 0, "recovery_fraction": 0.15, "max": 100}
     },
     "alert_per_record": 2,
     "pirate_loss": {"disable": 5, "kill": 10},

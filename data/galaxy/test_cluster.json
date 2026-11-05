@@ -7,12 +7,12 @@
     {"system": "test_graveyard", "position": [130, -70]},
     {"system": "lumen", "position": [230, 20]},
     {"system": "aster", "position": [110, 110]},
-    {"system": "drift", "position": [170, 230]},
+    {"system": "drift", "position": [170, 230], "trade_traffic": 0.5},
     {"system": "brink", "position": [240, 340]},
     {"system": "solace", "position": [380, 320]},
     {"system": "ember", "position": [300, 460]},
-    {"system": "hollow", "position": [500, 400], "map_state": "hidden"},
-    {"system": "redhaven", "position": [450, 520]}
+    {"system": "hollow", "position": [500, 400], "map_state": "hidden", "trade_traffic": 0.5},
+    {"system": "redhaven", "position": [450, 520], "trade_traffic": 0.2}
   ],
   "hyperlanes": [
     {"from": "test_nebula", "to": "test_graveyard"},

@@ -17,6 +17,8 @@ var start_states: Dictionary[String, String] = {}
 ## C10: condition under which a rescue may take the player to (or through) a
 ## system ("" always; "flag"; "!flag"), by system id.
 var rescue_if: Dictionary[String, String] = {}
+## EC7: how busy each system's trade is (1 = normal), by system id.
+var trade_traffic: Dictionary[String, float] = {}
 ## [{"from": String, "to": String, "rescue_reveals": bool}], each pair once in
 ## either direction. C10: rescue_reveals false keeps a rescue from revealing
 ## the far end of this lane.
@@ -39,6 +41,7 @@ static func parse(r: DefReader) -> GalaxyDef:
 		d.positions[id] = s.vec2("position", Vector2.ZERO, true)
 		d.start_states[id] = s.choice("map_state", MAP_STATES, "unexplored")
 		d.rescue_if[id] = s.string("rescue_if")
+		d.trade_traffic[id] = s.number("trade_traffic", 1.0, false, 0.0)
 		if not GateRules.is_valid_condition(d.rescue_if[id]):
 			s.error("rescue_if", "expected \"\", \"flag_name\" or \"!flag_name\" (lowercase snake_case)")
 	for l: DefReader in r.objects("hyperlanes"):

@@ -31,9 +31,13 @@ const SETTINGS_DEFAULTS: Dictionary = {
 	"player": {"credits": 0, "record": 0.0, "escape_pod": true, "insured": true, "uninsured_ship": "shuttle",
 		"rescue_fee_pct": 10.0, "rescue_days": [2.0, 5.0], "pod_speed": 600.0, "pod_time": 3.0},
 	"saves": {"root": "user://pilots", "max_pilots": 5, "max_slots": 10},
+	"danger": {"kill": 5.0, "trader_kill": 8.0, "disable": 3.0, "patrol_factor": 0.5, "fight": 10.0,
+		"pirate_entity_per_day": 2.0, "drift": 3.0, "trader_cut_per_point": 0.005, "trader_cut_max": 0.5,
+		"patrol_per_point": 0.03, "patrol_max_extra": 2, "flow_cut_max": 0.8, "levels": [20.0, 45.0, 70.0]},
 	"cargo": {"canister_life": 90.0, "scoop_radius": 40.0, "scoop_speed": 80.0, "drift_speed": 20.0, "pirate_min_value": 500.0, "dropper_grace": 5.0},
 	"economy": {"tiers": {"low": 0.7, "medium": 1.0, "high": 1.3}, "sell_spread_pct": 5.0,
-		"saturation": {"pct_per_10_units": 2.0, "cap_pct": 30.0, "recovery_per_day": 0.2}},
+		"saturation": {"pct_per_10_units": 2.0, "cap_pct": 30.0, "recovery_per_day": 0.2},
+		"flow": {"units_per_lane_per_day": 10.0, "min_margin_pct": 15.0}},
 	"landing": {"max_speed": 60.0, "radius_fraction": 0.6, "repair_cost_per_point": 0.0},
 	"boarding": {"range": 60.0, "max_speed": 40.0, "time": 2.0, "assist_armor_pct": 50.0},
 	"combat": {"friendly_fire_pct": 100.0, "disabled_drag": 30.0, "disable_armor_pct": 15.0},
@@ -51,7 +55,8 @@ const SETTINGS_DEFAULTS: Dictionary = {
 		"hostile": "#ff4040", "friendly": "#40d080", "warned": "#ffb030"}},
 	"engine_glow": {"idle": 0.25, "response": 6.0},
 	"memory": {"values": {"alert": {"baseline": 0.0, "recovery_per_day": 10.0, "max": 100.0},
-			"pirate_presence": {"baseline": 100.0, "recovery_per_day": 10.0, "max": 200.0}},
+			"pirate_presence": {"baseline": 100.0, "recovery_per_day": 10.0, "max": 200.0},
+			"danger": {"baseline": 5.0, "recovery_per_day": 0.0, "recovery_fraction": 0.15, "max": 100.0}},
 		"alert_per_record": 2.0, "pirate_loss": {"disable": 5.0, "kill": 10.0},
 		"pirate_governments": [], "wreck_days": 5},
 	"entities": {"arrival_offset": [-90.0, 120.0], "departure_window": [20.0, 150.0], "min_stay_seconds": 5.0, "ship_spacing": 160.0,
@@ -236,6 +241,8 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 		var v: DefReader = memory_values.object(name)
 		for key: String in ["baseline", "recovery_per_day", "max"]:
 			v.number(key, 0.0, false, 0.0)
+		if v.number("recovery_fraction", 0.0, false, 0.0) > 1.0:
+			v.error("recovery_fraction", "must be at most 1")
 	memory.number("alert_per_record", 0.0, false, 0.0)
 	var losses: DefReader = memory.object("pirate_loss")
 	losses.number("disable", 0.0, false, 0.0)
@@ -300,9 +307,23 @@ static func _check_settings(data_set: DataSet, refs: Array[Dictionary]) -> void:
 	saturation.number("cap_pct", 30.0, false, 0.0)
 	if saturation.number("recovery_per_day", 0.2, false, 0.0) > 1.0:
 		saturation.error("recovery_per_day", "must be at most 1")
+	var danger: DefReader = reader.object("danger")
+	for key: String in SETTINGS_DEFAULTS["danger"]:
+		if key == "levels":
+			var levels: Array = danger.array("levels")
+			if levels.size() != 3 or not (float(levels[0]) <= float(levels[1]) and float(levels[1]) <= float(levels[2])):
+				danger.error("levels", "expected three rising thresholds [medium, high, extreme]")
+		else:
+			danger.number(key, 0.0, false, 0.0)
+	for key: String in ["trader_cut_max", "flow_cut_max"]:
+		if float(danger.data.get(key, 0.0)) > 1.0:
+			danger.error(key, "must be at most 1")
 	var cargo_cfg: DefReader = reader.object("cargo")
 	for key: String in SETTINGS_DEFAULTS["cargo"]:
 		cargo_cfg.number(key, 0.0, false, 0.0)
+	var flow: DefReader = economy.object("flow")
+	flow.number("units_per_lane_per_day", 10.0, false, 0.0)
+	flow.number("min_margin_pct", 15.0, false, 0.0)
 	var saves: DefReader = reader.object("saves")
 	saves.integer("max_pilots", 5, false, 1)
 	saves.integer("max_slots", 10, false, 1)

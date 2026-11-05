@@ -1,0 +1,16 @@
+{
+  "name": "Raids on the Brink run",
+  "commodity": "medical_supplies",
+  "factor": 1.25,
+  "days": [
+    4,
+    7
+  ],
+  "chance_per_day": 0.03,
+  "systems": [
+    "brink"
+  ],
+  "danger": 8,
+  "news_start": "Pirate raids along the Brink run: traders wary, medical prices climb",
+  "news_end": "The Brink raids die down"
+}

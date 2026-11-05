@@ -609,6 +609,8 @@ func _run() -> void:
 	await _frames(2)
 	await _jettison_checks(player, scene_root)
 	await _frames(2)
+	await _danger_checks(player, scene_root)
+	await _frames(2)
 	await _lighting_checks(player, scene_root)
 	_debug.set_traffic_enabled(traffic_was_on)
 
@@ -994,6 +996,48 @@ func _jettison_checks(player: Ship, scene_root: Node) -> void:
 	pirate.remove_from_group(&"ships")
 	pirate.queue_free()
 	await _frames(2)
+
+
+## EC9: losses raise danger, which cuts trade flow (EC7) and shows on the map.
+func _danger_checks(player: Ship, scene_root: Node) -> void:
+	var here: String = scene_root.system.id
+	var before: float = GameState.memory_value(here, "danger")
+	var victim: Ship = scene_root.traffic.spawn_from_pool(DataRegistry.get_ai_pool("trader_traffic"), Vector2(-7000.0, 7000.0), "", "steady")
+	victim.health.force_destroy()
+	await _frames(2)
+	_check(GameState.memory_value(here, "danger") >= before + float(DataRegistry.settings["danger"]["trader_kill"]) - 0.01, "EC9: a trader's death raises danger")
+	GameState.memory_add(here, "danger", 100.0)
+	_check(GameState.danger_level(here) == "extreme", "EC9: danger shows as a level")
+	scene_root.leave_system()
+	_check(GameState.travel.seen_danger.get(here, "") == "extreme", "EC9: the map remembers the level last seen")
+	scene_root.refresh_entities()
+	# EC7: a wide price gap on a lane narrows by itself, less when it's dangerous.
+	var galaxy: GalaxyDef = DataRegistry.galaxy()
+	var lane: Dictionary = galaxy.lanes.filter(func(l: Dictionary) -> bool: return l["from"] == "test_nebula" or l["to"] == "test_nebula")[0]
+	var other: String = lane["to"] if lane["from"] == "test_nebula" else lane["from"]
+	GameState.memory.markets.clear()
+	GameState.memory.values.erase("test_nebula")
+	GameState.memory.values.erase(other)
+	GameState._trade_flow()
+	var calm: float = 0.0
+	for sys: String in ["test_nebula", other]:
+		for port: String in GameState.memory.markets.get(sys, {}):
+			for good: String in GameState.memory.markets[sys][port]:
+				calm += absf(float(GameState.memory.markets[sys][port][good]))
+	_check(calm > 0.0, "EC7: background trade moves prices along a lane")
+	GameState.memory.markets.clear()
+	GameState.memory_add("test_nebula", "danger", 100.0)
+	GameState.memory_add(other, "danger", 100.0)
+	GameState._trade_flow()
+	var risky: float = 0.0
+	for sys: String in ["test_nebula", other]:
+		for port: String in GameState.memory.markets.get(sys, {}):
+			for good: String in GameState.memory.markets[sys][port]:
+				risky += absf(float(GameState.memory.markets[sys][port][good]))
+	_check(risky < calm, "EC9: danger cuts the flow (%.3f < %.3f)" % [risky, calm])
+	GameState.memory.markets.clear()
+	GameState.memory.values.erase("test_nebula")
+	GameState.memory.values.erase(other)
 
 
 func _entity_ships(id: String) -> Array[Ship]:

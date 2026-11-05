@@ -61,7 +61,14 @@ func step_day(rules: Dictionary) -> void:
 		for name: String in (values[system_id] as Dictionary).keys():
 			var rule: Dictionary = rules.get(system_id, {}).get(name, {"baseline": 0.0, "recovery_per_day": 0.0})
 			var baseline: float = float(rule["baseline"])
-			_store(system_id, name, SystemMemory.recover(value(system_id, name, baseline), baseline, float(rule["recovery_per_day"])), baseline)
+			var now: float = value(system_id, name, baseline)
+			var fraction: float = float(rule.get("recovery_fraction", 0.0))
+			if fraction > 0.0:
+				# EC9: closes a share of the gap each day (danger).
+				now += (baseline - now) * fraction
+				if absf(now - baseline) < 0.05:
+					now = baseline
+			_store(system_id, name, SystemMemory.recover(now, baseline, float(rule["recovery_per_day"])), baseline)
 	for system_id: String in wrecks.keys():
 		var kept: Array = []
 		for wreck: Dictionary in wrecks[system_id]:
@@ -119,3 +126,27 @@ func _store(system_id: String, name: String, new_value: float, baseline: float) 
 		values.erase(system_id)
 	else:
 		values[system_id] = system_values
+
+
+## EC9: a traffic entry's count after danger, by role: traders thin out (by
+## at most `trader_cut_max`), patrols are drawn in (at most `patrol_max_extra`).
+static func danger_count(count: int, role: String, danger: float, baseline: float, cfg: Dictionary) -> int:
+	var over: float = maxf(danger - baseline, 0.0)
+	if role == "trader":
+		var cut: float = minf(over * float(cfg["trader_cut_per_point"]), float(cfg["trader_cut_max"]))
+		return maxi(0, roundi(count * (1.0 - cut)))
+	if role == "warship":
+		return count + mini(roundi(over * float(cfg["patrol_per_point"])), int(cfg["patrol_max_extra"]))
+	return count
+
+
+## EC9: "low", "medium", "high" or "extreme" (`levels`: the three thresholds).
+static func danger_level(danger: float, levels: Array) -> String:
+	if danger >= float(levels[2]):
+		return "extreme"
+	if danger >= float(levels[1]):
+		return "high"
+	if danger >= float(levels[0]):
+		return "medium"
+	return "low"
+

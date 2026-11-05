@@ -124,6 +124,11 @@ func refresh() -> void:
 		lines.append("Government: %s" % (gov.name if gov != null else "none"))
 		var ports: int = system.objects.filter(func(o: SystemObjectDef) -> bool: return o.landable).size()
 		lines.append("%d place%s to land" % [ports, "" if ports == 1 else "s"])
+		# EC9: live here; elsewhere the level last seen.
+		if selected == travel.current_system:
+			lines.append("Danger: %s" % GameState.danger_level(selected))
+		elif travel.seen_danger.has(selected):
+			lines.append("Danger: %s (when last here)" % travel.seen_danger[selected])
 	else:
 		lines.append("No survey data until you visit.")
 	lines.append("")

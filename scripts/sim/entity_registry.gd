@@ -12,6 +12,7 @@ extends RefCounted
 ##   player_system: where the player is, or is heading during a trip
 ##   rng: RandomNumberGenerator   settings: game.json entities.encounter
 ##   trade (optional): Callable(state, def, system_id), EC6 trading at a stop
+##   danger (optional): Callable(system_id), EC9 an off-screen fight there
 ## step_day and depart return news lines (PS7).
 
 ## id -> EntityState
@@ -194,6 +195,8 @@ func _encounters(ctx: Dictionary) -> Array[String]:
 				loser.ships = Encounter.after_defeat(loser.ships, float(cfg["loser_losses"]), float(cfg["loser_damage"]), float(cfg["floor_hull"]))
 				winner.ships = Encounter.after_damage(winner.ships, float(cfg["winner_damage"]), float(cfg["floor_hull"]))
 				var where: String = ctx["name_of"].call(system_id)
+				if ctx.has("danger"):
+					ctx["danger"].call(system_id)  # EC9: a fight makes the system more dangerous
 				if loser.ships.is_empty():
 					loser.alive = false
 					news.append("%s destroyed %s at %s" % [winner_name, loser_name, where])

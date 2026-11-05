@@ -95,6 +95,10 @@ func _update_count(entry: Entry) -> void:
 		var rule: Dictionary = GameState.memory_rule(system.id, entry.memory)
 		entry.count = SystemMemory.scaled_count(entry.base_count, GameState.memory_value(system.id, entry.memory),
 			float(rule["baseline"]), entry.per_point)
+	# EC9: danger thins traders and draws patrols (capped, so it can't cascade).
+	var danger_rule: Dictionary = GameState.memory_rule(system.id, "danger")
+	entry.count = SystemMemory.danger_count(entry.count, entry.pool.behaviour, GameState.memory_value(system.id, "danger"),
+		float(danger_rule["baseline"]), DataRegistry.settings["danger"])
 
 
 ## Seconds before the entry's next replacement (tests, debug).

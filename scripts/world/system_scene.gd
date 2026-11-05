@@ -189,6 +189,7 @@ func _enter(system_id: String, arrival: FlightState) -> void:
 		traffic.configure(system, true)  # D11 goto here: refill like a fresh visit
 	_restore_wrecks()
 	entity_presence.on_enter(system.id)
+	GameState.note_danger(system.id)  # EC9
 	if player != null:
 		Flash.spawn(world, player.global_position, player.hit_radius * 2.0, Color(0.6, 0.8, 1.0), 0.5)
 
@@ -197,6 +198,8 @@ func _enter(system_id: String, arrival: FlightState) -> void:
 ## remember wrecks and write persistent entities back. Call before days pass,
 ## so each wreck's clock starts when it was left. Safe to call twice.
 func leave_system() -> void:
+	if system != null:
+		GameState.note_danger(system.id)  # EC9
 	_record_wrecks()
 	entity_presence.on_leave()
 

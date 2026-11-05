@@ -117,5 +117,10 @@
         "radius": 6400
       }
     }
-  ]
+  ],
+  "memory": {
+    "danger": {
+      "baseline": 40
+    }
+  }
 }

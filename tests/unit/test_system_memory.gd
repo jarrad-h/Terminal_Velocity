@@ -53,3 +53,23 @@ func test_round_trip() -> void:
 	var back: SystemMemory = SystemMemory.from_dict(JSON.parse_string(JSON.stringify(m.to_dict())))
 	assert_near(back.value("a", "alert", 0.0), 20.0, "values")
 	assert_true(back.wrecks_in("a")[0]["ship"] == "freighter", "wrecks")
+
+
+func test_danger_counts_levels_and_recovery() -> void:
+	# EC9: traders thin and patrols gather with danger, both capped; levels; proportional recovery.
+	var cfg: Dictionary = {"trader_cut_per_point": 0.005, "trader_cut_max": 0.5, "patrol_per_point": 0.03, "patrol_max_extra": 2}
+	assert_eq(SystemMemory.danger_count(4, "trader", 5.0, 5.0, cfg), 4, "at its normal level: no change")
+	assert_eq(SystemMemory.danger_count(4, "trader", 45.0, 5.0, cfg), 3, "danger thins traders")
+	assert_eq(SystemMemory.danger_count(4, "trader", 100.0, 0.0, cfg), 2, "...by at most half")
+	assert_eq(SystemMemory.danger_count(2, "warship", 40.0, 5.0, cfg), 3, "danger draws patrols")
+	assert_eq(SystemMemory.danger_count(2, "warship", 100.0, 0.0, cfg), 4, "...at most two more")
+	assert_eq(SystemMemory.danger_count(1, "pirate", 100.0, 0.0, cfg), 1, "pirates aren't counted by danger")
+	var levels: Array = [20.0, 45.0, 70.0]
+	assert_eq(SystemMemory.danger_level(5.0, levels), "low")
+	assert_eq(SystemMemory.danger_level(20.0, levels), "medium")
+	assert_eq(SystemMemory.danger_level(50.0, levels), "high")
+	assert_eq(SystemMemory.danger_level(90.0, levels), "extreme")
+	var m := SystemMemory.new()
+	m.add("a", "danger", 55.0, 5.0, 100.0)
+	m.step_day({"a": {"danger": {"baseline": 5.0, "recovery_per_day": 0.0, "recovery_fraction": 0.15}}})
+	assert_almost_eq(m.value("a", "danger", 5.0), 51.75, 0.01, "60 recovers 15% of its 55 gap a day")
